@@ -155,7 +155,8 @@ goodle/
 │   │   ├── SettingsModal.svelte   # Theme toggle & notation selector with live preview
 │   │   ├── ShareModal.svelte      # Canvas proof card renderer, social sharing, clipboard
 │   │   ├── CaptchaGate.svelte     # reCAPTCHA gate with dev bypass fallback
-│   │   └── LandingPage.svelte     # Minimalist Truth Trees landing page & interactive tableau
+│   │   ├── LandingPage.svelte     # Minimalist Truth Trees landing page & interactive tableau
+│   │   └── AboutView.svelte       # About tab: Copi & UP Diliman PHILO 11 heritage, creator, repo
 │   ├── stores/
 │   │   ├── auth.ts            # authStore (user, token, captcha), notationStore, activeTabStore
 │   │   └── theme.ts           # themeStore (light/dark), toggleTheme, isSettingsOpen
@@ -521,6 +522,7 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 | `FrenzyMode`        | Survival mode (3 hearts, timer)             | Penalty shake, seeded problems, score submission  |
 | `SandboxMode`       | Library + generator + custom problems       | Solver assessment, proof saving, share codes      |
 | `TutorialView`      | Interactive 19-rule encyclopedia            | Filterable rule list, practice sandbox per rule   |
+| `AboutView`         | Context, links, creator & philosophical roots | Heritage, UP Diliman PHILO 11, open source links |
 
 ### Core Proof Components
 
@@ -565,7 +567,7 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 
 ### `activeTabStore` (`src/stores/auth.ts`)
 - Writable store initialized to `'wordle'`
-- Values: `'wordle' | 'frenzy' | 'sandbox' | 'tutorial'`
+- Values: `'wordle' | 'frenzy' | 'sandbox' | 'tutorial' | 'about'`
 
 ### `activeSandboxProblem` (`src/stores/auth.ts`)
 - Writable store holding active custom sandbox problem definition

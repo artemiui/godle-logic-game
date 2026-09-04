@@ -23,6 +23,7 @@
     { id: 'frenzy', label: 'Frenzy', number: '02' },
     { id: 'sandbox', label: 'Sandbox', number: '03' },
     { id: 'tutorial', label: 'Rules', number: '04' },
+    { id: 'about', label: 'About', number: '05' },
   ];
 </script>
 

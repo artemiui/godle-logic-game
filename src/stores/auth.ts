@@ -113,7 +113,7 @@ function createAuthStore() {
 
 export const authStore = createAuthStore();
 
-export type ActiveTab = 'wordle' | 'frenzy' | 'sandbox' | 'tutorial';
+export type ActiveTab = 'wordle' | 'frenzy' | 'sandbox' | 'tutorial' | 'about';
 
 export const notationStore = writable<NotationStyle>(
   (localStorage.getItem('goodle_notation') as NotationStyle) || 'copi'

@@ -82,8 +82,16 @@
         </span>
       </div>
 
-      <!-- Right: Theme Toggle -->
-      <div class="flex items-center gap-2 text-xs font-sans">
+      <!-- Right: About & Theme Toggle -->
+      <div class="flex items-center gap-3 text-xs font-sans">
+        <button
+          type="button"
+          on:click={() => dispatch('navigate', 'about')}
+          class="text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors cursor-pointer text-[11px] tracking-wider uppercase font-medium"
+        >
+          About
+        </button>
+
         <!-- Theme Toggle -->
         <button
           type="button"
@@ -237,8 +245,16 @@
       <div class="font-serif italic text-neutral-700 dark:text-neutral-300 text-sm">
         "Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning."
       </div>
-      <div class="text-[11px] text-neutral-500">
-        Irving M. Copi
+      <div class="text-[11px] text-neutral-500 flex items-center justify-center gap-3">
+        <span>Irving M. Copi</span>
+        <span class="opacity-40">·</span>
+        <button
+          type="button"
+          on:click={() => dispatch('navigate', 'about')}
+          class="hover:text-neutral-900 dark:hover:text-white underline cursor-pointer transition-colors"
+        >
+          About gödle
+        </button>
       </div>
     </div>
   </footer>

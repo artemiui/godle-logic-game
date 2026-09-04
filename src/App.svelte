@@ -14,6 +14,7 @@
   import SettingsModal from './components/SettingsModal.svelte';
   import CaptchaGate from './components/CaptchaGate.svelte';
   import LandingPage from './components/LandingPage.svelte';
+  import AboutView from './components/AboutView.svelte';
 
   let showLanding: boolean = typeof window !== 'undefined'
     ? localStorage.getItem('goodle_landing_seen') !== 'true'
@@ -68,6 +69,8 @@
       activeTabStore.set('sandbox');
     } else if (mode === 'tutorial') {
       activeTabStore.set('tutorial');
+    } else if (mode === 'about') {
+      activeTabStore.set('about');
     }
   });
 </script>
@@ -94,6 +97,8 @@
       <SandboxMode />
     {:else if $activeTabStore === 'tutorial'}
       <TutorialView />
+    {:else if $activeTabStore === 'about'}
+      <AboutView />
     {/if}
   </main>
 
