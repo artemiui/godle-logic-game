@@ -44,8 +44,8 @@
         </span>
       </div>
 
-      <!-- Right: Theme & Enter CTA -->
-      <div class="flex items-center gap-2 sm:gap-3 text-xs font-sans">
+      <!-- Right: Theme Toggle -->
+      <div class="flex items-center gap-2 text-xs font-sans">
         <!-- Theme Toggle -->
         <button
           type="button"
@@ -62,16 +62,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
           {/if}
-        </button>
-
-        <!-- Enter App Button -->
-        <button
-          type="button"
-          on:click={() => dispatch('enter')}
-          class="group px-4 py-1.5 rounded-full text-xs font-sans tracking-wide bg-neutral-950 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-950 transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-sm"
-        >
-          <span>Enter gödle</span>
-          <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </button>
       </div>
     </div>
@@ -91,7 +81,7 @@
     </p>
 
     <!-- Action Button Row -->
-    <div class="flex flex-wrap items-center justify-center gap-3 mb-16 sm:mb-24">
+    <div class="flex items-center justify-center mb-16 sm:mb-24">
       <button
         type="button"
         on:click={() => dispatch('navigate', 'wordle')}
@@ -99,22 +89,6 @@
       >
         <span>Begin Daily Deduction</span>
         <span>→</span>
-      </button>
-
-      <button
-        type="button"
-        on:click={() => dispatch('navigate', 'sandbox')}
-        class="px-5 py-2.5 rounded-full text-xs font-sans tracking-wider uppercase border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-800 dark:text-neutral-200 transition-colors cursor-pointer bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm"
-      >
-        Open Proof Sandbox
-      </button>
-
-      <button
-        type="button"
-        on:click={() => dispatch('navigate', 'tutorial')}
-        class="px-5 py-2.5 rounded-full text-xs font-sans tracking-wider uppercase border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors cursor-pointer"
-      >
-        19 Rules Codex
       </button>
     </div>
 
