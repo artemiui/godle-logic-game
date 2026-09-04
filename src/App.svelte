@@ -15,9 +15,7 @@
   import LandingPage from './components/LandingPage.svelte';
   import AboutView from './components/AboutView.svelte';
 
-  let showLanding: boolean = typeof window !== 'undefined'
-    ? localStorage.getItem('goodle_landing_seen') !== 'true'
-    : false;
+  let showLanding: boolean = true;
 
   let showAuthModal: boolean = false;
   let showProfileModal: boolean = false;
@@ -28,17 +26,11 @@
 
   function handleLandingEnter() {
     showLanding = false;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('goodle_landing_seen', 'true');
-    }
   }
 
   function handleLandingNavigate(mode: any) {
     activeTabStore.set(mode);
     showLanding = false;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('goodle_landing_seen', 'true');
-    }
   }
 
   function handleOpenPublicProfile(username: string) {
@@ -56,20 +48,24 @@
       document.documentElement.classList.remove('dark');
     }
 
-    // Check URL parameters for mode switch or landing
+    // Check URL parameters for direct mode switch or landing
     const params = new URLSearchParams(window.location.search);
-    if (params.get('landing') === 'true' || params.get('home') === 'true') {
-      showLanding = true;
-    }
     const mode = params.get('mode');
     if (mode === 'frenzy') {
       activeTabStore.set('frenzy');
+      showLanding = false;
     } else if (mode === 'sandbox') {
       activeTabStore.set('sandbox');
+      showLanding = false;
     } else if (mode === 'tutorial') {
       activeTabStore.set('tutorial');
+      showLanding = false;
     } else if (mode === 'about') {
       activeTabStore.set('about');
+      showLanding = false;
+    } else if (mode === 'wordle') {
+      activeTabStore.set('wordle');
+      showLanding = false;
     }
   });
 </script>
