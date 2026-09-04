@@ -19,7 +19,7 @@
   <!-- Animated Logic Symbols Pattern Background (Subtle & GPU-Optimized) -->
   <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
     <!-- Seamless Drifting Logic Symbol Grid -->
-    <div class="logic-pattern-grid absolute -top-60 -left-60 w-[calc(100%+480px)] h-[calc(100%+480px)] opacity-[0.04] dark:opacity-[0.06]">
+    <div class="logic-pattern-grid absolute -top-60 -left-60 w-[calc(100%+480px)] h-[calc(100%+480px)] opacity-[0.075] dark:opacity-[0.11]">
       <svg width="100%" height="100%" fill="none" class="text-neutral-900 dark:text-neutral-100">
         <defs>
           <pattern id="logic-symbol-pattern" width="240" height="240" patternUnits="userSpaceOnUse">
@@ -51,22 +51,22 @@
 
     <!-- Floating Ambient Logic Glyphs (Subtle, slow harmonic drift) -->
     <div class="absolute inset-0 pointer-events-none">
-      <div class="floating-glyph-1 absolute top-[18%] left-[10%] text-2xl sm:text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.04] dark:opacity-[0.065]">
+      <div class="floating-glyph-1 absolute top-[18%] left-[10%] text-2xl sm:text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.075] dark:opacity-[0.12]">
         ∴
       </div>
-      <div class="floating-glyph-2 absolute top-[28%] right-[12%] text-2xl sm:text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.035] dark:opacity-[0.06]">
+      <div class="floating-glyph-2 absolute top-[28%] right-[12%] text-2xl sm:text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.07] dark:opacity-[0.11]">
         ⊢
       </div>
-      <div class="floating-glyph-3 absolute bottom-[35%] left-[8%] text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.035] dark:opacity-[0.055]">
+      <div class="floating-glyph-3 absolute bottom-[35%] left-[8%] text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.07] dark:opacity-[0.10]">
         ≡
       </div>
-      <div class="floating-glyph-1 absolute bottom-[28%] right-[10%] text-2xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.04] dark:opacity-[0.065]">
+      <div class="floating-glyph-1 absolute bottom-[28%] right-[10%] text-2xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.075] dark:opacity-[0.12]">
         ⊃
       </div>
-      <div class="floating-glyph-2 absolute top-[60%] left-[18%] text-xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.03] dark:opacity-[0.05]">
+      <div class="floating-glyph-2 absolute top-[60%] left-[18%] text-xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.06] dark:opacity-[0.09]">
         ¬
       </div>
-      <div class="floating-glyph-3 absolute top-[45%] right-[20%] text-xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.03] dark:opacity-[0.05]">
+      <div class="floating-glyph-3 absolute top-[45%] right-[20%] text-xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.06] dark:opacity-[0.09]">
         ∧
       </div>
     </div>
