@@ -165,14 +165,15 @@
         </h1>
       </div>
 
-      <!-- Hint action link -->
+      <!-- Hint action icon -->
       <button
         type="button"
         on:click={requestHint}
         disabled={isWon || isRequestingHint}
-        class="text-xs font-sans text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white underline cursor-pointer self-start sm:self-auto transition-colors disabled:opacity-40"
+        title={isRequestingHint ? 'Analyzing…' : 'Request Hint'}
+        class="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white cursor-pointer self-start sm:self-auto transition-colors disabled:opacity-40"
       >
-        {isRequestingHint ? '[ Analyzing... ]' : '[ Request Hint ]'}
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{isRequestingHint ? 'animate-pulse' : ''}"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
       </button>
     </div>
 

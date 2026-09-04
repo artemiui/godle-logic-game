@@ -7,6 +7,7 @@
     openProfile: void;
     openAuthPrompt: void;
     openStats: void;
+    openLanding: void;
   }>();
 
   function handlePersonClick() {
@@ -31,7 +32,8 @@
     <div class="flex items-baseline gap-3">
       <button
         type="button"
-        on:click={() => activeTabStore.set('wordle')}
+        on:click={() => dispatch('openLanding')}
+        title="View Truth Trees Landing Page"
         class="text-left cursor-pointer group"
       >
         <span class="font-sans font-black text-xl tracking-tight text-neutral-950 dark:text-white group-hover:opacity-75 transition-opacity">

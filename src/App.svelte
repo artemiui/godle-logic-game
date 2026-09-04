@@ -13,6 +13,11 @@
   import StatsModal from './components/StatsModal.svelte';
   import SettingsModal from './components/SettingsModal.svelte';
   import CaptchaGate from './components/CaptchaGate.svelte';
+  import LandingPage from './components/LandingPage.svelte';
+
+  let showLanding: boolean = typeof window !== 'undefined'
+    ? localStorage.getItem('goodle_landing_seen') !== 'true'
+    : false;
 
   let showAuthModal: boolean = false;
   let showProfileModal: boolean = false;
@@ -20,6 +25,21 @@
   let publicProfileUsername: string | null = null;
   let authModalMode: 'prompt' | 'login' | 'register' = 'prompt';
   let showStatsModal: boolean = false;
+
+  function handleLandingEnter() {
+    showLanding = false;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goodle_landing_seen', 'true');
+    }
+  }
+
+  function handleLandingNavigate(mode: any) {
+    activeTabStore.set(mode);
+    showLanding = false;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goodle_landing_seen', 'true');
+    }
+  }
 
   function handleOpenPublicProfile(username: string) {
     publicProfileUsername = username;
@@ -36,8 +56,11 @@
       document.documentElement.classList.remove('dark');
     }
 
-    // Check URL parameters for mode switch
+    // Check URL parameters for mode switch or landing
     const params = new URLSearchParams(window.location.search);
+    if (params.get('landing') === 'true' || params.get('home') === 'true') {
+      showLanding = true;
+    }
     const mode = params.get('mode');
     if (mode === 'frenzy') {
       activeTabStore.set('frenzy');
@@ -52,6 +75,7 @@
 <div class="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0A] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans selection:bg-neutral-900 selection:text-white dark:selection:bg-white dark:selection:text-neutral-950 transition-colors">
   <!-- Minimal Header Bar -->
   <Header
+    on:openLanding={() => (showLanding = true)}
     on:openProfile={() => (showProfileModal = true)}
     on:openAuthPrompt={() => {
       authModalMode = 'prompt';
@@ -80,7 +104,7 @@
         "Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning."
       </div>
       <div class="text-[11px] text-neutral-600 dark:text-neutral-300">
-        Irving M. Copi — Symbolic Logic · 19 Propositional Rules
+        Irving M. Copi
       </div>
     </div>
   </footer>
@@ -118,4 +142,12 @@
       publicProfileUsername = null;
     }}
   />
+
+  <!-- Minimalist Truth Trees Landing Page -->
+  {#if showLanding}
+    <LandingPage
+      on:enter={handleLandingEnter}
+      on:navigate={(e) => handleLandingNavigate(e.detail)}
+    />
+  {/if}
 </div>

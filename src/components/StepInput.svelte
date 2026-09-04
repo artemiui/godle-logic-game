@@ -111,9 +111,10 @@
     <button
       type="button"
       on:click={() => (showKeyboard = !showKeyboard)}
-      class="text-[11px] font-sans text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white underline cursor-pointer transition-colors"
+      title={showKeyboard ? 'Hide Keypad' : 'Show Keypad'}
+      class="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white cursor-pointer transition-colors {showKeyboard ? 'text-black dark:text-white' : ''}"
     >
-      {showKeyboard ? '[ Hide Keypad ]' : '[ Show Keypad ]'}
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
     </button>
   </div>
 

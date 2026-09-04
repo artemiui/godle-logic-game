@@ -154,7 +154,8 @@ goodle/
 │   │   ├── StatsModal.svelte      # Daily stats distribution & frenzy leaderboard
 │   │   ├── SettingsModal.svelte   # Theme toggle & notation selector with live preview
 │   │   ├── ShareModal.svelte      # Canvas proof card renderer, social sharing, clipboard
-│   │   └── CaptchaGate.svelte    # reCAPTCHA gate with dev bypass fallback
+│   │   ├── CaptchaGate.svelte     # reCAPTCHA gate with dev bypass fallback
+│   │   └── LandingPage.svelte     # Minimalist Truth Trees landing page & interactive tableau
 │   ├── stores/
 │   │   ├── auth.ts            # authStore (user, token, captcha), notationStore, activeTabStore
 │   │   └── theme.ts           # themeStore (light/dark), toggleTheme, isSettingsOpen
@@ -541,6 +542,7 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 | `SettingsModal`       | Theme toggle + notation selector with live preview   |
 | `ShareModal`          | Canvas proof card renderer + social sharing          |
 | `CaptchaGate`         | reCAPTCHA overlay with dev bypass                    |
+| `LandingPage`         | Minimalist Truth Trees hero & interactive tableau    |
 
 ### Inter-Component Communication
 - **Event dispatching**: Components use `createEventDispatcher()` with typed payloads.
