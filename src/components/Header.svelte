@@ -40,8 +40,8 @@
           gödle
         </span>
       </button>
-      <span class="hidden sm:inline text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300">
-        / Propositional Deduction
+      <span class="hidden sm:inline text-[11px] font-sans text-neutral-500 dark:text-neutral-400">
+        by A. Arcega
       </span>
     </div>
 
