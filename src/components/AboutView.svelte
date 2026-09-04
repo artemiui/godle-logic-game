@@ -41,7 +41,7 @@
       </div>
     </section>
 
-    <!-- Section: Inspirations & PHILO 11 -->
+    <!-- Section: Inspirations & PHILO 12 -->
     <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline border-b border-neutral-200/60 dark:border-neutral-800/60 pb-10">
       <div class="md:col-span-4">
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
@@ -52,10 +52,10 @@
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 space-y-2">
           <div class="font-sans text-xs font-semibold text-neutral-900 dark:text-white">
-            UP Department of Philosophy · PHILO 11
+            UP Department of Philosophy · PHILO 12
           </div>
           <p class="text-xs text-neutral-600 dark:text-neutral-400">
-            Dedicated with profound gratitude to the <strong>Department of Philosophy, College of Social Sciences and Philosophy (CSSP)</strong> at the <strong>University of the Philippines Diliman</strong>, and to the faculty, lecturers, and teaching assistants of <strong>PHILO 11 (Elementary Logic)</strong>.
+            Dedicated with profound gratitude to the <strong>Department of Philosophy, College of Social Sciences and Philosophy (CSSP)</strong> at the <strong>University of the Philippines Diliman</strong>, and to the faculty, lecturers, and teaching assistants of <strong>PHILO 12 (Intermediate Logic)</strong>.
           </p>
         </div>
 
