@@ -142,7 +142,7 @@
           </p>
         </div>
         <div class="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-900 flex items-center gap-1.5 text-[10px] font-sans font-medium text-neutral-500">
-          <span>🔥 Track Daily Streaks</span>
+          <span>Track Daily Streaks</span>
         </div>
       </button>
 
@@ -165,7 +165,7 @@
           </p>
         </div>
         <div class="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-900 flex items-center gap-1.5 text-[10px] font-sans font-medium text-neutral-500">
-          <span>⚡ Global Leaderboard</span>
+          <span>Global Leaderboard</span>
         </div>
       </button>
 
@@ -188,7 +188,7 @@
           </p>
         </div>
         <div class="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-900 flex items-center gap-1.5 text-[10px] font-sans font-medium text-neutral-500">
-          <span>⚖ Automated BFS Solver</span>
+          <span>Automated BFS Solver</span>
         </div>
       </button>
 
@@ -211,7 +211,7 @@
           </p>
         </div>
         <div class="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-900 flex items-center gap-1.5 text-[10px] font-sans font-medium text-neutral-500">
-          <span>📖 Interactive Practice</span>
+          <span>Interactive Practice</span>
         </div>
       </button>
 
@@ -226,7 +226,7 @@
         "Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning."
       </div>
       <div class="text-[11px] text-neutral-500">
-        Irving M. Copi · Propositional Symbolic Logic
+        Irving M. Copi
       </div>
     </div>
   </footer>
