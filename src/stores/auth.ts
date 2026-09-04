@@ -59,7 +59,7 @@ function createAuthStore() {
     user: null,
     loading: true,
     token: typeof window !== 'undefined' ? localStorage.getItem('goodle_token') : null,
-    isCaptchaVerified: initialCaptcha,
+    isCaptchaVerified: true,
   });
 
   return {

@@ -12,7 +12,6 @@
   import PublicProfileModal from './components/PublicProfileModal.svelte';
   import StatsModal from './components/StatsModal.svelte';
   import SettingsModal from './components/SettingsModal.svelte';
-  import CaptchaGate from './components/CaptchaGate.svelte';
   import LandingPage from './components/LandingPage.svelte';
   import AboutView from './components/AboutView.svelte';
 
@@ -113,11 +112,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Entry Gate: Google reCAPTCHA Verification Required to Access Site -->
-  {#if !$authStore.isCaptchaVerified}
-    <CaptchaGate />
-  {/if}
 
   <!-- Modals & Utilities -->
   <SettingsModal />
