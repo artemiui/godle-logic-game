@@ -1,24 +1,32 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import confetti from 'canvas-confetti';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
-  import { COPI_PRESET_PROBLEMS } from '../logic/presets';
+  import { COPI_PRESET_PROBLEMS, COMMUNITY_DEFAULT_PROBLEMS } from '../logic/presets';
   import { generateProblem, encodeProblemToShareCode } from '../logic/generator';
   import { solveProblem } from '../logic/solver';
   import { validateProofStep } from '../logic/checker';
   import { parseFormula, safeParseFormula } from '../logic/parser';
   import { formulasEqual } from '../logic/ast';
-  import { authStore, activeSandboxProblem, type SavedProof } from '../stores/auth';
+  import { authStore, activeSandboxProblem, notationStore, type SavedProof } from '../stores/auth';
+  import { replaceFormulaKeywords } from '../logic/latex';
   import ProofTable from './ProofTable.svelte';
   import StepInput from './StepInput.svelte';
   import ShareModal from './ShareModal.svelte';
 
   let activeSubTab: 'library' | 'generator' | 'custom' = 'library';
-  let libraryFilter: 'copi' | 'saved' = 'copi';
+  let libraryFilter: 'copi' | 'community' | 'saved' = 'copi';
+  let communityTheorems: Problem[] = [];
+  let isCommunityLoading: boolean = false;
+  let isSubmittingToCommunity: boolean = false;
+  let communitySuccessMessage: string = '';
   let mySavedProofs: SavedProof[] = [];
   let isSavedLoading: boolean = false;
   let saveSuccessMessage: string = '';
   let isSavingToAccount: boolean = false;
+  let isCurrentSaved: boolean = false;
+  let isSavingCurrent: boolean = false;
+  let currentSaveFeedback: string = '';
   let showShareModal: boolean = false;
 
   let problem: Problem = COPI_PRESET_PROBLEMS[0];
@@ -46,6 +54,32 @@
   let isAssessing: boolean = false;
   let shareUrl: string = '';
 
+  function handleConclusionInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (!target) return;
+    const cursor = target.selectionStart ?? target.value.length;
+    const res = replaceFormulaKeywords(target.value, cursor, $notationStore);
+    if (res.changed) {
+      customConclusionText = res.text;
+      target.value = res.text;
+      target.setSelectionRange(res.cursor, res.cursor);
+      tick().then(() => target?.setSelectionRange(res.cursor, res.cursor));
+    }
+  }
+
+  function handlePremisesInput(e: Event) {
+    const target = e.target as HTMLTextAreaElement;
+    if (!target) return;
+    const cursor = target.selectionStart ?? target.value.length;
+    const res = replaceFormulaKeywords(target.value, cursor, $notationStore);
+    if (res.changed) {
+      customPremisesText = res.text;
+      target.value = res.text;
+      target.setSelectionRange(res.cursor, res.cursor);
+      tick().then(() => target?.setSelectionRange(res.cursor, res.cursor));
+    }
+  }
+
   $: if ($activeSandboxProblem) {
     loadProblem($activeSandboxProblem);
     activeSandboxProblem.set(null);
@@ -65,9 +99,84 @@
     shareUrl = '';
   }
 
-  async function fetchMySavedProofs() {
+  function checkIfCurrentSaved() {
+    if (!problem) return;
+    const inList = mySavedProofs.some(sp => sp.title === problem.title);
+    let inLocal = false;
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      inLocal = local.some((p: any) => p.title === problem.title);
+    } catch {}
+    isCurrentSaved = inList || inLocal;
+  }
+
+  $: if (problem || mySavedProofs) {
+    checkIfCurrentSaved();
+  }
+
+  async function saveCurrentTheorem() {
+    if (isSavingCurrent || isCurrentSaved || !problem) return;
+    isSavingCurrent = true;
+    currentSaveFeedback = '';
+
+    const newSaved: SavedProof = {
+      id: 'saved-' + Date.now(),
+      title: problem.title,
+      difficulty: problem.difficulty || 'medium',
+      premises: problem.premises,
+      conclusion: problem.conclusion,
+      notes: problem.author ? `Community theorem by @${problem.author}` : `Saved from Sandbox Prover on ${new Date().toLocaleDateString()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      if (!local.some((p: any) => p.title === newSaved.title)) {
+        local.unshift(newSaved);
+        localStorage.setItem('goodle_local_saved_proofs', JSON.stringify(local));
+      }
+    } catch {}
+
+    // Save to account if logged in
     const token = $authStore.token || localStorage.getItem('goodle_token');
-    if (!token) return;
+    if (token && $authStore.user) {
+      try {
+        await fetch('/api/user/saved-proofs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token,
+          },
+          body: JSON.stringify({
+            title: problem.title,
+            difficulty: problem.difficulty || 'medium',
+            premises: problem.premises,
+            conclusion: problem.conclusion,
+            notes: newSaved.notes,
+          }),
+        });
+      } catch {}
+    }
+
+    await fetchMySavedProofs();
+    isSavingCurrent = false;
+    isCurrentSaved = true;
+    currentSaveFeedback = 'Saved to Sandbox Library!';
+    setTimeout(() => (currentSaveFeedback = ''), 3000);
+  }
+
+  async function fetchMySavedProofs() {
+    let localProofs: SavedProof[] = [];
+    try {
+      localProofs = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+    } catch {}
+
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    if (!token) {
+      mySavedProofs = localProofs;
+      return;
+    }
     isSavedLoading = true;
     try {
       const res = await fetch('/api/user/saved-proofs', {
@@ -75,17 +184,48 @@
       });
       if (res.ok) {
         const data = await res.json();
-        mySavedProofs = data.proofs || [];
+        const serverProofs: SavedProof[] = data.proofs || [];
+        const combined = [...serverProofs];
+        for (const lp of localProofs) {
+          if (!combined.some(sp => sp.title === lp.title)) {
+            combined.push(lp);
+          }
+        }
+        mySavedProofs = combined;
+      } else {
+        mySavedProofs = localProofs;
       }
     } catch (err) {
-      console.warn('Failed to fetch saved proofs:', err);
+      mySavedProofs = localProofs;
     } finally {
       isSavedLoading = false;
     }
   }
 
+  async function fetchCommunityTheorems() {
+    isCommunityLoading = true;
+    try {
+      const res = await fetch('/api/community/theorems');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.theorems && data.theorems.length > 0) {
+          communityTheorems = data.theorems;
+        } else {
+          communityTheorems = COMMUNITY_DEFAULT_PROBLEMS;
+        }
+      } else {
+        communityTheorems = COMMUNITY_DEFAULT_PROBLEMS;
+      }
+    } catch {
+      communityTheorems = COMMUNITY_DEFAULT_PROBLEMS;
+    } finally {
+      isCommunityLoading = false;
+    }
+  }
+
   async function handleSaveToAccount() {
     saveSuccessMessage = '';
+    communitySuccessMessage = '';
     errorMessage = '';
     if (!$authStore.user) {
       errorMessage = 'Please sign in or register to save theorems to your account.';
@@ -148,8 +288,81 @@
     }
   }
 
+  async function handleSubmitToCommunity() {
+    communitySuccessMessage = '';
+    saveSuccessMessage = '';
+    errorMessage = '';
+
+    const lines = customPremisesText
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+    if (lines.length === 0) {
+      errorMessage = 'Enter at least one premise to submit.';
+      return;
+    }
+
+    const parsedPremises: Formula[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      const p = safeParseFormula(lines[i]);
+      if (!p.formula) {
+        errorMessage = `Syntax error in premise ${i + 1}: ${p.error}`;
+        return;
+      }
+      parsedPremises.push(p.formula);
+    }
+
+    const parsedConc = safeParseFormula(customConclusionText);
+    if (!parsedConc.formula) {
+      errorMessage = `Syntax error in conclusion: ${parsedConc.error}`;
+      return;
+    }
+
+    // Client-side solver verification first for immediate feedback
+    const testResult = solveProblem(parsedPremises, parsedConc.formula, 8);
+    if (!testResult.solvable) {
+      errorMessage = 'Theorem could not be proven valid under Copi\'s 19 rules. Only logically provable theorems are accepted into the Community Library.';
+      return;
+    }
+
+    isSubmittingToCommunity = true;
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      const res = await fetch('/api/community/theorems', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title: customTitle.trim() || 'Community Theorem',
+          difficulty: testResult.minSteps && testResult.minSteps > 4 ? 'hard' : (testResult.minSteps && testResult.minSteps > 2 ? 'medium' : 'easy'),
+          premises: parsedPremises,
+          conclusion: parsedConc.formula,
+          creatorUsername: $authStore.user?.username || 'Anonymous Logician',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        communitySuccessMessage = data.message || 'Theorem verified and added to the Community Library!';
+        await fetchCommunityTheorems();
+        libraryFilter = 'community';
+        activeSubTab = 'library';
+      } else {
+        errorMessage = data.error || 'Failed to submit theorem.';
+      }
+    } catch {
+      errorMessage = 'Network error while submitting to community.';
+    } finally {
+      isSubmittingToCommunity = false;
+    }
+  }
+
   onMount(() => {
     loadProblem(COPI_PRESET_PROBLEMS[0]);
+    fetchCommunityTheorems();
+    if ($authStore.user) fetchMySavedProofs();
   });
 
   function handleAddStep(event: CustomEvent<{ formula: Formula; formulaRaw: string; ruleId: RuleId; citations: number[] }>) {
@@ -277,9 +490,38 @@
         <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
           03 / Prover Sandbox
         </span>
-        <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
-          {problem.title}
-        </h1>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
+            {problem.title}
+          </h1>
+          <button
+            type="button"
+            on:click={saveCurrentTheorem}
+            disabled={isSavingCurrent}
+            title={isCurrentSaved ? "Saved to Sandbox Library" : "Save theorem to Sandbox Library"}
+            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
+              isCurrentSaved
+                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+            }"
+          >
+            {#if isCurrentSaved}
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Saved</span>
+            {:else if isSavingCurrent}
+              <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+              <span>Saving...</span>
+            {:else}
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <span>Save</span>
+            {/if}
+          </button>
+        </div>
+        {#if currentSaveFeedback}
+          <div class="text-[11px] font-sans text-emerald-600 dark:text-emerald-400 mt-0.5">
+            ✓ {currentSaveFeedback}
+          </div>
+        {/if}
       </div>
 
       <!-- Mode sub-tabs -->
@@ -333,7 +575,22 @@
                 : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
             }"
           >
-            Copi Textbook ({COPI_PRESET_PROBLEMS.length})
+            Copi ({COPI_PRESET_PROBLEMS.length})
+          </button>
+          <span class="text-neutral-300 dark:text-neutral-700">|</span>
+          <button
+            type="button"
+            on:click={() => {
+              libraryFilter = 'community';
+              fetchCommunityTheorems();
+            }}
+            class="text-xs uppercase tracking-wider font-bold cursor-pointer transition-colors {
+              libraryFilter === 'community'
+                ? 'text-neutral-950 dark:text-white border-b border-neutral-950 dark:border-white'
+                : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+            }"
+          >
+            Community ({communityTheorems.length})
           </button>
           <span class="text-neutral-300 dark:text-neutral-700">|</span>
           <button
@@ -348,7 +605,7 @@
                 : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
             }"
           >
-            My Saved Theorems ({$authStore.user ? mySavedProofs.length : 0})
+            Saved Theorems ({mySavedProofs.length})
           </button>
         </div>
 
@@ -372,21 +629,62 @@
               </button>
             {/each}
           </div>
-        {:else}
-          {#if !$authStore.user}
-            <div class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 text-center space-y-2">
-              <div class="text-xs text-neutral-600 dark:text-neutral-400">
-                Sign in or register an account to save and synchronize your custom deductions.
-              </div>
+
+        {:else if libraryFilter === 'community'}
+          {#if isCommunityLoading}
+            <div class="py-6 text-center text-xs text-neutral-400 animate-pulse font-sans">
+              Loading verified community theorems...
             </div>
-          {:else if isSavedLoading}
-            <div class="py-6 text-center text-xs text-neutral-400 animate-pulse">
+          {:else if communityTheorems.length === 0}
+            <div class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 text-center space-y-1 font-sans">
+              <div class="text-xs font-bold text-neutral-900 dark:text-white">No community theorems found.</div>
+              <div class="text-[11px] text-neutral-500">Design a theorem in the Custom tab and submit it to be proven and included!</div>
+            </div>
+          {:else}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+              {#each communityTheorems as cp}
+                <button
+                  type="button"
+                  on:click={() => loadProblem({
+                    id: cp.id,
+                    title: cp.title,
+                    difficulty: (cp.difficulty as any) || 'medium',
+                    premises: cp.premises,
+                    conclusion: cp.conclusion,
+                    author: cp.author || cp.creator_username,
+                    creator_username: cp.creator_username || cp.author,
+                    isCommunity: true
+                  })}
+                  class="p-2.5 text-left border transition-colors cursor-pointer {
+                    problem.id === cp.id
+                      ? 'border-neutral-900 dark:border-white bg-neutral-100/70 dark:bg-neutral-900'
+                      : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-400'
+                  }"
+                >
+                  <div class="flex items-center justify-between font-sans text-xs">
+                    <span class="font-bold text-neutral-900 dark:text-neutral-100 truncate pr-2">{cp.title}</span>
+                    <span class="text-[10px] uppercase text-neutral-600 dark:text-neutral-300 flex-shrink-0">{cp.difficulty}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 font-sans">
+                    <span>by <strong class="text-neutral-800 dark:text-neutral-200">@{cp.author || cp.creator_username || 'Logician'}</strong></span>
+                    <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Proven</span>
+                  </div>
+                </button>
+              {/each}
+            </div>
+          {/if}
+
+        {:else}
+          {#if isSavedLoading}
+            <div class="py-6 text-center text-xs text-neutral-400 animate-pulse font-sans">
               Loading your saved theorems...
             </div>
           {:else if mySavedProofs.length === 0}
-            <div class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 text-center space-y-1">
-              <div class="text-xs font-bold">No saved theorems found.</div>
-              <div class="text-[11px] text-neutral-500">Create a theorem in the Custom tab and click "Save to Account".</div>
+            <div class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 text-center space-y-1 font-sans">
+              <div class="text-xs font-bold text-neutral-900 dark:text-white">No saved theorems found.</div>
+              <div class="text-[11px] text-neutral-500">
+                Click the "Save" button beside any theorem title to add it here, or create one in Custom!
+              </div>
             </div>
           {:else}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
@@ -403,8 +701,8 @@
                   class="p-2.5 text-left border border-neutral-200 dark:border-neutral-800 hover:border-neutral-900 dark:hover:border-white transition-colors cursor-pointer"
                 >
                   <div class="flex items-center justify-between font-sans text-xs">
-                    <span class="font-bold text-neutral-900 dark:text-neutral-100">{sp.title}</span>
-                    <span class="text-[9px] uppercase text-neutral-500">{sp.difficulty}</span>
+                    <span class="font-bold text-neutral-900 dark:text-neutral-100 truncate pr-2">{sp.title}</span>
+                    <span class="text-[9px] uppercase text-neutral-500 flex-shrink-0">{sp.difficulty}</span>
                   </div>
                   {#if sp.notes}
                     <div class="text-[11px] text-neutral-500 truncate mt-0.5">{sp.notes}</div>
@@ -412,6 +710,11 @@
                 </button>
               {/each}
             </div>
+            {#if !$authStore.user}
+              <div class="text-[10px] text-neutral-400 dark:text-neutral-500 text-center font-sans pt-1">
+                Saved locally on this device. Sign in to synchronize across devices.
+              </div>
+            {/if}
           {/if}
         {/if}
       </div>
@@ -473,6 +776,8 @@
             <textarea
               id="sandbox-custom-premises"
               bind:value={customPremisesText}
+              on:input={handlePremisesInput}
+              maxlength="2000"
               rows="3"
               class="w-full p-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-serif text-sm"
             ></textarea>
@@ -484,6 +789,8 @@
                 id="sandbox-custom-conclusion"
                 type="text"
                 bind:value={customConclusionText}
+                on:input={handleConclusionInput}
+                maxlength="250"
                 class="w-full h-8 px-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-serif text-sm"
               />
             </div>
@@ -504,14 +811,22 @@
                 Load to Prove
               </button>
             </div>
-            <div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
                 on:click={handleSaveToAccount}
                 disabled={isSavingToAccount}
-                class="w-full h-8 border border-neutral-400 dark:border-neutral-600 hover:border-neutral-900 dark:hover:border-white text-neutral-800 dark:text-neutral-200 text-xs uppercase cursor-pointer transition-colors disabled:opacity-40"
+                class="h-8 border border-neutral-400 dark:border-neutral-600 hover:border-neutral-900 dark:hover:border-white text-neutral-800 dark:text-neutral-200 text-xs uppercase cursor-pointer transition-colors disabled:opacity-40"
               >
-                {isSavingToAccount ? 'Saving...' : '💾 Save to My Account'}
+                {isSavingToAccount ? 'Saving...' : '💾 Save to Account'}
+              </button>
+              <button
+                type="button"
+                on:click={handleSubmitToCommunity}
+                disabled={isSubmittingToCommunity}
+                class="h-8 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 hover:bg-black dark:hover:bg-neutral-100 text-xs uppercase cursor-pointer transition-colors disabled:opacity-40"
+              >
+                {isSubmittingToCommunity ? 'Verifying...' : '🌐 Submit to Community'}
               </button>
             </div>
           </div>
@@ -520,6 +835,12 @@
         {#if saveSuccessMessage}
           <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
             ✓ {saveSuccessMessage}
+          </div>
+        {/if}
+
+        {#if communitySuccessMessage}
+          <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
+            {communitySuccessMessage}
           </div>
         {/if}
 

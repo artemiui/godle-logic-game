@@ -307,6 +307,20 @@ SQLite via Node.js 22 built-in `node:sqlite` (`DatabaseSync`). WAL journal mode,
 | `status`           | TEXT     | DEFAULT `'pending'`                 |
 | `created_at`       | DATETIME | DEFAULT CURRENT_TIMESTAMP           |
 
+### `community_theorems`
+| Column               | Type     | Constraints                                   |
+|----------------------|----------|-----------------------------------------------|
+| `id`                 | TEXT     | PRIMARY KEY                                   |
+| `user_id`            | TEXT     | NULL, FK → users(id) ON DELETE SET NULL       |
+| `title`              | TEXT     | NOT NULL                                      |
+| `difficulty`         | TEXT     | DEFAULT `'medium'`                            |
+| `premises_json`      | TEXT     | NOT NULL                                      |
+| `conclusion_json`    | TEXT     | NOT NULL                                      |
+| `creator_username`   | TEXT     | NOT NULL                                      |
+| `proof_steps_count`  | INTEGER  | DEFAULT 0                                     |
+| `is_valid`           | INTEGER  | DEFAULT 1                                     |
+| `created_at`         | DATETIME | DEFAULT CURRENT_TIMESTAMP                     |
+
 ---
 
 ## 📡 API Endpoint Reference
@@ -372,6 +386,13 @@ All endpoints are defined in `server/index.ts`. Rate-limited routes are marked w
 |--------|-----------------------|----------|----------------------------------------------------------|
 | POST   | `/api/puzzles/share`  | Optional | Store custom puzzle with 8-hex share code                |
 | GET    | `/api/puzzles/:code`  | Public   | Retrieve shared puzzle by code; increments play count    |
+
+### Community Theorems (`/api/community/*`)
+
+| Method | Path                       | Auth     | Description                                                          |
+|--------|----------------------------|----------|----------------------------------------------------------------------|
+| GET    | `/api/community/theorems`  | Public   | Fetch verified community theorem submissions                         |
+| POST   | `/api/community/theorems`  | Optional | Submit theorem to community library (validated by BFS theorem solver)|
 
 ---
 
@@ -529,7 +550,7 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 | Component         | Purpose                                       | Events                            |
 |-------------------|-----------------------------------------------|-----------------------------------|
 | `ProofTable`      | Formal proof display with clickable lines     | `citeLine`, `undoStep`            |
-| `StepInput`       | Formula input + rule picker + citation chips  | `submitStep`                      |
+| `StepInput`       | Formula input (keyword auto-conversion) + rule picker + citation chips | `submitStep` |
 | `SymbolKeyboard`  | Virtual keypad (notation-adaptive)            | `insert`, `backspace`, `clear`    |
 | `LaTeX`           | KaTeX renderer (formula or raw LaTeX string)  | —                                 |
 

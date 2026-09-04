@@ -9,7 +9,7 @@ import { db } from './db';
 import { validateProofStep } from '../src/logic/checker';
 import { solveProblem, getProofHint } from '../src/logic/solver';
 import { generateProblem, encodeProblemToShareCode, decodeProblemFromShareCode } from '../src/logic/generator';
-import { getDailyProblem } from '../src/logic/presets';
+import { getDailyProblem, COPI_PRESET_PROBLEMS, COMMUNITY_DEFAULT_PROBLEMS } from '../src/logic/presets';
 import { parseFormula } from '../src/logic/parser';
 
 import { promisify } from 'node:util';
@@ -17,6 +17,31 @@ import { promisify } from 'node:util';
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'goodle-super-secret-key-copi-19-rules';
+
+// Seed starter community theorems if table is empty
+try {
+  const commCount = db.prepare('SELECT COUNT(*) as count FROM community_theorems').get() as any;
+  if (commCount && commCount.count === 0) {
+    for (const cp of COMMUNITY_DEFAULT_PROBLEMS) {
+      const sol = solveProblem(cp.premises, cp.conclusion, 8);
+      db.prepare(`
+        INSERT INTO community_theorems (id, user_id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, is_valid)
+        VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 1)
+      `).run(
+        cp.id,
+        cp.title,
+        cp.difficulty,
+        JSON.stringify(cp.premises),
+        JSON.stringify(cp.conclusion),
+        cp.author || 'Anonymous Logician',
+        sol.minSteps || 1
+      );
+    }
+    console.log('🌱 Seeded default verified community theorems');
+  }
+} catch (err) {
+  console.warn('Community theorems seed note:', err);
+}
 
 // Security Headers (Helmet equivalents)
 app.disable('x-powered-by');
@@ -978,8 +1003,51 @@ app.post('/api/logic/assess', (req, res) => {
 app.get('/api/wordle/today', (req, res) => {
   const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
   const difficulty = ((req.query.difficulty as string) || 'easy') as 'easy' | 'medium' | 'hard';
-  const problem = getDailyProblem(date, difficulty);
-  res.json({ problem, date, difficulty });
+
+  try {
+    const commRows = db.prepare(`
+      SELECT id, title, difficulty, premises_json, conclusion_json, creator_username
+      FROM community_theorems
+      WHERE is_valid = 1 AND difficulty = ?
+    `).all(difficulty) as any[];
+
+    const copiProblems = COPI_PRESET_PROBLEMS.filter(p => p.difficulty === difficulty);
+    const candidates: any[] = [
+      ...copiProblems.map(p => ({
+        ...p,
+        isCommunity: false,
+        author: undefined,
+        creator_username: undefined,
+      })),
+      ...commRows.map(r => ({
+        id: r.id,
+        title: r.title,
+        difficulty: r.difficulty,
+        premises: JSON.parse(r.premises_json),
+        conclusion: JSON.parse(r.conclusion_json),
+        author: r.creator_username,
+        creator_username: r.creator_username,
+        isCommunity: true,
+      }))
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < date.length; i++) {
+      hash = (hash * 31 + date.charCodeAt(i)) >>> 0;
+    }
+
+    const chosen = candidates[hash % candidates.length];
+    const problem = {
+      ...chosen,
+      id: 'daily-' + date + '-' + difficulty,
+      title: chosen.isCommunity ? chosen.title : 'Daily gödle: ' + chosen.title,
+    };
+
+    res.json({ problem, date, difficulty });
+  } catch {
+    const problem = getDailyProblem(date, difficulty);
+    res.json({ problem, date, difficulty });
+  }
 });
 
 app.post('/api/wordle/submit', (req: AuthenticatedRequest, res) => {
@@ -1067,6 +1135,89 @@ app.get('/api/frenzy/leaderboard', (_req, res) => {
     res.json({ leaderboard: rows });
   } catch {
     res.status(500).json({ error: 'Failed to fetch leaderboard.' });
+  }
+});
+
+// -------------------------------------------------------------
+// COMMUNITY THEOREMS API
+// -------------------------------------------------------------
+
+app.get('/api/community/theorems', (_req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, created_at
+      FROM community_theorems
+      WHERE is_valid = 1
+      ORDER BY created_at DESC
+    `).all() as any[];
+
+    const theorems = rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      difficulty: r.difficulty,
+      premises: JSON.parse(r.premises_json),
+      conclusion: JSON.parse(r.conclusion_json),
+      creator_username: r.creator_username,
+      author: r.creator_username,
+      proof_steps_count: r.proof_steps_count,
+      created_at: r.created_at,
+      isCommunity: true,
+    }));
+
+    res.json({ theorems });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch community theorems.' });
+  }
+});
+
+app.post('/api/community/theorems', (req: AuthenticatedRequest, res) => {
+  try {
+    const { title, difficulty, premises, conclusion } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Theorem title is required.' });
+    }
+    if (!Array.isArray(premises) || premises.length === 0) {
+      return res.status(400).json({ error: 'At least one premise is required.' });
+    }
+    if (!conclusion) {
+      return res.status(400).json({ error: 'Conclusion formula is required.' });
+    }
+
+    // Verify logical validity with Copi theorem prover
+    const solution = solveProblem(premises, conclusion, 8);
+    if (!solution.solvable) {
+      return res.status(400).json({
+        error: 'Theorem cannot be proven valid under Copi\'s 19 rules. Only logically valid, provable theorems can be accepted into the Community Library.'
+      });
+    }
+
+    const id = crypto.randomUUID();
+    const creator = req.user?.username || req.body.creatorUsername || 'Anonymous Logician';
+    const diff = difficulty || 'medium';
+
+    db.prepare(`
+      INSERT INTO community_theorems (id, user_id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, is_valid)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(id, req.user?.id || null, title.trim(), diff, JSON.stringify(premises), JSON.stringify(conclusion), creator, solution.minSteps);
+
+    res.json({
+      success: true,
+      id,
+      message: `Theorem "${title.trim()}" proven valid (${solution.minSteps} step${solution.minSteps === 1 ? '' : 's'}) and published to the Community Library!`,
+      theorem: {
+        id,
+        title: title.trim(),
+        difficulty: diff,
+        premises,
+        conclusion,
+        creator_username: creator,
+        author: creator,
+        proof_steps_count: solution.minSteps,
+        isCommunity: true,
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to submit community theorem.' });
   }
 });
 

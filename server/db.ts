@@ -84,6 +84,20 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS community_theorems (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    title TEXT NOT NULL,
+    difficulty TEXT DEFAULT 'medium',
+    premises_json TEXT NOT NULL,
+    conclusion_json TEXT NOT NULL,
+    creator_username TEXT NOT NULL,
+    proof_steps_count INTEGER DEFAULT 0,
+    is_valid INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+  );
 `);
 
 // Safe migrations for existing users table

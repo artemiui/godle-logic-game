@@ -5,6 +5,7 @@
   import { getDailyProblem } from '../logic/presets';
   import { validateProofStep } from '../logic/checker';
   import { formulasEqual } from '../logic/ast';
+  import { authStore } from '../stores/auth';
   import ProofTable from './ProofTable.svelte';
   import StepInput from './StepInput.svelte';
   import ShareModal from './ShareModal.svelte';
@@ -30,6 +31,10 @@
   let durationSeconds: number = 0;
   let copiedShareText: boolean = false;
 
+  let isSaved: boolean = false;
+  let isSavingTheorem: boolean = false;
+  let saveFeedback: string = '';
+
   let stepInputComponent: any;
 
   let completedStages: Record<Difficulty, boolean> = {
@@ -38,9 +43,85 @@
     hard: false,
   };
 
-  function initProblem(diff: Difficulty) {
+  function checkIfSaved() {
+    if (!problem) return;
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      isSaved = local.some((p: any) => p.title === problem.title);
+    } catch {
+      isSaved = false;
+    }
+  }
+
+  $: if (problem) {
+    checkIfSaved();
+  }
+
+  async function saveToSandboxLibrary() {
+    if (isSavingTheorem || isSaved || !problem) return;
+    isSavingTheorem = true;
+    saveFeedback = '';
+
+    const newSaved = {
+      id: 'saved-' + Date.now(),
+      title: problem.title,
+      difficulty: problem.difficulty || 'medium',
+      premises: problem.premises,
+      conclusion: problem.conclusion,
+      notes: problem.author ? `Community theorem by @${problem.author}` : `Daily problem (${dateStr})`,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      if (!local.some((p: any) => p.title === newSaved.title)) {
+        local.unshift(newSaved);
+        localStorage.setItem('goodle_local_saved_proofs', JSON.stringify(local));
+      }
+    } catch {}
+
+    // Save to server if authenticated
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    if (token && $authStore.user) {
+      try {
+        await fetch('/api/user/saved-proofs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token,
+          },
+          body: JSON.stringify({
+            title: problem.title,
+            difficulty: problem.difficulty || 'medium',
+            premises: problem.premises,
+            conclusion: problem.conclusion,
+            notes: newSaved.notes,
+          }),
+        });
+      } catch {}
+    }
+
+    isSavingTheorem = false;
+    isSaved = true;
+    saveFeedback = 'Saved to Sandbox Library!';
+    setTimeout(() => (saveFeedback = ''), 3000);
+  }
+
+  async function initProblem(diff: Difficulty) {
     selectedDifficulty = diff;
-    problem = getDailyProblem(dateStr, diff);
+    let loadedProb: Problem = getDailyProblem(dateStr, diff);
+    try {
+      const res = await fetch(`/api/wordle/today?date=${dateStr}&difficulty=${diff}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.problem) {
+          loadedProb = data.problem;
+        }
+      }
+    } catch {}
+
+    problem = loadedProb;
     steps = problem.premises.map((p, idx) => ({
       stepNumber: idx + 1,
       formula: p,
@@ -137,7 +218,8 @@
     };
     const deductionSteps = steps.filter(s => s.rule !== 'premise').length;
     const squares = '■ '.repeat(Math.min(deductionSteps, 8));
-    return `gödle • ${dateStr}\nStage: ${stageNames[selectedDifficulty]}\nSolved in ${deductionSteps} steps (${durationSeconds}s)\n${squares}`;
+    const authorLine = (problem.author || problem.creator_username) ? `\nTheorem by: @${problem.author || problem.creator_username}` : '';
+    return `gödle • ${dateStr}\nStage: ${stageNames[selectedDifficulty]}${authorLine}\nSolved in ${deductionSteps} steps (${durationSeconds}s)\n${squares}`;
   }
 
   function copyShareCard() {
@@ -160,9 +242,48 @@
         <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
           Daily Problem • {dateStr}
         </span>
-        <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
-          {problem.title}
-        </h1>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
+            {problem.title}
+          </h1>
+          <button
+            type="button"
+            on:click={saveToSandboxLibrary}
+            disabled={isSavingTheorem}
+            title={isSaved ? "Saved to Sandbox Library" : "Save theorem to Sandbox Library"}
+            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
+              isSaved
+                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+            }"
+          >
+            {#if isSaved}
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Saved</span>
+            {:else if isSavingTheorem}
+              <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+              <span>Saving...</span>
+            {:else}
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <span>Save</span>
+            {/if}
+          </button>
+        </div>
+        {#if saveFeedback}
+          <div class="text-[11px] font-sans text-emerald-600 dark:text-emerald-400 mt-0.5">
+            ✓ {saveFeedback}
+          </div>
+        {/if}
+        {#if problem.author || problem.creator_username}
+          <div class="text-xs font-sans text-neutral-600 dark:text-neutral-400 mt-1 flex items-center gap-1.5">
+            <span class="text-[10px] font-sans uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-neutral-200/80 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+              Community
+            </span>
+            <span>
+              Submitted by <strong class="text-neutral-900 dark:text-white">@{problem.author || problem.creator_username}</strong>
+            </span>
+          </div>
+        {/if}
       </div>
 
       <!-- Hint action icon -->

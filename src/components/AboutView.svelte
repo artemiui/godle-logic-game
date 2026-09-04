@@ -8,20 +8,17 @@
   <!-- Masthead Header -->
   <div class="border-b border-neutral-200 dark:border-neutral-800 pb-8 mb-12">
     <div class="flex items-center gap-2 mb-3">
-      <span class="text-[10px] font-mono tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
+      <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
         05 / ABOUT & CONTEXT
       </span>
       <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
-      <span class="text-[10px] font-mono tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
+      <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
         v1.0
       </span>
     </div>
     <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-neutral-950 dark:text-white mb-4">
       About gödle
     </h1>
-    <p class="font-serif italic text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl leading-relaxed">
-      A digital sanctuary for formal natural deduction, propositional reasoning, and Irving M. Copi's nineteen rules of deduction.
-    </p>
   </div>
 
   <!-- Main Editorial Content Columns -->
@@ -33,7 +30,7 @@
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
           The Purpose
         </h2>
-        <span class="text-xs font-mono text-neutral-500">Form & Deduction</span>
+        <span class="text-xs font-sans text-neutral-500">Form & Deduction</span>
       </div>
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
@@ -51,18 +48,15 @@
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
           Inspiration & Heritage
         </h2>
-        <span class="text-xs font-mono text-neutral-500">Copi & UP Diliman</span>
+        <span class="text-xs font-sans text-neutral-500">Copi & UP Diliman</span>
       </div>
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 space-y-2">
-          <div class="font-mono text-xs font-semibold text-neutral-900 dark:text-white">
+          <div class="font-sans text-xs font-semibold text-neutral-900 dark:text-white">
             UP Department of Philosophy · PHILO 11
           </div>
           <p class="text-xs text-neutral-600 dark:text-neutral-400">
             Dedicated with profound gratitude to the <strong>Department of Philosophy, College of Social Sciences and Philosophy (CSSP)</strong> at the <strong>University of the Philippines Diliman</strong>, and to the faculty, lecturers, and teaching assistants of <strong>PHILO 11 (Elementary Logic)</strong>.
-          </p>
-          <p class="text-xs text-neutral-600 dark:text-neutral-400">
-            For generations of UP scholars, PHILO 11 has served as an intellectual crucible—cultivating critical rigor, formal reasoning, and the disciplined art of natural deduction. gödle was forged as an interactive homage to the chalkboard proofs, problem sets, and deductive joy experienced inside the lecture halls of Palma Hall.
           </p>
         </div>
 
@@ -83,7 +77,7 @@
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
           The Creator
         </h2>
-        <span class="text-xs font-mono text-neutral-500">Design & Engineering</span>
+        <span class="text-xs font-sans text-neutral-500">Design & Engineering</span>
       </div>
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
@@ -112,7 +106,7 @@
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
           Open Source
         </h2>
-        <span class="text-xs font-mono text-neutral-500">Free & Transparent</span>
+        <span class="text-xs font-sans text-neutral-500">Free & Transparent</span>
       </div>
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
@@ -141,13 +135,13 @@
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
           Notation Traditions
         </h2>
-        <span class="text-xs font-mono text-neutral-500">Dynamic Typesetting</span>
+        <span class="text-xs font-sans text-neutral-500">Dynamic Typesetting</span>
       </div>
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
           Symbolic logic has evolved multiple rich typographical traditions over the past century. gödle dynamically adapts formulas in real time across four major systems via the Settings panel:
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-sans">
           <div class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50">
             <div class="font-bold text-neutral-950 dark:text-white mb-1 font-sans">Copi (Classic)</div>
             <div class="text-neutral-600 dark:text-neutral-400">~ (not), • (and), ⊃ (implies), ≡ (equiv)</div>

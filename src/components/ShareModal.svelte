@@ -70,13 +70,19 @@
     const userIcon = $authStore.user?.avatarIcon || '⊢';
     const timeInfo = durationSeconds > 0 ? ` (${formatDuration(durationSeconds)})` : '';
 
-    return [
+    const lines = [
       `gödle · ${today}`,
       `Theorem: ${theoremString}`,
+    ];
+    if (problem?.author || problem?.creator_username) {
+      lines.push(`Author: @${problem.author || problem.creator_username}`);
+    }
+    lines.push(
       `Solved in ${deducedCount} step(s)${timeInfo}`,
       `Logician: ${userIcon} ${username}`,
       `Q.E.D. ∎`,
-    ].join('\n');
+    );
+    return lines.join('\n');
   }
 
   // Full proof text sharing with NO LaTeX tags i.e. NO '(LaTeX: $A \supset B$)'

@@ -77,6 +77,9 @@ export interface Problem {
   difficulty: 'easy' | 'medium' | 'hard';
   presetId?: string;
   seed?: string;
+  author?: string;
+  creator_username?: string;
+  isCommunity?: boolean;
 }
 
 export interface StepValidationResult {

@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
   import type { Formula, RuleId, ProofStep } from '../types/logic';
   import { COPI_RULES, RULE_MAP } from '../logic/rules';
   import { safeParseFormula } from '../logic/parser';
+  import { notationStore } from '../stores/auth';
+  import { replaceFormulaKeywords } from '../logic/latex';
   import LaTeX from './LaTeX.svelte';
   import SymbolKeyboard from './SymbolKeyboard.svelte';
 
@@ -23,6 +25,7 @@
   let citationInput: string = '';
   let validationError: string = '';
   let showKeyboard: boolean = false;
+  let inputElement: HTMLInputElement | null = null;
 
   $: selectedRule = RULE_MAP.get(selectedRuleId);
   $: parsed = safeParseFormula(formulaText);
@@ -30,16 +33,65 @@
   const inferenceRules = COPI_RULES.filter(r => r.category === 'inference');
   const replacementRules = COPI_RULES.filter(r => r.category === 'replacement');
 
+  function handleFormulaInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (!target) return;
+    const originalVal = target.value;
+    const cursor = target.selectionStart ?? originalVal.length;
+
+    const result = replaceFormulaKeywords(originalVal, cursor, $notationStore);
+    if (result.changed) {
+      formulaText = result.text;
+      target.value = result.text;
+      target.setSelectionRange(result.cursor, result.cursor);
+      tick().then(() => {
+        if (target) {
+          target.setSelectionRange(result.cursor, result.cursor);
+        }
+      });
+    }
+  }
+
   function handleInsertSymbol(event: CustomEvent<string>) {
-    formulaText += event.detail;
+    const sym = event.detail;
+    if (inputElement) {
+      const start = inputElement.selectionStart ?? formulaText.length;
+      const end = inputElement.selectionEnd ?? formulaText.length;
+      formulaText = formulaText.slice(0, start) + sym + formulaText.slice(end);
+      const newPos = start + sym.length;
+      inputElement.focus();
+      tick().then(() => {
+        if (inputElement) {
+          inputElement.setSelectionRange(newPos, newPos);
+        }
+      });
+    } else {
+      formulaText += sym;
+    }
   }
 
   function handleBackspace() {
-    formulaText = formulaText.slice(0, -1);
+    if (inputElement && inputElement.selectionStart !== null) {
+      const start = inputElement.selectionStart;
+      const end = inputElement.selectionEnd ?? start;
+      if (start !== end) {
+        formulaText = formulaText.slice(0, start) + formulaText.slice(end);
+        inputElement.focus();
+        tick().then(() => inputElement?.setSelectionRange(start, start));
+      } else if (start > 0) {
+        formulaText = formulaText.slice(0, start - 1) + formulaText.slice(start);
+        const newPos = start - 1;
+        inputElement.focus();
+        tick().then(() => inputElement?.setSelectionRange(newPos, newPos));
+      }
+    } else {
+      formulaText = formulaText.slice(0, -1);
+    }
   }
 
   function handleClear() {
     formulaText = '';
+    if (inputElement) inputElement.focus();
   }
 
   export function toggleCitation(stepNum: number) {
@@ -105,9 +157,14 @@
 
 <div class="border border-neutral-200 dark:border-neutral-800 p-5 bg-white dark:bg-neutral-950 space-y-4">
   <div class="flex items-center justify-between">
-    <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300">
-      Step {String(existingSteps.length + 1).padStart(2, '0')} / Deduction Input
-    </span>
+    <div class="flex items-center gap-2">
+      <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300">
+        Step {String(existingSteps.length + 1).padStart(2, '0')} / Deduction Input
+      </span>
+      <span class="hidden sm:inline-block text-[10px] font-sans text-neutral-400 dark:text-neutral-500">
+        • auto-converts AND, OR, NOT, -&gt;
+      </span>
+    </div>
     <button
       type="button"
       on:click={() => (showKeyboard = !showKeyboard)}
@@ -122,9 +179,12 @@
   <div class="space-y-2">
     <div class="relative">
       <input
+        bind:this={inputElement}
         type="text"
         bind:value={formulaText}
+        on:input={handleFormulaInput}
         on:keydown={handleKeyDown}
+        maxlength="250"
         placeholder="Enter formula, e.g. B  or  P ⊃ (P • Q)  or  ~P ∨ Q"
         {disabled}
         class="w-full h-11 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-serif text-lg focus:outline-none focus:border-neutral-900 dark:focus:border-white transition-colors"

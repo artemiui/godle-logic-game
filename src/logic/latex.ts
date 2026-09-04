@@ -171,3 +171,109 @@ export function formulaToString(f: Formula, style: NotationStyle = 'copi'): stri
 
   return render(f, 0);
 }
+
+export interface ReplacementResult {
+  text: string;
+  cursor: number;
+  changed: boolean;
+}
+
+/**
+ * Detects keywords like 'AND', 'OR', 'NOT', 'IMPLIES', 'THEN', 'IFF', 'EQUIV'
+ * as well as shorthand like '->', '=>', '<->', '<=>', '&&', '||'
+ * and converts them in real time to the corresponding logic symbol for the active notation.
+ * Preserves caret / cursor position smoothly.
+ */
+export function replaceFormulaKeywords(
+  text: string,
+  cursor: number,
+  style: NotationStyle = 'copi'
+): ReplacementResult {
+  const config = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.copi;
+  const symbols = {
+    and: config.and.trim(),
+    or: config.or.trim(),
+    not: config.not.trim(),
+    implies: config.implies.trim(),
+    iff: config.iff.trim(),
+  };
+
+  // Match symbols & words:
+  // 1. Multi-character arrow operators: <->, <=>, ->, =>, &&, ||
+  // 2. Whole words for logic connectives: IMPLIES, EQUIV, THEN, BICOND, COND, AND, IFF, OR
+  // 3. Whole word NOT with optional trailing whitespace: \bNOT\b\s*
+  const pattern = /(<->|<=>|->|=>|&&|\|\||\b(?:IMPLIES|EQUIV|THEN|BICOND|COND|AND|IFF|OR)\b|\bNOT\b\s*)/gi;
+
+  let changed = false;
+  let newCursor = cursor;
+
+  let result = '';
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const matchStart = match.index;
+    const matchText = match[0];
+    const matchEnd = matchStart + matchText.length;
+    const cleanUpper = matchText.trim().toUpperCase();
+
+    let replacement = matchText;
+    switch (cleanUpper) {
+      case 'AND':
+      case '&&':
+        replacement = symbols.and;
+        break;
+      case 'OR':
+      case '||':
+        replacement = symbols.or;
+        break;
+      case 'NOT':
+        replacement = symbols.not;
+        break;
+      case 'IMPLIES':
+      case 'THEN':
+      case 'COND':
+      case '->':
+      case '=>':
+        replacement = symbols.implies;
+        break;
+      case 'IFF':
+      case 'EQUIV':
+      case 'BICOND':
+      case '<->':
+      case '<=>':
+        replacement = symbols.iff;
+        break;
+    }
+
+    if (replacement !== matchText) {
+      changed = true;
+      result += text.slice(lastIndex, matchStart) + replacement;
+      lastIndex = matchEnd;
+
+      // Adjust cursor
+      const diff = replacement.length - matchText.length;
+      if (cursor >= matchEnd) {
+        newCursor += diff;
+      } else if (cursor > matchStart && cursor < matchEnd) {
+        newCursor = matchStart + replacement.length;
+      }
+    } else {
+      result += text.slice(lastIndex, matchEnd);
+      lastIndex = matchEnd;
+    }
+  }
+
+  if (!changed) {
+    return { text, cursor, changed: false };
+  }
+
+  result += text.slice(lastIndex);
+
+  return {
+    text: result,
+    cursor: Math.max(0, Math.min(newCursor, result.length)),
+    changed: true,
+  };
+}
+

@@ -5,7 +5,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   // EASY / NOVICE
   {
     id: 'copi-ex-1',
-    title: 'Copi §3.1 Ex. 1: Basic Ponens Chaining',
+    title: 'Basic Ponens Chaining',
     description: 'Derive B from the chained premises.',
     difficulty: 'easy',
     premises: [
@@ -16,7 +16,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-ex-2',
-    title: 'Copi §3.1 Ex. 2: Syllogistic Chain',
+    title: 'Syllogistic Chain',
     description: 'Chain two conditionals to reach the target.',
     difficulty: 'easy',
     premises: [
@@ -28,7 +28,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-ex-3',
-    title: 'Copi §3.1 Ex. 3: Modus Tollens Extraction',
+    title: 'Modus Tollens Extraction',
     description: 'Employ Tollens to deduce the negation of the antecedent.',
     difficulty: 'easy',
     premises: [
@@ -40,7 +40,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-ex-4',
-    title: 'Copi §3.1 Ex. 4: Disjunctive Elimination',
+    title: 'Disjunctive Elimination',
     description: 'Use Simplification and Disjunctive Syllogism.',
     difficulty: 'easy',
     premises: [
@@ -51,7 +51,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-ex-5',
-    title: 'Copi §3.1 Ex. 5: Conjunction and Addition',
+    title: 'Conjunction and Addition',
     description: 'Derive a disjunctive outcome from premises.',
     difficulty: 'easy',
     premises: [
@@ -64,7 +64,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   // MEDIUM / ADEPT
   {
     id: 'copi-med-1',
-    title: 'Copi §3.2 Ex. 6: Constructive Dilemma in Action',
+    title: 'Constructive Dilemma in Action',
     description: 'Deduce the disjunctive consequence from a conjunction of conditionals.',
     difficulty: 'medium',
     premises: [
@@ -77,7 +77,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-med-2',
-    title: 'Copi §3.2 Ex. 7: Absorption & Ponens',
+    title: 'Absorption & Ponens',
     description: 'Use Absorption to compound the consequent before deducing.',
     difficulty: 'medium',
     premises: [
@@ -89,7 +89,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-med-3',
-    title: 'Copi §3.2 Ex. 8: Material Implication Bridge',
+    title: 'Material Implication Bridge',
     description: 'Convert a conditional into a disjunction via Implication to unlock DS.',
     difficulty: 'medium',
     premises: [
@@ -101,7 +101,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-med-4',
-    title: 'Copi §3.2 Ex. 9: Double Negation & Transposition',
+    title: 'Double Negation & Transposition',
     description: 'Transposition of negated consequents.',
     difficulty: 'medium',
     premises: [
@@ -115,7 +115,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   // HARD / MASTER
   {
     id: 'copi-hard-1',
-    title: 'Copi §3.3 Ex. 15: De Morgan Theorem & Distributive Expansion',
+    title: 'De Morgan Theorem & Distributive Expansion',
     description: 'Break down compound negations with De Morgan and distribute.',
     difficulty: 'hard',
     premises: [
@@ -128,7 +128,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-hard-2',
-    title: 'Copi §3.3 Ex. 16: Exportation and Multi-Variable Deduction',
+    title: 'Exportation and Multi-Variable Deduction',
     description: 'Export conjunctions into nested implications.',
     difficulty: 'hard',
     premises: [
@@ -141,7 +141,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-hard-3',
-    title: 'Copi §3.3 Ex. 17: Material Equivalence Resolution',
+    title: 'Material Equivalence Resolution',
     description: 'Deconstruct material equivalence into conjunction of conditionals.',
     difficulty: 'hard',
     premises: [
@@ -154,7 +154,7 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   },
   {
     id: 'copi-hard-4',
-    title: 'Copi §3.3 Ex. 18: Distribution & Association Tour de Force',
+    title: 'Distribution & Association Tour de Force',
     description: 'Rearrange deeply nested expressions to extract the target theorem.',
     difficulty: 'hard',
     premises: [
@@ -166,17 +166,70 @@ export const COPI_PRESET_PROBLEMS: Problem[] = [
   }
 ];
 
+export const COMMUNITY_DEFAULT_PROBLEMS: Problem[] = [
+  {
+    id: 'comm-starter-1',
+    title: 'Hypothetical Contraposition',
+    description: 'Chain implications to deduce the contrapositive.',
+    difficulty: 'easy',
+    premises: [
+      parseFormula('P ⊃ Q'),
+      parseFormula('Q ⊃ R'),
+      parseFormula('~R'),
+    ],
+    conclusion: parseFormula('~P'),
+    author: 'aletheia',
+    creator_username: 'aletheia',
+    isCommunity: true,
+  },
+  {
+    id: 'comm-starter-2',
+    title: 'Disjunctive Constructive Dilemma',
+    description: 'Employ constructive dilemma over compound disjuncts.',
+    difficulty: 'medium',
+    premises: [
+      parseFormula('(P ⊃ Q) • (R ⊃ S)'),
+      parseFormula('P ∨ R'),
+    ],
+    conclusion: parseFormula('Q ∨ S'),
+    author: 'chrysippus',
+    creator_username: 'chrysippus',
+    isCommunity: true,
+  },
+  {
+    id: 'comm-starter-3',
+    title: 'Double De Morgan Reduction',
+    description: 'Deconstruct compound negated conjunction to extract conclusion.',
+    difficulty: 'hard',
+    premises: [
+      parseFormula('~(P • Q)'),
+      parseFormula('P'),
+      parseFormula('~Q ⊃ R'),
+    ],
+    conclusion: parseFormula('R'),
+    author: 'russell',
+    creator_username: 'russell',
+    isCommunity: true,
+  },
+];
+
 export function getDailyProblem(dateStr: string, difficulty: 'easy' | 'medium' | 'hard'): Problem {
-  const filtered = COPI_PRESET_PROBLEMS.filter(p => p.difficulty === difficulty);
+  const copiFiltered = COPI_PRESET_PROBLEMS.filter(p => p.difficulty === difficulty);
+  const commFiltered = COMMUNITY_DEFAULT_PROBLEMS.filter(p => p.difficulty === difficulty);
+  const candidates: Problem[] = [
+    ...copiFiltered.map(p => ({ ...p, isCommunity: false })),
+    ...commFiltered,
+  ];
+
   let hash = 0;
   for (let i = 0; i < dateStr.length; i++) {
     hash = (hash * 31 + dateStr.charCodeAt(i)) >>> 0;
   }
-  const index = hash % filtered.length;
-  const base = filtered[index];
+  const index = hash % candidates.length;
+  const base = candidates[index];
   return {
     ...base,
     id: 'daily-' + dateStr + '-' + difficulty,
-    title: 'Daily gödle: ' + base.title,
+    title: base.isCommunity ? base.title : 'Daily gödle: ' + base.title,
   };
 }

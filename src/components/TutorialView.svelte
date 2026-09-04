@@ -1,13 +1,17 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { COPI_RULES } from '../logic/rules';
   import type { RuleDefinition, Formula } from '../types/logic';
   import { parseFormula } from '../logic/parser';
   import { validateProofStep } from '../logic/checker';
+  import { activeTabStore, notationStore } from '../stores/auth';
+  import { replaceFormulaKeywords } from '../logic/latex';
   import LaTeX from './LaTeX.svelte';
 
   let searchQuery: string = '';
   let selectedCategory: 'all' | 'inference' | 'replacement' = 'all';
   let activeRuleId: string = 'MP';
+  let showGettingStarted: boolean = true;
 
   let sandboxFormulaInput: string = '';
   let sandboxCitationLine: string = '1, 2';
@@ -56,6 +60,19 @@
     sandboxFormulaInput = currentRule.example.result;
     sandboxCitationLine = currentRule.example.inputs.map((_, i) => i + 1).join(', ');
     testRuleSandbox();
+  }
+
+  function handleFormulaInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (!target) return;
+    const cursor = target.selectionStart ?? target.value.length;
+    const res = replaceFormulaKeywords(target.value, cursor, $notationStore);
+    if (res.changed) {
+      sandboxFormulaInput = res.text;
+      target.value = res.text;
+      target.setSelectionRange(res.cursor, res.cursor);
+      tick().then(() => target?.setSelectionRange(res.cursor, res.cursor));
+    }
   }
 </script>
 
@@ -125,6 +142,88 @@
         />
       </div>
     </div>
+  </div>
+
+  <!-- How to Get Started Section -->
+  <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 sm:p-6 bg-white/60 dark:bg-neutral-900/40 backdrop-blur-sm space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500">Primer</span>
+        <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
+        <h2 class="font-serif text-lg sm:text-xl font-medium text-neutral-950 dark:text-white">
+          How to Construct a Proof
+        </h2>
+      </div>
+      <button
+        type="button"
+        on:click={() => (showGettingStarted = !showGettingStarted)}
+        class="text-[11px] font-sans text-neutral-500 hover:text-neutral-950 dark:hover:text-white cursor-pointer underline transition-colors"
+      >
+        {showGettingStarted ? 'Hide Guide' : 'Show Guide'}
+      </button>
+    </div>
+
+    {#if showGettingStarted}
+      <!-- 3 Intuitive Steps -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1">
+        <!-- Step 1 -->
+        <div class="p-4 rounded-lg border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-1.5">
+          <div class="flex items-center justify-between text-[10px] font-sans text-neutral-500">
+            <span>PHASE 01</span>
+            <span class="font-serif italic font-bold">Inspect Goal</span>
+          </div>
+          <div class="font-serif text-sm font-semibold text-neutral-950 dark:text-white">
+            1. Read Premises & Conclusion
+          </div>
+          <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans text-[11px]">
+            Every puzzle provides numbered premises and a target conclusion (<span class="font-serif italic">∴</span>). Look at the operators to determine what must be detached, combined, or transformed.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="p-4 rounded-lg border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-1.5">
+          <div class="flex items-center justify-between text-[10px] font-sans text-neutral-500">
+            <span>PHASE 02</span>
+            <span class="font-serif italic font-bold">Cite & Derive</span>
+          </div>
+          <div class="font-serif text-sm font-semibold text-neutral-950 dark:text-white">
+            2. Cite Lines & Apply Rule
+          </div>
+          <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans text-[11px]">
+            Click 1 or 2 existing lines from your proof to cite them. Select a valid rule from Copi's 19, type your deduced proposition, and submit. Each valid step becomes a new line available for future citations.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="p-4 rounded-lg border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-1.5">
+          <div class="flex items-center justify-between text-[10px] font-sans text-neutral-500">
+            <span>PHASE 03</span>
+            <span class="font-serif italic font-bold">Conclude</span>
+          </div>
+          <div class="font-serif text-sm font-semibold text-neutral-950 dark:text-white">
+            3. Reach the Conclusion
+          </div>
+          <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans text-[11px]">
+            Once a derived step matches the target conclusion structurally, the deduction is sealed (Q.E.D.). You can solve each puzzle in multiple valid ways as long as every step is sound.
+          </p>
+        </div>
+      </div>
+
+      <!-- Golden Rule Callout -->
+      <div class="pt-3 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+        <div class="flex items-center gap-2">
+          <span class="font-sans text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-200">Key Rule</span>
+          <span><strong>Inference (1–9):</strong> One-way deduction on whole lines only. <strong>Replacement (10–19):</strong> Two-way equivalence (<span class="font-serif italic">≡</span>) on whole lines or any sub-part.</span>
+        </div>
+        <button
+          type="button"
+          on:click={() => activeTabStore.set('wordle')}
+          class="self-start sm:self-auto text-neutral-950 dark:text-white font-medium underline hover:opacity-75 cursor-pointer font-sans text-[11px]"
+        >
+          Try a Daily Deduction →
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- Main Content Grid -->
@@ -225,6 +324,8 @@
                 id="tutorial-practice-formula"
                 type="text"
                 bind:value={sandboxFormulaInput}
+                on:input={handleFormulaInput}
+                maxlength="250"
                 placeholder="e.g. {currentRule.example.result}"
                 class="w-full h-8 px-2.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 font-serif text-sm"
               />
