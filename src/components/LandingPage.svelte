@@ -16,22 +16,60 @@
     <div class="w-[850px] h-[850px] rounded-full bg-neutral-200/40 dark:bg-neutral-800/20 blur-[140px] -translate-y-24"></div>
   </div>
 
-  <!-- Perspective Vanishing Rays (Delphi & Polkadot reference) -->
-  <div class="pointer-events-none fixed inset-0 z-0 opacity-[0.035] dark:opacity-[0.06] overflow-hidden">
-    <svg viewBox="0 0 1440 900" class="w-full h-full" preserveAspectRatio="none" fill="none" stroke="currentColor">
-      <line x1="720" y1="360" x2="0" y2="0" stroke-width="1" />
-      <line x1="720" y1="360" x2="360" y2="0" stroke-width="1" />
-      <line x1="720" y1="360" x2="720" y2="0" stroke-width="1" />
-      <line x1="720" y1="360" x2="1080" y2="0" stroke-width="1" />
-      <line x1="720" y1="360" x2="1440" y2="0" stroke-width="1" />
-      <line x1="720" y1="360" x2="0" y2="900" stroke-width="1" />
-      <line x1="720" y1="360" x2="480" y2="900" stroke-width="1" />
-      <line x1="720" y1="360" x2="960" y2="900" stroke-width="1" />
-      <line x1="720" y1="360" x2="1440" y2="900" stroke-width="1" />
-      <ellipse cx="720" cy="360" rx="200" ry="120" stroke-width="1" stroke-dasharray="4 6" />
-      <ellipse cx="720" cy="360" rx="420" ry="250" stroke-width="1" stroke-dasharray="4 6" />
-      <ellipse cx="720" cy="360" rx="680" ry="400" stroke-width="1" stroke-dasharray="4 6" />
-    </svg>
+  <!-- Animated Logic Symbols Pattern Background (Subtle & GPU-Optimized) -->
+  <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
+    <!-- Seamless Drifting Logic Symbol Grid -->
+    <div class="logic-pattern-grid absolute -top-60 -left-60 w-[calc(100%+480px)] h-[calc(100%+480px)] opacity-[0.04] dark:opacity-[0.06]">
+      <svg width="100%" height="100%" fill="none" class="text-neutral-900 dark:text-neutral-100">
+        <defs>
+          <pattern id="logic-symbol-pattern" width="240" height="240" patternUnits="userSpaceOnUse">
+            <!-- Row 1 -->
+            <text x="30" y="36" font-family="'Newsreader', Georgia, serif" font-size="22" font-style="italic" fill="currentColor" text-anchor="middle">⊢</text>
+            <text x="110" y="38" font-family="'Newsreader', Georgia, serif" font-size="22" fill="currentColor" text-anchor="middle">⊃</text>
+            <text x="190" y="38" font-family="'Newsreader', Georgia, serif" font-size="20" fill="currentColor" text-anchor="middle">∧</text>
+            
+            <!-- Row 2 -->
+            <text x="70" y="98" font-family="'Newsreader', Georgia, serif" font-size="22" fill="currentColor" text-anchor="middle">¬</text>
+            <text x="150" y="98" font-family="'Newsreader', Georgia, serif" font-size="24" fill="currentColor" text-anchor="middle">≡</text>
+            <text x="225" y="98" font-family="'Newsreader', Georgia, serif" font-size="22" fill="currentColor" text-anchor="middle">∴</text>
+            
+            <!-- Row 3 -->
+            <text x="35" y="158" font-family="'Newsreader', Georgia, serif" font-size="24" fill="currentColor" text-anchor="middle">•</text>
+            <text x="115" y="158" font-family="'Newsreader', Georgia, serif" font-size="20" fill="currentColor" text-anchor="middle">∨</text>
+            <text x="195" y="158" font-family="'Newsreader', Georgia, serif" font-size="20" fill="currentColor" text-anchor="middle">→</text>
+            
+            <!-- Row 4 -->
+            <text x="75" y="218" font-family="'Newsreader', Georgia, serif" font-size="22" fill="currentColor" text-anchor="middle">⊥</text>
+            <text x="155" y="218" font-family="'Newsreader', Georgia, serif" font-size="20" fill="currentColor" text-anchor="middle">↔</text>
+            <text x="225" y="218" font-family="'Newsreader', Georgia, serif" font-size="22" fill="currentColor" text-anchor="middle">⊨</text>
+            <text x="10" y="218" font-family="'Newsreader', Georgia, serif" font-size="22" fill="currentColor" text-anchor="middle">~</text>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#logic-symbol-pattern)" />
+      </svg>
+    </div>
+
+    <!-- Floating Ambient Logic Glyphs (Subtle, slow harmonic drift) -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="floating-glyph-1 absolute top-[18%] left-[10%] text-2xl sm:text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.04] dark:opacity-[0.065]">
+        ∴
+      </div>
+      <div class="floating-glyph-2 absolute top-[28%] right-[12%] text-2xl sm:text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.035] dark:opacity-[0.06]">
+        ⊢
+      </div>
+      <div class="floating-glyph-3 absolute bottom-[35%] left-[8%] text-3xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.035] dark:opacity-[0.055]">
+        ≡
+      </div>
+      <div class="floating-glyph-1 absolute bottom-[28%] right-[10%] text-2xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.04] dark:opacity-[0.065]">
+        ⊃
+      </div>
+      <div class="floating-glyph-2 absolute top-[60%] left-[18%] text-xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.03] dark:opacity-[0.05]">
+        ¬
+      </div>
+      <div class="floating-glyph-3 absolute top-[45%] right-[20%] text-xl font-serif text-neutral-900 dark:text-neutral-100 opacity-[0.03] dark:opacity-[0.05]">
+        ∧
+      </div>
+    </div>
   </div>
 
   <!-- Minimalist Top Bar -->
@@ -206,3 +244,70 @@
   </footer>
 
 </div>
+
+<style>
+  @keyframes driftPattern {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(-240px, -240px, 0);
+    }
+  }
+
+  .logic-pattern-grid {
+    animation: driftPattern 80s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes floatSlow1 {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(10px, -18px, 0) rotate(3deg);
+    }
+  }
+
+  @keyframes floatSlow2 {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(-12px, -22px, 0) rotate(-4deg);
+    }
+  }
+
+  @keyframes floatSlow3 {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(12px, 16px, 0) rotate(4deg);
+    }
+  }
+
+  .floating-glyph-1 {
+    animation: floatSlow1 24s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .floating-glyph-2 {
+    animation: floatSlow2 30s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .floating-glyph-3 {
+    animation: floatSlow3 27s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logic-pattern-grid,
+    .floating-glyph-1,
+    .floating-glyph-2,
+    .floating-glyph-3 {
+      animation: none !important;
+    }
+  }
+</style>
