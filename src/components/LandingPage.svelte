@@ -76,8 +76,8 @@
     </h1>
 
     <!-- Minimalist Subtitle -->
-    <p class="font-serif italic text-neutral-600 dark:text-neutral-400 text-lg sm:text-2xl text-center max-w-xl mx-auto leading-relaxed mb-10">
-      Formal propositional deduction, distilled.
+    <p class="font-sans text-neutral-500 dark:text-neutral-400 text-sm sm:text-base tracking-wide text-center max-w-xl mx-auto mb-10">
+      by A. Arcega
     </p>
 
     <!-- Action Button Row -->
