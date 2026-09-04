@@ -221,17 +221,17 @@ export function generateProblem(
 
 export function formatProblemShareString(problem: Problem): string {
   const premisesStr = problem.premises
-    .map((p, idx) => `${idx + 1}. ${formulaToString(p, 'copi')}`)
+    .map((p, idx) => `${idx + 1}. ${formulaToString(p, 'standard')}`)
     .join('\n');
-  const conclusionStr = ` /∴ ${formulaToString(problem.conclusion, 'copi')}`;
+  const conclusionStr = ` /∴ ${formulaToString(problem.conclusion, 'standard')}`;
   return `${problem.title} [${problem.difficulty.toUpperCase()}]\n${premisesStr}\n${conclusionStr}`;
 }
 
 export function encodeProblemToShareCode(problem: Problem): string {
   const payload = {
     title: problem.title,
-    premises: problem.premises.map(p => formulaToString(p, 'copi')),
-    conclusion: formulaToString(problem.conclusion, 'copi'),
+    premises: problem.premises.map(p => formulaToString(p, 'standard')),
+    conclusion: formulaToString(problem.conclusion, 'standard'),
     difficulty: problem.difficulty,
   };
   try {

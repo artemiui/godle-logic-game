@@ -1,6 +1,5 @@
 <script lang="ts">
   import { activeTabStore } from '../stores/auth';
-  import { notationStore } from '../stores/auth';
 </script>
 
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 text-neutral-900 dark:text-neutral-100 font-sans">
@@ -13,7 +12,7 @@
       </span>
       <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
       <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
-        v1.0
+        v0.5
       </span>
     </div>
     <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-neutral-950 dark:text-white mb-4">
@@ -129,34 +128,74 @@
       </div>
     </section>
 
-    <!-- Section: Four Supported Notations -->
+    <!-- Section: Roadmap -->
     <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline pb-6">
       <div class="md:col-span-4">
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
-          Notation Traditions
+          Roadmap
         </h2>
-        <span class="text-xs font-sans text-neutral-500">Dynamic Typesetting</span>
+        <span class="text-xs font-sans text-neutral-500">The Road to v1.0 & Beyond</span>
       </div>
-      <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
+      <div class="md:col-span-8 space-y-5 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
-          Symbolic logic has evolved multiple rich typographical traditions over the past century. gödle dynamically adapts formulas in real time across four major systems via the Settings panel:
+          gödle is evolving from an elementary propositional deduction sandbox into an expansive platform for formal philosophical and mathematical reasoning. Following the <span class="font-sans font-medium text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">v0.5</span> preview, our upcoming development cycles focus on persistent identity, competitive ranking, and expanding beyond sentential logic.
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-sans">
-          <div class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50">
-            <div class="font-bold text-neutral-950 dark:text-white mb-1 font-sans">Copi (Classic)</div>
-            <div class="text-neutral-600 dark:text-neutral-400">~ (not), • (and), ⊃ (implies), ≡ (equiv)</div>
+
+        <div class="space-y-4">
+          <!-- Milestone 1: v1.0 Accounts -->
+          <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-sans text-xs font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                <span>Account System & Cloud Sync</span>
+              </span>
+              <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
+                v1.0 · In Development
+              </span>
+            </div>
+            <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Full cross-device cloud persistence. Seamlessly synchronize daily deduction streaks, saved theorem libraries, and historical solving statistics. Introduction of verified global Frenzy leaderboards with anti-cheat validation.
+            </p>
           </div>
-          <div class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50">
-            <div class="font-bold text-neutral-950 dark:text-white mb-1 font-sans">Modern Mathematical</div>
-            <div class="text-neutral-600 dark:text-neutral-400">¬ (not), ∧ (and), → (implies), ↔ (equiv)</div>
+
+          <!-- Milestone 2: Advanced Logical Systems -->
+          <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-sans text-xs font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                <span>Expanding Beyond Propositional Logic</span>
+              </span>
+              <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800/40">
+                Post-v1.0 · Research & Design
+              </span>
+            </div>
+            <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-2">
+              While propositional calculus tests truth functions of entire statements, philosophical logic encompasses far richer systems. We are actively exploring expansions into:
+            </p>
+            <ul class="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400 pl-4 list-disc marker:text-neutral-400">
+              <li>
+                <strong class="text-neutral-900 dark:text-white font-medium">First-Order Predicate Logic (FOL):</strong> Universal (∀) and existential (∃) quantification, predicates, relations, and Copi's four quantification rules (UI, UG, EI, EG).
+              </li>
+              <li>
+                <strong class="text-neutral-900 dark:text-white font-medium">Modal Logic:</strong> Operators of necessity (□) and possibility (◇), exploring systems K, T, S4, and S5 for metaphysical and epistemic reasoning.
+              </li>
+              <li>
+                <strong class="text-neutral-900 dark:text-white font-medium">Non-Classical & Intuitionistic Systems:</strong> Constructive proof systems rejecting the Law of Excluded Middle, alongside many-valued (Łukasiewicz) formalisms.
+              </li>
+            </ul>
           </div>
-          <div class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50">
-            <div class="font-bold text-neutral-950 dark:text-white mb-1 font-sans">Whitehead & Russell</div>
-            <div class="text-neutral-600 dark:text-neutral-400">~ (not), · (and), ⊃ (implies), ≡ (equiv)</div>
-          </div>
-          <div class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50">
-            <div class="font-bold text-neutral-950 dark:text-white mb-1 font-sans">Programmer / ASCII</div>
-            <div class="text-neutral-600 dark:text-neutral-400">~ (not), & (and), -> (implies), &lt;-> (equiv)</div>
+
+          <!-- Milestone 3: Visual Proof Explorers -->
+          <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-sans text-xs font-semibold text-neutral-900 dark:text-white">
+                Interactive Proof Trees & Semantic Tableaux
+              </span>
+              <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800/40">
+                Future Exploration
+              </span>
+            </div>
+            <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Alternative visual proof representations allowing logicians to compare linear natural deduction against graphical truth trees, Gentzen-style sequent calculi, and semantic refutation trees.
+            </p>
           </div>
         </div>
       </div>

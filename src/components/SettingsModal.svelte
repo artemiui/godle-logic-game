@@ -12,12 +12,6 @@
 
   const notationOptions: { id: NotationStyle; title: string; subtitle: string; sample: string }[] = [
     {
-      id: 'copi',
-      title: 'Copi (Classic)',
-      subtitle: 'Tilde ~, dot •, horseshoe ⊃, triple bar ≡',
-      sample: '(P • Q) ⊃ (R ∨ ~S)',
-    },
-    {
       id: 'standard',
       title: 'Modern Math (Standard)',
       subtitle: 'Negation ¬, conjunction ∧, arrow →, equivalence ↔',
@@ -28,12 +22,6 @@
       title: 'Whitehead & Russell',
       subtitle: 'Principia: tilde ~, center dot ·, horseshoe ⊃',
       sample: '(P · Q) ⊃ (R ∨ ~S)',
-    },
-    {
-      id: 'ascii',
-      title: 'ASCII / Plaintext',
-      subtitle: 'Keyboard plain characters: ~, &, v, ->, <->',
-      sample: '(P & Q) -> (R v ~S)',
     },
   ];
 

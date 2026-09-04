@@ -39,14 +39,13 @@
   prove (`∴ Conclusion`) and the sequenced order of logical premises, followed by clean line
   derivations.
 - **Typography**: Editorial serifs (*Newsreader*, *Crimson Pro*, *Lora*) for logic statements
-  and math notation, paired with Swiss grotesques (*Plus Jakarta Sans*, *Inter*) for UI text
-  and monospaced indices (*JetBrains Mono*).
+  and math notation, paired with Swiss grotesques (*Plus Jakarta Sans*, *Inter*) for all UI text,
+  labels, indices, and numerals. The design deliberately excludes monospaced typefaces in favor
+  of clean, high-density grotesque typography with tabular OpenType features.
 - **LaTeX Math Rendering**: Formulas rendered with **KaTeX** supporting dynamic real-time
-  notation switching across four traditions:
-  - **Copi (Classic)**: `~`, `•`, `⊃`, `≡`
+  notation switching across two traditions:
   - **Modern Math / Standard**: `¬`, `∧`, `→`, `↔`
   - **Whitehead & Russell (Principia)**: `~`, `·`, `⊃`, `≡`
-  - **ASCII / Programmer**: `~`, `&`, `->`, `<->`
 
 ---
 
@@ -583,7 +582,8 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 - **Persistence**: Token in `localStorage('goodle_token')`, captcha in `localStorage('godle_captcha_verified')`
 
 ### `notationStore` (`src/stores/auth.ts`)
-- Writable store defaulting to `localStorage('goodle_notation') || 'copi'`
+- Writable store defaulting to `localStorage('goodle_notation') || 'standard'`
+- Values: `'standard' | 'whitehead'`
 - Auto-persists changes back to localStorage via subscription
 
 ### `activeTabStore` (`src/stores/auth.ts`)
@@ -613,8 +613,7 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 
 ### Font Stack
 - **Serif** (formulas, quotes): Newsreader → Crimson Pro → Playfair Display → Georgia
-- **Sans** (UI labels, badges): Plus Jakarta Sans → Inter → system-ui
-- **Mono**: Plus Jakarta Sans → Inter (same as sans)
+- **Sans** (UI labels, badges, indices, numerals): Plus Jakarta Sans → Inter → system-ui
 - **OpenType features**: `cv02`, `cv03`, `cv04`, `cv11` for refined number/glyph alternates
 
 ### Dark Mode

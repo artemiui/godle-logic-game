@@ -946,7 +946,7 @@ app.delete('/api/user/saved-proofs/:id', (req: AuthenticatedRequest, res) => {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
   try {
-    db.prepare('DELETE FROM user_saved_proofs WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+    db.prepare('DELETE FROM user_saved_proofs WHERE (id = ? OR title = ?) AND user_id = ?').run(req.params.id, req.params.id, req.user.id);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Failed to delete saved proof.' });

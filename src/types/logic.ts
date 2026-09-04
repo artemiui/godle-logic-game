@@ -18,7 +18,7 @@ export interface BinaryFormula {
 
 export type Formula = AtomFormula | NotFormula | BinaryFormula;
 
-export type NotationStyle = 'copi' | 'standard' | 'whitehead' | 'ascii';
+export type NotationStyle = 'standard' | 'whitehead';
 
 export type InferenceRuleId = 
   | 'MP'   // Modus Ponens

@@ -50,16 +50,16 @@
   // LaTeX theorem statement: P1, P2, ... ⊢ C
   $: theoremLatex = (() => {
     if (!problem) return '';
-    const premLatex = problem.premises.map(p => formulaToLaTeX(p, 'copi')).join(', ');
-    const concLatex = formulaToLaTeX(problem.conclusion, 'copi');
+    const premLatex = problem.premises.map(p => formulaToLaTeX(p, $notationStore)).join(', ');
+    const concLatex = formulaToLaTeX(problem.conclusion, $notationStore);
     return `${premLatex} \\vdash ${concLatex}`;
   })();
 
   // Plain symbolic string theorem: P1, P2, ... ⊢ C
   $: theoremString = (() => {
     if (!problem) return '';
-    const premStr = problem.premises.map(p => formulaToString(p, 'copi')).join(', ');
-    const concStr = formulaToString(problem.conclusion, 'copi');
+    const premStr = problem.premises.map(p => formulaToString(p, $notationStore)).join(', ');
+    const concStr = formulaToString(problem.conclusion, $notationStore);
     return `${premStr} ⊢ ${concStr}`;
   })();
 
@@ -90,7 +90,7 @@
     const summary = getShareSummaryText();
     let proofLines = ['\n--- FORMAL DERIVATION ---'];
     steps.forEach(s => {
-      const fStr = formulaToString(s.formula, 'copi');
+      const fStr = formulaToString(s.formula, $notationStore);
       const rule = getRuleLabel(s.rule, s.citations);
       proofLines.push(`${s.stepNumber}. ${fStr}   [${rule}]`);
     });
@@ -206,12 +206,12 @@
 
       // Line number
       ctx.fillStyle = mutedColor;
-      ctx.font = '11px "Courier New", monospace';
+      ctx.font = '11px "Plus Jakarta Sans", "Inter", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`${step.stepNumber}.`, 40, currentY);
 
       // Formula string
-      const fStr = formulaToString(step.formula, 'copi');
+      const fStr = formulaToString(step.formula, $notationStore);
       ctx.fillStyle = textColor;
       ctx.font = 'bold 13px Georgia, serif';
       ctx.fillText(fStr, 90, currentY);
@@ -497,7 +497,7 @@
           <div class="divide-y {imageTheme === 'dark' ? 'divide-[#1A1A1A]' : 'divide-[#F0F0F0]'}">
             {#each steps as s}
               <div class="grid grid-cols-12 py-2 text-xs items-center {s.stepNumber === steps.length ? 'font-bold' : ''}">
-                <span class="col-span-1 font-mono {imageTheme === 'dark' ? 'text-[#666666]' : 'text-[#999999]'}">{s.stepNumber}.</span>
+                <span class="col-span-1 font-sans {imageTheme === 'dark' ? 'text-[#666666]' : 'text-[#999999]'}">{s.stepNumber}.</span>
                 <span class="col-span-7 font-serif flex items-center">
                   <LaTeX formula={s.formula} displayMode={false} />
                 </span>

@@ -16,20 +16,6 @@ export interface NotationSymbols {
 }
 
 export const NOTATION_CONFIGS: Record<NotationStyle, NotationSymbols> = {
-  copi: {
-    name: "Copi (Classic)",
-    description: "Irving Copi's Symbolic Logic: tilde ~, dot •, horseshoe ⊃, triple bar ≡",
-    not: "~",
-    and: " • ",
-    or: " ∨ ",
-    implies: " ⊃ ",
-    iff: " ≡ ",
-    latexNot: "\\sim ",
-    latexAnd: " \\mathbin{\\bullet} ",
-    latexOr: " \\lor ",
-    latexImplies: " \\supset ",
-    latexIff: " \\equiv ",
-  },
   standard: {
     name: "Modern Math / Standard",
     description: "Contemporary logic: ¬, ∧, ∨, →, ↔",
@@ -58,24 +44,10 @@ export const NOTATION_CONFIGS: Record<NotationStyle, NotationSymbols> = {
     latexImplies: " \\supset ",
     latexIff: " \\equiv ",
   },
-  ascii: {
-    name: "ASCII / Programmer",
-    description: "Plain keyboard logic: ~, &, v, ->, <->",
-    not: "~",
-    and: " & ",
-    or: " v ",
-    implies: " -> ",
-    iff: " <-> ",
-    latexNot: "\\sim ",
-    latexAnd: " \\ \\&\\  ",
-    latexOr: " \\lor ",
-    latexImplies: " \\to ",
-    latexIff: " \\leftrightarrow ",
-  },
 };
 
-export function formulaToLaTeX(f: Formula, style: NotationStyle = 'copi'): string {
-  const sym = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.copi;
+export function formulaToLaTeX(f: Formula, style: NotationStyle = 'standard'): string {
+  const sym = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.standard;
 
   function render(node: Formula, parentPrecedence: number): string {
     if (node.type === 'atom') {
@@ -123,8 +95,8 @@ export function formulaToLaTeX(f: Formula, style: NotationStyle = 'copi'): strin
   return render(f, 0);
 }
 
-export function formulaToString(f: Formula, style: NotationStyle = 'copi'): string {
-  const sym = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.copi;
+export function formulaToString(f: Formula, style: NotationStyle = 'standard'): string {
+  const sym = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.standard;
 
   function render(node: Formula, parentPrecedence: number): string {
     if (node.type === 'atom') {
@@ -187,9 +159,9 @@ export interface ReplacementResult {
 export function replaceFormulaKeywords(
   text: string,
   cursor: number,
-  style: NotationStyle = 'copi'
+  style: NotationStyle = 'standard'
 ): ReplacementResult {
-  const config = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.copi;
+  const config = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.standard;
   const symbols = {
     and: config.and.trim(),
     or: config.or.trim(),

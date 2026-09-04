@@ -9,7 +9,7 @@
     clear: void;
   }>();
 
-  $: config = NOTATION_CONFIGS[$notationStore] || NOTATION_CONFIGS.copi;
+  $: config = NOTATION_CONFIGS[$notationStore] || NOTATION_CONFIGS.standard;
 
   $: opKeys = [
     { label: config.not.trim(), val: config.not.trim(), name: 'Negation' },

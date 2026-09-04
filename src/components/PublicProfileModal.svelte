@@ -341,7 +341,7 @@
 
             <!-- Heatmap Legend & Tooltip readout -->
             <div class="flex items-center justify-between text-[10px] text-neutral-500 pt-1 border-t border-neutral-100 dark:border-neutral-900">
-              <div class="min-h-[16px] truncate font-mono">
+              <div class="min-h-[16px] truncate font-sans">
                 {#if hoveredDay}
                   <span class="text-neutral-900 dark:text-neutral-100 font-bold">{hoveredDay.formatted}</span>: {hoveredDay.count} {hoveredDay.count === 1 ? 'deduction' : 'deductions'}
                 {:else}

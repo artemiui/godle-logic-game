@@ -814,7 +814,7 @@
 
             <!-- Heatmap Legend & Tooltip readout -->
             <div class="flex items-center justify-between text-[10px] text-neutral-500 pt-1 border-t border-neutral-100 dark:border-neutral-900">
-              <div class="min-h-[16px] truncate font-mono">
+              <div class="min-h-[16px] truncate font-sans">
                 {#if hoveredDay}
                   <span class="text-neutral-900 dark:text-neutral-100 font-bold">{hoveredDay.formatted}</span>: {hoveredDay.count} {hoveredDay.count === 1 ? 'deduction' : 'deductions'}
                 {:else}
@@ -1113,13 +1113,13 @@
             This will permanently delete your daily solve history, frenzy high scores, and reset your streak back to 0. This cannot be undone.
           </p>
           <div class="p-2.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-xs">
-            To proceed, type <span class="font-mono font-bold text-neutral-950 dark:text-neutral-100 select-all">RESET STATS</span> below:
+            To proceed, type <span class="font-sans font-bold text-neutral-950 dark:text-neutral-100 select-all">RESET STATS</span> below:
           </div>
           <input
             type="text"
             bind:value={dangerConfirmInput}
             placeholder="RESET STATS"
-            class="w-full h-9 px-3 border border-rose-500 bg-white dark:bg-neutral-950 text-xs font-mono font-bold focus:outline-none"
+            class="w-full h-9 px-3 border border-rose-500 bg-white dark:bg-neutral-950 text-xs font-sans font-bold focus:outline-none"
           />
         {:else if activeDangerAction === 'delete-account'}
           <h3 class="text-base font-bold text-rose-600 dark:text-rose-400">
@@ -1129,13 +1129,13 @@
             This will completely remove your logician credentials, avatar, user bio, all saved proofs, and all deductive records. You will immediately be signed out.
           </p>
           <div class="p-2.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-xs">
-            To proceed, type your exact username <span class="font-mono font-bold text-neutral-950 dark:text-neutral-100 select-all">{$authStore.user.username}</span> below:
+            To proceed, type your exact username <span class="font-sans font-bold text-neutral-950 dark:text-neutral-100 select-all">{$authStore.user.username}</span> below:
           </div>
           <input
             type="text"
             bind:value={dangerConfirmInput}
             placeholder={$authStore.user.username}
-            class="w-full h-9 px-3 border border-rose-500 bg-white dark:bg-neutral-950 text-xs font-mono font-bold focus:outline-none"
+            class="w-full h-9 px-3 border border-rose-500 bg-white dark:bg-neutral-950 text-xs font-sans font-bold focus:outline-none"
           />
         {/if}
 

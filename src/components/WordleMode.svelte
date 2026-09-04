@@ -108,6 +108,43 @@
     setTimeout(() => (saveFeedback = ''), 3000);
   }
 
+  async function removeFromSandboxLibrary() {
+    if (isSavingTheorem || !isSaved || !problem) return;
+    isSavingTheorem = true;
+    saveFeedback = '';
+
+    // Remove from localStorage
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      const updated = local.filter((p: any) => p.title !== problem.title);
+      localStorage.setItem('goodle_local_saved_proofs', JSON.stringify(updated));
+    } catch {}
+
+    // Remove from server if authenticated
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    if (token && $authStore.user) {
+      try {
+        await fetch('/api/user/saved-proofs/' + encodeURIComponent(problem.title), {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token },
+        });
+      } catch {}
+    }
+
+    isSavingTheorem = false;
+    isSaved = false;
+    saveFeedback = 'Removed from Sandbox Library';
+    setTimeout(() => (saveFeedback = ''), 3000);
+  }
+
+  function toggleSaveToSandboxLibrary() {
+    if (isSaved) {
+      removeFromSandboxLibrary();
+    } else {
+      saveToSandboxLibrary();
+    }
+  }
+
   async function initProblem(diff: Difficulty) {
     selectedDifficulty = diff;
     let loadedProb: Problem = getDailyProblem(dateStr, diff);
@@ -248,21 +285,23 @@
           </h1>
           <button
             type="button"
-            on:click={saveToSandboxLibrary}
+            on:click={toggleSaveToSandboxLibrary}
             disabled={isSavingTheorem}
-            title={isSaved ? "Saved to Sandbox Library" : "Save theorem to Sandbox Library"}
-            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
+            title={isSaved ? "Saved to Sandbox Library (click to remove)" : "Save theorem to Sandbox Library"}
+            class="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
               isSaved
-                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-300'
                 : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
             }"
           >
             {#if isSaved}
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Saved</span>
+              <svg class="group-hover:hidden" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg class="hidden group-hover:block" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span class="group-hover:hidden">Saved</span>
+              <span class="hidden group-hover:inline">Remove</span>
             {:else if isSavingTheorem}
               <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-              <span>Saving...</span>
+              <span>Updating...</span>
             {:else}
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               <span>Save</span>

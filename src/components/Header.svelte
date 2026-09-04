@@ -11,11 +11,7 @@
   }>();
 
   function handlePersonClick() {
-    if ($authStore.user) {
-      dispatch('openProfile');
-    } else {
-      dispatch('openAuthPrompt');
-    }
+    dispatch('openAuthPrompt');
   }
 
   const tabs: { id: ActiveTab; label: string; number: string }[] = [
@@ -77,11 +73,11 @@
         <span class="font-bold">{$authStore.user?.streakCount || 0}</span>
       </button>
 
-      <!-- Person Icon (Profile if signed in, Login/Register prompt if not) -->
+      <!-- Person Icon (Account System - Coming Soon) -->
       <button
         type="button"
         on:click={handlePersonClick}
-        title={$authStore.user ? `Profile: ${$authStore.user.username}` : 'Account: Sign In or Register'}
+        title="Account System (Coming Soon in v1.0)"
         class="w-8 h-8 flex items-center justify-center border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white transition-colors cursor-pointer relative text-neutral-800 dark:text-neutral-200"
         aria-label="User Account"
       >

@@ -166,6 +166,70 @@
     setTimeout(() => (currentSaveFeedback = ''), 3000);
   }
 
+  async function removeCurrentTheorem() {
+    if (isSavingCurrent || !isCurrentSaved || !problem) return;
+    isSavingCurrent = true;
+    currentSaveFeedback = '';
+
+    // Remove from localStorage
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      const updated = local.filter((p: any) => p.title !== problem.title);
+      localStorage.setItem('goodle_local_saved_proofs', JSON.stringify(updated));
+    } catch {}
+
+    // Remove from account if logged in
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    if (token && $authStore.user) {
+      try {
+        await fetch('/api/user/saved-proofs/' + encodeURIComponent(problem.title), {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token },
+        });
+      } catch {}
+    }
+
+    await fetchMySavedProofs();
+    isSavingCurrent = false;
+    isCurrentSaved = false;
+    currentSaveFeedback = 'Removed from Sandbox Library';
+    setTimeout(() => (currentSaveFeedback = ''), 3000);
+  }
+
+  function toggleSaveCurrentTheorem() {
+    if (isCurrentSaved) {
+      removeCurrentTheorem();
+    } else {
+      saveCurrentTheorem();
+    }
+  }
+
+  async function removeSavedProof(sp: SavedProof) {
+    // Remove from localStorage
+    try {
+      const local = JSON.parse(localStorage.getItem('goodle_local_saved_proofs') || '[]');
+      const updated = local.filter((p: any) => p.title !== sp.title && p.id !== sp.id);
+      localStorage.setItem('goodle_local_saved_proofs', JSON.stringify(updated));
+    } catch {}
+
+    // Remove from account if logged in
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    if (token && $authStore.user) {
+      try {
+        const identifier = sp.id || sp.title;
+        await fetch('/api/user/saved-proofs/' + encodeURIComponent(identifier), {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token },
+        });
+      } catch {}
+    }
+
+    await fetchMySavedProofs();
+    if (problem && (problem.title === sp.title || problem.id === sp.id)) {
+      isCurrentSaved = false;
+    }
+  }
+
   async function fetchMySavedProofs() {
     let localProofs: SavedProof[] = [];
     try {
@@ -496,21 +560,23 @@
           </h1>
           <button
             type="button"
-            on:click={saveCurrentTheorem}
+            on:click={toggleSaveCurrentTheorem}
             disabled={isSavingCurrent}
-            title={isCurrentSaved ? "Saved to Sandbox Library" : "Save theorem to Sandbox Library"}
-            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
+            title={isCurrentSaved ? "Saved to Sandbox Library (click to remove)" : "Save theorem to Sandbox Library"}
+            class="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
               isCurrentSaved
-                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-300'
                 : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
             }"
           >
             {#if isCurrentSaved}
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Saved</span>
+              <svg class="group-hover:hidden" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg class="hidden group-hover:block" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span class="group-hover:hidden">Saved</span>
+              <span class="hidden group-hover:inline">Remove</span>
             {:else if isSavingCurrent}
               <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-              <span>Saving...</span>
+              <span>Updating...</span>
             {:else}
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               <span>Save</span>
@@ -689,25 +755,35 @@
           {:else}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
               {#each mySavedProofs as sp}
-                <button
-                  type="button"
-                  on:click={() => loadProblem({
-                    id: sp.id,
-                    title: sp.title,
-                    difficulty: (sp.difficulty as any) || 'medium',
-                    premises: sp.premises,
-                    conclusion: sp.conclusion
-                  })}
-                  class="p-2.5 text-left border border-neutral-200 dark:border-neutral-800 hover:border-neutral-900 dark:hover:border-white transition-colors cursor-pointer"
-                >
-                  <div class="flex items-center justify-between font-sans text-xs">
-                    <span class="font-bold text-neutral-900 dark:text-neutral-100 truncate pr-2">{sp.title}</span>
-                    <span class="text-[9px] uppercase text-neutral-500 flex-shrink-0">{sp.difficulty}</span>
-                  </div>
-                  {#if sp.notes}
-                    <div class="text-[11px] text-neutral-500 truncate mt-0.5">{sp.notes}</div>
-                  {/if}
-                </button>
+                <div class="group relative flex items-stretch border border-neutral-200 dark:border-neutral-800 hover:border-neutral-900 dark:hover:border-white transition-colors bg-white dark:bg-neutral-950">
+                  <button
+                    type="button"
+                    on:click={() => loadProblem({
+                      id: sp.id,
+                      title: sp.title,
+                      difficulty: (sp.difficulty as any) || 'medium',
+                      premises: sp.premises,
+                      conclusion: sp.conclusion
+                    })}
+                    class="flex-1 p-2.5 text-left cursor-pointer min-w-0"
+                  >
+                    <div class="flex items-center justify-between font-sans text-xs">
+                      <span class="font-bold text-neutral-900 dark:text-neutral-100 truncate pr-2">{sp.title}</span>
+                      <span class="text-[9px] uppercase text-neutral-500 flex-shrink-0">{sp.difficulty}</span>
+                    </div>
+                    {#if sp.notes}
+                      <div class="text-[11px] text-neutral-500 truncate mt-0.5">{sp.notes}</div>
+                    {/if}
+                  </button>
+                  <button
+                    type="button"
+                    on:click|stopPropagation={() => removeSavedProof(sp)}
+                    title="Remove from Saved Theorems"
+                    class="px-2.5 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 opacity-40 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  </button>
+                </div>
               {/each}
             </div>
             {#if !$authStore.user}

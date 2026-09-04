@@ -115,8 +115,9 @@ export const authStore = createAuthStore();
 
 export type ActiveTab = 'wordle' | 'frenzy' | 'sandbox' | 'tutorial' | 'about';
 
+const initialNotation = typeof localStorage !== 'undefined' ? localStorage.getItem('goodle_notation') : null;
 export const notationStore = writable<NotationStyle>(
-  (localStorage.getItem('goodle_notation') as NotationStyle) || 'copi'
+  initialNotation === 'whitehead' ? 'whitehead' : 'standard'
 );
 
 notationStore.subscribe(val => {

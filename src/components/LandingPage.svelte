@@ -151,7 +151,7 @@
       >
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="font-mono text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">01 / MODE</span>
+            <span class="font-sans font-medium text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">01 / MODE</span>
             <span class="text-neutral-400 group-hover:text-black dark:group-hover:text-white group-hover:translate-x-1 transition-all">→</span>
           </div>
           <h3 class="font-serif text-lg font-medium text-neutral-950 dark:text-white mb-2">
@@ -174,7 +174,7 @@
       >
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="font-mono text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">02 / SURVIVAL</span>
+            <span class="font-sans font-medium text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">02 / SURVIVAL</span>
             <span class="text-neutral-400 group-hover:text-black dark:group-hover:text-white group-hover:translate-x-1 transition-all">→</span>
           </div>
           <h3 class="font-serif text-lg font-medium text-neutral-950 dark:text-white mb-2">
@@ -197,7 +197,7 @@
       >
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="font-mono text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">03 / FREEFORM</span>
+            <span class="font-sans font-medium text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">03 / FREEFORM</span>
             <span class="text-neutral-400 group-hover:text-black dark:group-hover:text-white group-hover:translate-x-1 transition-all">→</span>
           </div>
           <h3 class="font-serif text-lg font-medium text-neutral-950 dark:text-white mb-2">
@@ -220,7 +220,7 @@
       >
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="font-mono text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">04 / CODEX</span>
+            <span class="font-sans font-medium text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-600">04 / CODEX</span>
             <span class="text-neutral-400 group-hover:text-black dark:group-hover:text-white group-hover:translate-x-1 transition-all">→</span>
           </div>
           <h3 class="font-serif text-lg font-medium text-neutral-950 dark:text-white mb-2">
