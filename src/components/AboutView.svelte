@@ -12,7 +12,7 @@
       </span>
       <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
       <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
-        v0.5
+        v1.0
       </span>
     </div>
     <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-neutral-950 dark:text-white mb-4">
@@ -134,11 +134,11 @@
         <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
           Roadmap
         </h2>
-        <span class="text-xs font-sans text-neutral-500">The Road to v1.0 & Beyond</span>
+        <span class="text-xs font-sans text-neutral-500">Future Horizons & Research</span>
       </div>
       <div class="md:col-span-8 space-y-5 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
-          gödle is evolving from an elementary propositional deduction sandbox into an expansive platform for formal philosophical and mathematical reasoning. Following the <span class="font-sans font-medium text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">v0.5</span> preview, our upcoming development cycles focus on persistent identity, competitive ranking, and expanding beyond sentential logic.
+          gödle is evolving from an elementary propositional deduction sandbox into an expansive platform for formal philosophical and mathematical reasoning. With the <span class="font-sans font-medium text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">v1.0</span> release delivering persistent logician identities and cloud synchronization, our upcoming research and development cycles focus on expanding beyond standard sentential logic.
         </p>
 
         <div class="space-y-4">
@@ -148,8 +148,8 @@
               <span class="font-sans text-xs font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
                 <span>Account System & Cloud Sync</span>
               </span>
-              <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
-                v1.0 · In Development
+              <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
+                v1.0 · Live & Active
               </span>
             </div>
             <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">

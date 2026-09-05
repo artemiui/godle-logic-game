@@ -256,8 +256,8 @@
       role="dialog"
       aria-modal="true"
     >
-      <!-- Blurred Background Form Container -->
-      <div class="filter blur-[4px] opacity-35 select-none pointer-events-none transition-all space-y-6">
+      <!-- Form Container -->
+      <div class="space-y-6">
         <!-- Modal Header -->
         <div class="flex items-start justify-between border-b border-neutral-200 dark:border-neutral-800 pb-4">
         <div>
@@ -763,49 +763,6 @@
           </div>
         </div>
       {/if}
-      </div>
-
-      <!-- Coming Soon Overlay -->
-      <div class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-white/70 dark:bg-neutral-950/75 backdrop-blur-[2px]">
-        <div class="w-full max-w-sm border border-neutral-900 dark:border-neutral-100 p-6 bg-white dark:bg-neutral-950 shadow-2xl text-center space-y-4">
-          <div class="inline-flex items-center gap-2 px-3 py-1 border border-neutral-900 dark:border-neutral-100 text-[10px] font-sans uppercase tracking-widest font-bold text-neutral-950 dark:text-white">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-            <span>Coming Soon</span>
-          </div>
-
-          <div class="space-y-1.5">
-            <h3 class="font-serif text-2xl font-normal text-neutral-950 dark:text-white tracking-tight">
-              Logician Accounts
-            </h3>
-            <p class="text-xs font-sans text-neutral-600 dark:text-neutral-300 leading-relaxed">
-              Cloud account profiles, cross-device streak synchronization, and verified community submissions will be available in <strong>v1.0</strong>.
-            </p>
-          </div>
-
-          <div class="border-t border-neutral-200 dark:border-neutral-800 pt-3 text-[11px] font-sans text-neutral-600 dark:text-neutral-400 space-y-1.5 text-left bg-neutral-50 dark:bg-neutral-900/60 p-3 rounded">
-            <div class="flex items-center gap-2">
-              <span class="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
-              <span>All daily Wordle progress is saved locally</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
-              <span>Theorems saved to your personal library</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
-              <span>Full access to Daily, Frenzy, and Sandbox modes</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            on:click={() => dispatch('close')}
-            class="w-full h-10 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-950 font-sans text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>Continue Solving</span>
-            <span>→</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>
