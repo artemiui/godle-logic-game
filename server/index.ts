@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import path from 'node:path';
 import fs from 'node:fs';
-import { db } from './db';
+import { db, initDb } from './db';
 import { validateProofStep } from '../src/logic/checker';
 import { solveProblem, getProofHint } from '../src/logic/solver';
 import { generateProblem, encodeProblemToShareCode, decodeProblemFromShareCode } from '../src/logic/generator';
@@ -21,30 +21,42 @@ if (!process.env.JWT_SECRET) {
   console.warn('⚠️  WARNING: JWT_SECRET is not set. Using insecure default. Set JWT_SECRET env var in production!');
 }
 
+// Ensure database schema is ready before handling requests
+app.use(async (_req, _res, next) => {
+  try {
+    await initDb();
+  } catch {}
+  next();
+});
+
 // Seed starter community theorems if table is empty
-try {
-  const commCount = db.prepare('SELECT COUNT(*) as count FROM community_theorems').get() as any;
-  if (commCount && commCount.count === 0) {
-    for (const cp of COMMUNITY_DEFAULT_PROBLEMS) {
-      const sol = solveProblem(cp.premises, cp.conclusion, 8);
-      db.prepare(`
-        INSERT INTO community_theorems (id, user_id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, is_valid)
-        VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 1)
-      `).run(
-        cp.id,
-        cp.title,
-        cp.difficulty,
-        JSON.stringify(cp.premises),
-        JSON.stringify(cp.conclusion),
-        cp.author || 'Anonymous Logician',
-        sol.minSteps || 1
-      );
+async function seedStarterCommunityTheorems() {
+  try {
+    await initDb();
+    const commCount = (await db.prepare('SELECT COUNT(*) as count FROM community_theorems').get()) as any;
+    if (commCount && Number(commCount.count) === 0) {
+      for (const cp of COMMUNITY_DEFAULT_PROBLEMS) {
+        const sol = solveProblem(cp.premises, cp.conclusion, 8);
+        await db.prepare(`
+          INSERT INTO community_theorems (id, user_id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, is_valid)
+          VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 1)
+        `).run(
+          cp.id,
+          cp.title,
+          cp.difficulty,
+          JSON.stringify(cp.premises),
+          JSON.stringify(cp.conclusion),
+          cp.author || 'Anonymous Logician',
+          sol.minSteps || 1
+        );
+      }
+      console.log('🌱 Seeded default verified community theorems');
     }
-    console.log('🌱 Seeded default verified community theorems');
+  } catch (err) {
+    console.warn('Community theorems seed note:', err);
   }
-} catch (err) {
-  console.warn('Community theorems seed note:', err);
 }
+seedStarterCommunityTheorems().catch(() => {});
 
 // Security Headers (Helmet equivalents)
 app.disable('x-powered-by');
@@ -254,11 +266,10 @@ app.post('/api/auth/register', async (req, res) => {
     const colors = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
 
-    const stmt = db.prepare(`
+    await db.prepare(`
       INSERT INTO users (id, username, email, password_hash, avatar_color, has_password)
       VALUES (?, ?, ?, ?, ?, 1)
-    `);
-    stmt.run(id, username.trim(), email || null, passwordHash, avatarColor);
+    `).run(id, username.trim(), email || null, passwordHash, avatarColor);
 
     const token = jwt.sign({ id, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
     setAuthCookie(res, token);
@@ -288,8 +299,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   try {
-    const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
-    const user = stmt.get(username.trim()) as any;
+    const user = (await db.prepare('SELECT * FROM users WHERE username = ?').get(username.trim())) as any;
 
     if (!user || !(await verifyPassword(password, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid username or password.' });
@@ -323,40 +333,38 @@ function calculateRank(streak: number, wordleCount: number, frenzyCount: number)
   return 'Axiomatic Apprentice';
 }
 
-app.get('/api/auth/me', (req: AuthenticatedRequest, res) => {
+app.get('/api/auth/me', async (req: AuthenticatedRequest, res) => {
   if (!req.user) {
     return res.json({ user: null });
   }
 
   try {
-    const stmt = db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, has_password, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?');
-    const user = stmt.get(req.user.id) as any;
+    const user = (await db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, has_password, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id)) as any;
     if (!user) {
       return res.json({ user: null });
     }
 
-    const wordleCountStmt = db.prepare('SELECT COUNT(*) as cnt FROM wordle_completions WHERE user_id = ?');
-    const wordleCount = (wordleCountStmt.get(user.id) as any)?.cnt || 0;
+    const wordleCount = ((await db.prepare('SELECT COUNT(*) as cnt FROM wordle_completions WHERE user_id = ?').get(user.id)) as any)?.cnt || 0;
 
-    const frenzyCountStmt = db.prepare('SELECT COUNT(*) as cnt FROM frenzy_records WHERE user_id = ? AND won = 1');
+    const frenzyCountStmt = await db.prepare('SELECT COUNT(*) as cnt FROM frenzy_records WHERE user_id = ? AND won = 1');
     const frenzyCount = (frenzyCountStmt.get(user.id) as any)?.cnt || 0;
 
     const rankTitle = calculateRank(user.streak_count || 0, wordleCount, frenzyCount);
 
     // Calculate leaderboard standing (frenzy best score)
-    const userBestScoreRow = db.prepare('SELECT MAX(score) as best FROM frenzy_records WHERE user_id = ?').get(user.id) as any;
+    const userBestScoreRow = await db.prepare('SELECT MAX(score) as best FROM frenzy_records WHERE user_id = ?').get(user.id) as any;
     const userBestScore = userBestScoreRow?.best;
     let leaderboardStanding = 'Unranked';
     if (user.opt_out_leaderboard) {
       leaderboardStanding = 'Opted Out';
     } else if (userBestScore !== null && userBestScore !== undefined) {
-      const aheadRow = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM frenzy_records WHERE user_id IS NOT NULL AND user_id != ? AND score > ?').get(user.id, userBestScore) as any;
+      const aheadRow = await db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM frenzy_records WHERE user_id IS NOT NULL AND user_id != ? AND score > ?').get(user.id, userBestScore) as any;
       const ahead = aheadRow?.count || 0;
       leaderboardStanding = `#${ahead + 1}`;
     }
 
     // Activity Heatmap (last 90 days count by day)
-    const activityRows = db.prepare(`
+    const activityRows = await db.prepare(`
       SELECT day, COUNT(*) as count FROM (
         SELECT substr(created_at, 1, 10) as day FROM wordle_completions WHERE user_id = ?
         UNION ALL
@@ -460,13 +468,13 @@ app.post('/api/auth/change-password', async (req: AuthenticatedRequest, res) => 
   }
 
   try {
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id) as any;
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id) as any;
     if (!user || !(await verifyPassword(currentPassword, user.password_hash))) {
       return res.status(400).json({ error: 'Current password incorrect.' });
     }
 
     const newHash = await hashPassword(newPassword);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.user.id);
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.user.id);
     res.json({ success: true, message: 'Password updated successfully.' });
   } catch {
     res.status(500).json({ error: 'Failed to update password.' });
@@ -484,7 +492,7 @@ app.post('/api/auth/attach-password', async (req: AuthenticatedRequest, res) => 
   }
 
   try {
-    const user = db.prepare('SELECT has_password FROM users WHERE id = ?').get(req.user.id) as any;
+    const user = await db.prepare('SELECT has_password FROM users WHERE id = ?').get(req.user.id) as any;
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
@@ -493,7 +501,7 @@ app.post('/api/auth/attach-password', async (req: AuthenticatedRequest, res) => 
     }
 
     const newHash = await hashPassword(newPassword);
-    db.prepare('UPDATE users SET password_hash = ?, has_password = 1 WHERE id = ?').run(newHash, req.user.id);
+    await db.prepare('UPDATE users SET password_hash = ?, has_password = 1 WHERE id = ?').run(newHash, req.user.id);
     res.json({ success: true, message: 'Password attached successfully. You can now sign in using your username and password.' });
   } catch {
     res.status(500).json({ error: 'Failed to attach password.' });
@@ -511,7 +519,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 
   try {
-    const user = db.prepare('SELECT id, username, email FROM users WHERE username = ? COLLATE NOCASE').get(username.trim()) as any;
+    const user = await db.prepare('SELECT id, username, email FROM users WHERE username = ? COLLATE NOCASE').get(username.trim()) as any;
     if (!user) {
       return res.status(404).json({ error: 'No logician account found with that username.' });
     }
@@ -528,14 +536,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
     }
 
     const newHash = await hashPassword(newPassword);
-    db.prepare('UPDATE users SET password_hash = ?, has_password = 1 WHERE id = ?').run(newHash, user.id);
+    await db.prepare('UPDATE users SET password_hash = ?, has_password = 1 WHERE id = ?').run(newHash, user.id);
     res.json({ success: true, message: 'Password reset successfully. You may now sign in with your new password.' });
   } catch {
     res.status(500).json({ error: 'Failed to reset password.' });
   }
 });
 
-app.post('/api/auth/update-profile', (req: AuthenticatedRequest, res) => {
+app.post('/api/auth/update-profile', async (req: AuthenticatedRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
@@ -549,37 +557,37 @@ app.post('/api/auth/update-profile', (req: AuthenticatedRequest, res) => {
       if (trimmed.length > 32) {
         return res.status(400).json({ error: 'Username must be at most 32 characters.' });
       }
-      const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(trimmed, req.user.id);
+      const existing = await db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(trimmed, req.user.id);
       if (existing) {
         return res.status(409).json({ error: 'Username already in use.' });
       }
-      db.prepare('UPDATE users SET username = ? WHERE id = ?').run(trimmed, req.user.id);
-      db.prepare('UPDATE frenzy_records SET player_name = ? WHERE user_id = ?').run(trimmed, req.user.id);
+      await db.prepare('UPDATE users SET username = ? WHERE id = ?').run(trimmed, req.user.id);
+      await db.prepare('UPDATE frenzy_records SET player_name = ? WHERE user_id = ?').run(trimmed, req.user.id);
     }
     if (bio !== undefined) {
-      db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio.slice(0, 160), req.user.id);
+      await db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio.slice(0, 160), req.user.id);
     }
     if (avatarIcon !== undefined) {
-      db.prepare('UPDATE users SET avatar_icon = ? WHERE id = ?').run(avatarIcon, req.user.id);
+      await db.prepare('UPDATE users SET avatar_icon = ? WHERE id = ?').run(avatarIcon, req.user.id);
     }
     if (avatarImage !== undefined) {
       // Limit avatar image payload size to avoid database bloat (~150KB)
       if (avatarImage && avatarImage.length > 200000) {
         return res.status(400).json({ error: 'Avatar image too large. Limit is ~100KB.' });
       }
-      db.prepare('UPDATE users SET avatar_image = ? WHERE id = ?').run(avatarImage, req.user.id);
+      await db.prepare('UPDATE users SET avatar_image = ? WHERE id = ?').run(avatarImage, req.user.id);
     }
     if (avatarColor) {
-      db.prepare('UPDATE users SET avatar_color = ? WHERE id = ?').run(avatarColor, req.user.id);
+      await db.prepare('UPDATE users SET avatar_color = ? WHERE id = ?').run(avatarColor, req.user.id);
     }
     if (optOutLeaderboard !== undefined) {
-      db.prepare('UPDATE users SET opt_out_leaderboard = ? WHERE id = ?').run(optOutLeaderboard ? 1 : 0, req.user.id);
+      await db.prepare('UPDATE users SET opt_out_leaderboard = ? WHERE id = ?').run(optOutLeaderboard ? 1 : 0, req.user.id);
     }
     if (email !== undefined) {
-      db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email || null, req.user.id);
+      await db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email || null, req.user.id);
     }
 
-    const updated = db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id) as any;
+    const updated = await db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id) as any;
     const token = jwt.sign({ id: updated.id, username: updated.username }, JWT_SECRET, { expiresIn: '30d' });
     setAuthCookie(res, token);
 
@@ -613,30 +621,30 @@ app.post('/api/auth/update-profile', (req: AuthenticatedRequest, res) => {
 });
 
 // View public profile of another logician
-app.get('/api/user/profile/:username', (req, res) => {
+app.get('/api/user/profile/:username', async (req, res) => {
   const { username } = req.params;
   try {
-    const user = db.prepare('SELECT id, username, bio, avatar_color, avatar_icon, avatar_image, streak_count, best_streak, created_at, opt_out_leaderboard FROM users WHERE username = ? COLLATE NOCASE').get(username) as any;
+    const user = await db.prepare('SELECT id, username, bio, avatar_color, avatar_icon, avatar_image, streak_count, best_streak, created_at, opt_out_leaderboard FROM users WHERE username = ? COLLATE NOCASE').get(username) as any;
     if (!user) {
       return res.status(404).json({ error: 'Logician profile not found.' });
     }
 
-    const wordleCount = (db.prepare('SELECT COUNT(*) as cnt FROM wordle_completions WHERE user_id = ?').get(user.id) as any)?.cnt || 0;
-    const frenzyCount = (db.prepare('SELECT COUNT(*) as cnt FROM frenzy_records WHERE user_id = ? AND won = 1').get(user.id) as any)?.cnt || 0;
+    const wordleCount = (await db.prepare('SELECT COUNT(*) as cnt FROM wordle_completions WHERE user_id = ?').get(user.id) as any)?.cnt || 0;
+    const frenzyCount = (await db.prepare('SELECT COUNT(*) as cnt FROM frenzy_records WHERE user_id = ? AND won = 1').get(user.id) as any)?.cnt || 0;
     const rankTitle = calculateRank(user.streak_count || 0, wordleCount, frenzyCount);
 
-    const userBestScoreRow = db.prepare('SELECT MAX(score) as best FROM frenzy_records WHERE user_id = ?').get(user.id) as any;
+    const userBestScoreRow = await db.prepare('SELECT MAX(score) as best FROM frenzy_records WHERE user_id = ?').get(user.id) as any;
     const userBestScore = userBestScoreRow?.best;
     let leaderboardStanding = 'Unranked';
     if (user.opt_out_leaderboard) {
       leaderboardStanding = 'Hidden';
     } else if (userBestScore !== null && userBestScore !== undefined) {
-      const aheadRow = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM frenzy_records WHERE user_id IS NOT NULL AND user_id != ? AND score > ?').get(user.id, userBestScore) as any;
+      const aheadRow = await db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM frenzy_records WHERE user_id IS NOT NULL AND user_id != ? AND score > ?').get(user.id, userBestScore) as any;
       const ahead = aheadRow?.count || 0;
       leaderboardStanding = `#${ahead + 1}`;
     }
 
-    const activityRows = db.prepare(`
+    const activityRows = await db.prepare(`
       SELECT day, COUNT(*) as count FROM (
         SELECT substr(created_at, 1, 10) as day FROM wordle_completions WHERE user_id = ?
         UNION ALL
@@ -674,7 +682,7 @@ app.get('/api/user/profile/:username', (req, res) => {
 });
 
 // Profile reporting / moderation flagging
-app.post('/api/user/report', (req: AuthenticatedRequest, res) => {
+app.post('/api/user/report', async (req: AuthenticatedRequest, res) => {
   const { reportedUsername, reason, details } = req.body;
   if (!reportedUsername || !reason) {
     return res.status(400).json({ error: 'Reported username and reason are required.' });
@@ -683,7 +691,7 @@ app.post('/api/user/report', (req: AuthenticatedRequest, res) => {
   try {
     const reportId = crypto.randomUUID();
     const reporterId = req.user?.id || 'anonymous';
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO profile_reports (id, reporter_user_id, reported_username, reason, details)
       VALUES (?, ?, ?, ?, ?)
     `).run(reportId, reporterId, reportedUsername.trim(), reason, details ? details.slice(0, 500) : null);
@@ -695,7 +703,7 @@ app.post('/api/user/report', (req: AuthenticatedRequest, res) => {
 });
 
 // Public OAuth configuration endpoint
-app.get('/api/auth/oauth/config', (_req, res) => {
+app.get('/api/auth/oauth/config', async (_req, res) => {
   res.json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
     githubClientId: process.env.GITHUB_CLIENT_ID || null,
@@ -740,16 +748,16 @@ app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
   try {
     if (req.user) {
       // Link Google to existing user
-      db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(verifiedGoogleId, req.user.id);
+      await db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(verifiedGoogleId, req.user.id);
       return res.json({ success: true, message: 'Google account linked successfully.' });
     }
 
     // Sign in or register via Google
-    let existing = db.prepare('SELECT * FROM users WHERE google_id = ?').get(verifiedGoogleId) as any;
+    let existing = await db.prepare('SELECT * FROM users WHERE google_id = ?').get(verifiedGoogleId) as any;
     if (!existing && verifiedEmail) {
-      existing = db.prepare('SELECT * FROM users WHERE email = ?').get(verifiedEmail) as any;
+      existing = await db.prepare('SELECT * FROM users WHERE email = ?').get(verifiedEmail) as any;
       if (existing) {
-        db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(verifiedGoogleId, existing.id);
+        await db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(verifiedGoogleId, existing.id);
       }
     }
 
@@ -775,7 +783,7 @@ app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
     const baseUsername = (verifiedName || verifiedEmail?.split('@')[0] || 'google_logician').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16);
     let finalUsername = baseUsername;
     let counter = 1;
-    while (db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
+    while (await db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
       finalUsername = `${baseUsername}_${counter++}`;
     }
 
@@ -784,7 +792,7 @@ app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
     const colors = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
 
-    db.prepare('INSERT INTO users (id, username, email, password_hash, avatar_color, google_id, has_password) VALUES (?, ?, ?, ?, ?, ?, 0)')
+    await db.prepare('INSERT INTO users (id, username, email, password_hash, avatar_color, google_id, has_password) VALUES (?, ?, ?, ?, ?, ?, 0)')
       .run(id, finalUsername, verifiedEmail || null, tempHash, avatarColor, verifiedGoogleId);
 
     const token = jwt.sign({ id, username: finalUsername }, JWT_SECRET, { expiresIn: '30d' });
@@ -856,11 +864,11 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
   try {
     if (req.user) {
       // Link GitHub to current user
-      db.prepare('UPDATE users SET github_id = ? WHERE id = ?').run(verifiedGithubId, req.user.id);
+      await db.prepare('UPDATE users SET github_id = ? WHERE id = ?').run(verifiedGithubId, req.user.id);
       return res.json({ success: true, message: 'GitHub account linked successfully.' });
     }
 
-    let existing = db.prepare('SELECT * FROM users WHERE github_id = ?').get(verifiedGithubId) as any;
+    let existing = await db.prepare('SELECT * FROM users WHERE github_id = ?').get(verifiedGithubId) as any;
     if (existing) {
       const token = jwt.sign({ id: existing.id, username: existing.username }, JWT_SECRET, { expiresIn: '30d' });
       setAuthCookie(res, token);
@@ -883,7 +891,7 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
     const baseUsername = (verifiedUsername || 'gh_logician').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16);
     let finalUsername = baseUsername;
     let counter = 1;
-    while (db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
+    while (await db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
       finalUsername = `${baseUsername}_${counter++}`;
     }
 
@@ -892,7 +900,7 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
     const colors = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
 
-    db.prepare('INSERT INTO users (id, username, password_hash, avatar_color, github_id, has_password) VALUES (?, ?, ?, ?, ?, 0)')
+    await db.prepare('INSERT INTO users (id, username, password_hash, avatar_color, github_id, has_password) VALUES (?, ?, ?, ?, ?, 0)')
       .run(id, finalUsername, tempHash, avatarColor, verifiedGithubId);
 
     const token = jwt.sign({ id, username: finalUsername }, JWT_SECRET, { expiresIn: '30d' });
@@ -915,7 +923,7 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.post('/api/auth/oauth/disconnect', (req: AuthenticatedRequest, res) => {
+app.post('/api/auth/oauth/disconnect', async (req: AuthenticatedRequest, res) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized.' });
   const { provider } = req.body;
 
@@ -925,7 +933,7 @@ app.post('/api/auth/oauth/disconnect', (req: AuthenticatedRequest, res) => {
 
   try {
     // Safety check: ensure user retains at least one auth method after disconnecting
-    const user = db.prepare('SELECT has_password, google_id, github_id FROM users WHERE id = ?').get(req.user.id) as any;
+    const user = await db.prepare('SELECT has_password, google_id, github_id FROM users WHERE id = ?').get(req.user.id) as any;
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
     const hasPassword = Boolean(user.has_password);
@@ -944,9 +952,9 @@ app.post('/api/auth/oauth/disconnect', (req: AuthenticatedRequest, res) => {
     }
 
     if (provider === 'google') {
-      db.prepare('UPDATE users SET google_id = NULL WHERE id = ?').run(req.user.id);
+      await db.prepare('UPDATE users SET google_id = NULL WHERE id = ?').run(req.user.id);
     } else {
-      db.prepare('UPDATE users SET github_id = NULL WHERE id = ?').run(req.user.id);
+      await db.prepare('UPDATE users SET github_id = NULL WHERE id = ?').run(req.user.id);
     }
     res.json({ success: true, message: `Disconnected ${provider} account.` });
   } catch {
@@ -955,7 +963,7 @@ app.post('/api/auth/oauth/disconnect', (req: AuthenticatedRequest, res) => {
 });
 
 // DANGER ZONE: Reset Account Statistics
-app.post('/api/user/reset-stats', (req: AuthenticatedRequest, res) => {
+app.post('/api/user/reset-stats', async (req: AuthenticatedRequest, res) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized.' });
   const { confirmText } = req.body;
 
@@ -964,9 +972,9 @@ app.post('/api/user/reset-stats', (req: AuthenticatedRequest, res) => {
   }
 
   try {
-    db.prepare('DELETE FROM wordle_completions WHERE user_id = ?').run(req.user.id);
-    db.prepare('DELETE FROM frenzy_records WHERE user_id = ?').run(req.user.id);
-    db.prepare('UPDATE users SET streak_count = 0, best_streak = 0, last_played_date = NULL WHERE id = ?').run(req.user.id);
+    await db.prepare('DELETE FROM wordle_completions WHERE user_id = ?').run(req.user.id);
+    await db.prepare('DELETE FROM frenzy_records WHERE user_id = ?').run(req.user.id);
+    await db.prepare('UPDATE users SET streak_count = 0, best_streak = 0, last_played_date = NULL WHERE id = ?').run(req.user.id);
 
     res.json({ success: true, message: 'All statistics, records, and streak history have been reset.' });
   } catch {
@@ -975,17 +983,17 @@ app.post('/api/user/reset-stats', (req: AuthenticatedRequest, res) => {
 });
 
 // DANGER ZONE: Delete Account Permanently
-app.post('/api/user/delete-account', (req: AuthenticatedRequest, res) => {
+app.post('/api/user/delete-account', async (req: AuthenticatedRequest, res) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized.' });
   const { confirmUsername } = req.body;
 
   try {
-    const user = db.prepare('SELECT username FROM users WHERE id = ?').get(req.user.id) as any;
+    const user = await db.prepare('SELECT username FROM users WHERE id = ?').get(req.user.id) as any;
     if (!user || confirmUsername !== user.username) {
       return res.status(400).json({ error: `Confirmation username must exactly match "${user?.username}".` });
     }
 
-    db.prepare('DELETE FROM users WHERE id = ?').run(req.user.id);
+    await db.prepare('DELETE FROM users WHERE id = ?').run(req.user.id);
     res.clearCookie('token');
     res.json({ success: true, message: 'Account and associated records have been permanently deleted.' });
   } catch {
@@ -993,12 +1001,12 @@ app.post('/api/user/delete-account', (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.get('/api/user/history', (req: AuthenticatedRequest, res) => {
+app.get('/api/user/history', async (req: AuthenticatedRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
   try {
-    const wordles = db.prepare(`
+    const wordles = await db.prepare(`
       SELECT date, difficulty, step_count, duration_seconds, created_at
       FROM wordle_completions
       WHERE user_id = ?
@@ -1006,7 +1014,7 @@ app.get('/api/user/history', (req: AuthenticatedRequest, res) => {
       LIMIT 25
     `).all(req.user.id);
 
-    const frenzies = db.prepare(`
+    const frenzies = await db.prepare(`
       SELECT seed, hearts_left, score, time_seconds, won, created_at
       FROM frenzy_records
       WHERE user_id = ?
@@ -1020,12 +1028,12 @@ app.get('/api/user/history', (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.get('/api/user/saved-proofs', (req: AuthenticatedRequest, res) => {
+app.get('/api/user/saved-proofs', async (req: AuthenticatedRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
   try {
-    const rows = db.prepare(`
+    const rows = await db.prepare(`
       SELECT id, title, difficulty, premises_json, conclusion_json, notes, created_at
       FROM user_saved_proofs
       WHERE user_id = ?
@@ -1048,7 +1056,7 @@ app.get('/api/user/saved-proofs', (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.post('/api/user/saved-proofs', (req: AuthenticatedRequest, res) => {
+app.post('/api/user/saved-proofs', async (req: AuthenticatedRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized. Please sign in to save proofs to your account.' });
   }
@@ -1059,7 +1067,7 @@ app.post('/api/user/saved-proofs', (req: AuthenticatedRequest, res) => {
 
   try {
     const id = crypto.randomUUID();
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO user_saved_proofs (id, user_id, title, difficulty, premises_json, conclusion_json, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(id, req.user.id, title.trim(), difficulty || 'custom', JSON.stringify(premises), JSON.stringify(conclusion), notes || null);
@@ -1070,19 +1078,19 @@ app.post('/api/user/saved-proofs', (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.delete('/api/user/saved-proofs/:id', (req: AuthenticatedRequest, res) => {
+app.delete('/api/user/saved-proofs/:id', async (req: AuthenticatedRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
   try {
-    db.prepare('DELETE FROM user_saved_proofs WHERE (id = ? OR title = ?) AND user_id = ?').run(req.params.id, req.params.id, req.user.id);
+    await db.prepare('DELETE FROM user_saved_proofs WHERE (id = ? OR title = ?) AND user_id = ?').run(req.params.id, req.params.id, req.user.id);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Failed to delete saved proof.' });
   }
 });
 
-app.post('/api/auth/logout', (_req, res) => {
+app.post('/api/auth/logout', async (_req, res) => {
   res.clearCookie('token');
   res.json({ success: true });
 });
@@ -1091,7 +1099,7 @@ app.post('/api/auth/logout', (_req, res) => {
 // LOGIC API (VALIDATOR, HINTS, ASSESSOR)
 // -------------------------------------------------------------
 
-app.post('/api/logic/validate-step', (req, res) => {
+app.post('/api/logic/validate-step', async (req, res) => {
   const { existingSteps, newFormula, ruleId, citations } = req.body;
   try {
     const parsedFormula = typeof newFormula === 'string' ? parseFormula(newFormula) : newFormula;
@@ -1102,7 +1110,7 @@ app.post('/api/logic/validate-step', (req, res) => {
   }
 });
 
-app.post('/api/logic/hint', (req, res) => {
+app.post('/api/logic/hint', async (req, res) => {
   const { steps, conclusion } = req.body;
   try {
     const parsedConclusion = typeof conclusion === 'string' ? parseFormula(conclusion) : conclusion;
@@ -1113,7 +1121,7 @@ app.post('/api/logic/hint', (req, res) => {
   }
 });
 
-app.post('/api/logic/assess', (req, res) => {
+app.post('/api/logic/assess', async (req, res) => {
   const { premises, conclusion } = req.body;
   try {
     const parsedPremises = premises.map((p: any) => typeof p === 'string' ? parseFormula(p) : p);
@@ -1129,12 +1137,12 @@ app.post('/api/logic/assess', (req, res) => {
 // DAILY WORDLE API
 // -------------------------------------------------------------
 
-app.get('/api/wordle/today', (req, res) => {
+app.get('/api/wordle/today', async (req, res) => {
   const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
   const difficulty = ((req.query.difficulty as string) || 'easy') as 'easy' | 'medium' | 'hard';
 
   try {
-    const commRows = db.prepare(`
+    const commRows = await db.prepare(`
       SELECT id, title, difficulty, premises_json, conclusion_json, creator_username
       FROM community_theorems
       WHERE is_valid = 1 AND difficulty = ?
@@ -1179,21 +1187,20 @@ app.get('/api/wordle/today', (req, res) => {
   }
 });
 
-app.post('/api/wordle/submit', (req: AuthenticatedRequest, res) => {
+app.post('/api/wordle/submit', async (req: AuthenticatedRequest, res) => {
   const { date, difficulty, stepCount, durationSeconds } = req.body;
   const userId = req.user?.id;
 
   try {
     if (userId) {
       const id = crypto.randomUUID();
-      db.prepare(`
+      await db.prepare(`
         INSERT INTO wordle_completions (id, user_id, date, difficulty, step_count, duration_seconds)
         VALUES (?, ?, ?, ?, ?, ?)
       `).run(id, userId, date, difficulty, stepCount, durationSeconds);
 
       // Update user streak if not already recorded today
-      const userStmt = db.prepare('SELECT streak_count, best_streak, last_played_date FROM users WHERE id = ?');
-      const user = userStmt.get(userId) as any;
+      const user = (await db.prepare('SELECT streak_count, best_streak, last_played_date FROM users WHERE id = ?').get(userId)) as any;
 
       if (user) {
         let newStreak = user.streak_count;
@@ -1210,7 +1217,7 @@ app.post('/api/wordle/submit', (req: AuthenticatedRequest, res) => {
         }
 
         const bestStreak = Math.max(newStreak, user.best_streak || 0);
-        db.prepare('UPDATE users SET streak_count = ?, best_streak = ?, last_played_date = ? WHERE id = ?')
+        await db.prepare('UPDATE users SET streak_count = ?, best_streak = ?, last_played_date = ? WHERE id = ?')
           .run(newStreak, bestStreak, date, userId);
       }
     }
@@ -1225,7 +1232,7 @@ app.post('/api/wordle/submit', (req: AuthenticatedRequest, res) => {
 // FRENZY API
 // -------------------------------------------------------------
 
-app.get('/api/frenzy/generate', (req, res) => {
+app.get('/api/frenzy/generate', async (req, res) => {
   const seed = (req.query.seed as string) || `frenzy-${Date.now()}`;
   const difficulty = ((req.query.difficulty as string) || 'medium') as 'easy' | 'medium' | 'hard';
   const problem = generateProblem(seed, difficulty);
@@ -1233,7 +1240,7 @@ app.get('/api/frenzy/generate', (req, res) => {
   res.json({ problem, seed, shareCode });
 });
 
-app.post('/api/frenzy/submit', (req: AuthenticatedRequest, res) => {
+app.post('/api/frenzy/submit', async (req: AuthenticatedRequest, res) => {
   const { seed, heartsLeft, score, timeSeconds, won, playerName } = req.body;
   const userId = req.user?.id || null;
   // Authenticated users always use their real username; guests get a sanitized name
@@ -1243,7 +1250,7 @@ app.post('/api/frenzy/submit', (req: AuthenticatedRequest, res) => {
 
   try {
     const id = crypto.randomUUID();
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO frenzy_records (id, user_id, player_name, seed, hearts_left, score, time_seconds, won)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(id, userId, name, seed, heartsLeft, score, timeSeconds, won ? 1 : 0);
@@ -1254,9 +1261,9 @@ app.post('/api/frenzy/submit', (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.get('/api/frenzy/leaderboard', (_req, res) => {
+app.get('/api/frenzy/leaderboard', async (_req, res) => {
   try {
-    const rows = db.prepare(`
+    const rows = await db.prepare(`
       SELECT COALESCE(u.username, f.player_name) as username, f.player_name, f.score, f.hearts_left, f.time_seconds, f.seed, f.created_at
       FROM frenzy_records f
       LEFT JOIN users u ON f.user_id = u.id
@@ -1274,9 +1281,9 @@ app.get('/api/frenzy/leaderboard', (_req, res) => {
 // COMMUNITY THEOREMS API
 // -------------------------------------------------------------
 
-app.get('/api/community/theorems', (_req, res) => {
+app.get('/api/community/theorems', async (_req, res) => {
   try {
-    const rows = db.prepare(`
+    const rows = await db.prepare(`
       SELECT id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, created_at
       FROM community_theorems
       WHERE is_valid = 1
@@ -1302,7 +1309,7 @@ app.get('/api/community/theorems', (_req, res) => {
   }
 });
 
-app.post('/api/community/theorems', (req: AuthenticatedRequest, res) => {
+app.post('/api/community/theorems', async (req: AuthenticatedRequest, res) => {
   try {
     const { title, difficulty, premises, conclusion } = req.body;
     if (!title || !title.trim()) {
@@ -1327,7 +1334,7 @@ app.post('/api/community/theorems', (req: AuthenticatedRequest, res) => {
     const creator = req.user?.username || 'Anonymous Logician';
     const diff = difficulty || 'medium';
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO community_theorems (id, user_id, title, difficulty, premises_json, conclusion_json, creator_username, proof_steps_count, is_valid)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
     `).run(id, req.user?.id || null, title.trim(), diff, JSON.stringify(premises), JSON.stringify(conclusion), creator, solution.minSteps);
@@ -1357,14 +1364,14 @@ app.post('/api/community/theorems', (req: AuthenticatedRequest, res) => {
 // SHARED PUZZLE API
 // -------------------------------------------------------------
 
-app.post('/api/puzzles/share', (req: AuthenticatedRequest, res) => {
+app.post('/api/puzzles/share', async (req: AuthenticatedRequest, res) => {
   const { title, difficulty, premises, conclusion } = req.body;
   const creator = req.user?.username || 'Logician';
   const shareCode = `goodle-${crypto.randomBytes(4).toString('hex')}`;
 
   try {
     const id = crypto.randomUUID();
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO shared_puzzles (id, share_code, title, difficulty, premises_json, conclusion_json, creator_username)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(id, shareCode, title, difficulty, JSON.stringify(premises), JSON.stringify(conclusion), creator);
@@ -1375,10 +1382,10 @@ app.post('/api/puzzles/share', (req: AuthenticatedRequest, res) => {
   }
 });
 
-app.get('/api/puzzles/:code', (req, res) => {
+app.get('/api/puzzles/:code', async (req, res) => {
   const { code } = req.params;
   try {
-    const row = db.prepare('SELECT * FROM shared_puzzles WHERE share_code = ?').get(code) as any;
+    const row = await db.prepare('SELECT * FROM shared_puzzles WHERE share_code = ?').get(code) as any;
     if (!row) {
       const decoded = decodeProblemFromShareCode(code);
       if (decoded) {
@@ -1387,7 +1394,7 @@ app.get('/api/puzzles/:code', (req, res) => {
       return res.status(404).json({ error: 'Puzzle not found.' });
     }
 
-    db.prepare('UPDATE shared_puzzles SET plays_count = plays_count + 1 WHERE id = ?').run(row.id);
+    await db.prepare('UPDATE shared_puzzles SET plays_count = plays_count + 1 WHERE id = ?').run(row.id);
 
     const problem = {
       id: row.id,
@@ -1408,7 +1415,7 @@ app.get('/api/puzzles/:code', (req, res) => {
 const distPath = path.resolve(process.cwd(), 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (_req, res) => {
+  app.get('*', async (_req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
