@@ -2044,6 +2044,27 @@ function authMiddleware(req, res, next) {
   }
   next();
 }
+app.get("/api/health", async (_req, res) => {
+  const isTursoConfigured = Boolean(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+  let dbOk = false;
+  let rowCount = 0;
+  try {
+    const r = await db.prepare("SELECT COUNT(*) as count FROM users").get();
+    dbOk = true;
+    rowCount = Number(r?.count || 0);
+  } catch {
+  }
+  res.json({
+    status: "ok",
+    database: isTursoConfigured ? "turso" : process.env.VERCEL ? "vercel-tmp-sqlite" : "local-sqlite",
+    tursoConfigured: isTursoConfigured,
+    tursoHost: process.env.TURSO_DATABASE_URL ? process.env.TURSO_DATABASE_URL.split("@").pop()?.split("/")[0] || "configured" : null,
+    dbConnected: dbOk,
+    registeredUsersCount: rowCount,
+    uptime: Math.round(process.uptime()),
+    nodeEnv: process.env.NODE_ENV || "development"
+  });
+});
 app.use(authMiddleware);
 app.post("/api/auth/register", async (req, res) => {
   const { username, password, email } = req.body;
