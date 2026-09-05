@@ -204,8 +204,8 @@
   function copyFormattedStatement() {
     if (!problem) return;
     const formatted = formatProblemShareString(problem);
-    const url = `${window.location.origin}?mode=frenzy&seed=${encodeProblemToShareCode(problem)}`;
-    const fullShare = `⚡ gödle frenzy [Seed: ${activeSeed}]\n\n${formatted}\n\nCan you prove it in 3 hearts?\nPlay: ${url}`;
+    const url = `https://godle-logic-game.vercel.app?mode=frenzy&seed=${encodeProblemToShareCode(problem)}`;
+    const fullShare = `⚡ gödle frenzy by A. Arcega [Seed: ${activeSeed}]\n\n${formatted}\n\nCan you prove it in 3 hearts?\nPlay: ${url}`;
     navigator.clipboard.writeText(fullShare);
     shareTextCopied = true;
     setTimeout(() => (shareTextCopied = false), 3000);

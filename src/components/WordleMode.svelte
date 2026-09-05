@@ -256,7 +256,7 @@
     const deductionSteps = steps.filter(s => s.rule !== 'premise').length;
     const squares = '■ '.repeat(Math.min(deductionSteps, 8));
     const authorLine = (problem.author || problem.creator_username) ? `\nTheorem by: @${problem.author || problem.creator_username}` : '';
-    return `gödle • ${dateStr}\nStage: ${stageNames[selectedDifficulty]}${authorLine}\nSolved in ${deductionSteps} steps (${durationSeconds}s)\n${squares}`;
+    return `gödle by A. Arcega • ${dateStr}\nStage: ${stageNames[selectedDifficulty]}${authorLine}\nSolved in ${deductionSteps} steps (${durationSeconds}s)\n${squares}\nhttps://godle-logic-game.vercel.app`;
   }
 
   function copyShareCard() {

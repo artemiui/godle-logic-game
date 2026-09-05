@@ -71,7 +71,7 @@
     const timeInfo = durationSeconds > 0 ? ` (${formatDuration(durationSeconds)})` : '';
 
     const lines = [
-      `gödle · ${today}`,
+      `gödle by A. Arcega · ${today}`,
       `Theorem: ${theoremString}`,
     ];
     if (problem?.author || problem?.creator_username) {
@@ -95,7 +95,7 @@
       proofLines.push(`${s.stepNumber}. ${fStr}   [${rule}]`);
     });
     proofLines.push(`∎ Q.E.D. (${totalStepsCount} total lines)`);
-    proofLines.push(`\nhttps://godle.org`);
+    proofLines.push(`\nhttps://godle-logic-game.vercel.app`);
     return `${summary}\n${proofLines.join('\n')}`;
   }
 
@@ -138,11 +138,16 @@
     ctx.lineWidth = 1;
     ctx.strokeRect(20, 20, width - 40, calculatedHeight - 40);
 
-    // 3. Top Header: ONLY main gödle typography
+    // 3. Top Header: gödle typography with author credit
     ctx.fillStyle = textColor;
     ctx.font = 'bold 28px system-ui, -apple-system, "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('gödle', 40, 62);
+    const godleWidth = ctx.measureText('gödle').width;
+
+    ctx.fillStyle = mutedColor;
+    ctx.font = '12px system-ui, -apple-system, "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('by A. Arcega', 40 + godleWidth + 10, 62);
 
     // Subtle right date
     const todayStr = new Date().toLocaleDateString(undefined, {
@@ -237,7 +242,7 @@
     ctx.font = '9px system-ui, -apple-system, sans-serif';
     ctx.letterSpacing = '1px';
     ctx.fillStyle = mutedColor;
-    ctx.fillText('FORMAL PROPOSITIONAL DEDUCTION · GODLE.ORG', 40, footerY);
+    ctx.fillText('FORMAL PROPOSITIONAL DEDUCTION · GODLE-LOGIC-GAME.VERCEL.APP · BY A. ARCEGA', 40, footerY);
 
     ctx.textAlign = 'right';
     ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
@@ -298,13 +303,13 @@
 
   function shareTwitter() {
     const text = getShareSummaryText();
-    const url = window.location.origin;
+    const url = 'https://godle-logic-game.vercel.app';
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
     window.open(tweetUrl, '_blank', 'width=600,height=480');
   }
 
   function shareFacebook() {
-    const url = window.location.origin;
+    const url = 'https://godle-logic-game.vercel.app';
     const quote = getShareSummaryText();
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(quote)}`;
     window.open(fbUrl, '_blank', 'width=600,height=500');
@@ -446,11 +451,16 @@
       <div class="border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 space-y-6 transition-colors shadow-sm {
         imageTheme === 'dark' ? 'bg-[#0A0A0A] text-[#F5F5F5]' : 'bg-[#FFFFFF] text-[#0A0A0A]'
       }">
-        <!-- Card Header: ONLY main gödle typography -->
+        <!-- Card Header: gödle typography and author credit -->
         <div class="flex items-baseline justify-between border-b {imageTheme === 'dark' ? 'border-[#262626]' : 'border-[#E5E5E5]'} pb-3">
-          <span class="text-3xl font-black font-sans tracking-tight">
-            gödle
-          </span>
+          <div class="flex items-baseline gap-2.5">
+            <span class="text-3xl font-black font-sans tracking-tight">
+              gödle
+            </span>
+            <span class="text-xs font-sans {imageTheme === 'dark' ? 'text-[#888888]' : 'text-[#666666]'}">
+              by A. Arcega
+            </span>
+          </div>
           <span class="text-xs font-sans uppercase tracking-wider {imageTheme === 'dark' ? 'text-[#888888]' : 'text-[#666666]'}">
             {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
           </span>
@@ -511,7 +521,18 @@
 
         <!-- Card Footer Watermark -->
         <div class="pt-2 border-t {imageTheme === 'dark' ? 'border-[#262626]' : 'border-[#E5E5E5]'} flex items-center justify-between text-[9px] uppercase tracking-wider {imageTheme === 'dark' ? 'text-[#777777]' : 'text-[#888888]'}">
-          <span>godle.org</span>
+          <div class="flex items-center gap-2">
+            <a
+              href="https://godle-logic-game.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:underline transition-colors {imageTheme === 'dark' ? 'text-[#888888] hover:text-white' : 'text-[#666666] hover:text-black'}"
+            >
+              godle-logic-game.vercel.app
+            </a>
+            <span class="{imageTheme === 'dark' ? 'text-[#444444]' : 'text-[#CCCCCC]'}">·</span>
+            <span>by A. Arcega</span>
+          </div>
           <span>∎ Quod Erat Demonstrandum</span>
         </div>
       </div>
