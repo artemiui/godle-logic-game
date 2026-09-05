@@ -2029,7 +2029,7 @@ app.use((_req, res, next) => {
   res.setHeader("X-DNS-Prefetch-Control", "off");
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://www.google.com; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://www.google.com; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com https://va.vercel-scripts.com;"
   );
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");

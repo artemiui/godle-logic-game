@@ -14,6 +14,7 @@
   import SettingsModal from './components/SettingsModal.svelte';
   import LandingPage from './components/LandingPage.svelte';
   import AboutView from './components/AboutView.svelte';
+  import Analytics from './components/Analytics.svelte';
 
   let showLanding: boolean = true;
 
@@ -134,6 +135,7 @@
   </footer>
 
   <!-- Modals & Utilities -->
+  <Analytics />
   <SettingsModal />
 
   <AuthModal
