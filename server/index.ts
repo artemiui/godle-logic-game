@@ -392,8 +392,7 @@ app.get('/api/auth/me', async (req: AuthenticatedRequest, res) => {
 
     const wordleCount = ((await db.prepare('SELECT COUNT(*) as cnt FROM wordle_completions WHERE user_id = ?').get(user.id)) as any)?.cnt || 0;
 
-    const frenzyCountStmt = await db.prepare('SELECT COUNT(*) as cnt FROM frenzy_records WHERE user_id = ? AND won = 1');
-    const frenzyCount = (frenzyCountStmt.get(user.id) as any)?.cnt || 0;
+    const frenzyCount = ((await db.prepare('SELECT COUNT(*) as cnt FROM frenzy_records WHERE user_id = ? AND won = 1').get(user.id)) as any)?.cnt || 0;
 
     const rankTitle = calculateRank(user.streak_count || 0, wordleCount, frenzyCount);
 

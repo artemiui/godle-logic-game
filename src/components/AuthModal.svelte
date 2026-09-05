@@ -60,9 +60,11 @@
         const data = await res.json();
         captchaSvg = data.svg;
         captchaToken = data.token;
+      } else {
+        errorMessage = 'Failed to load security captcha challenge. Please refresh.';
       }
     } catch {
-      // User can click refresh
+      errorMessage = 'Could not reach server to load captcha. Please check connection.';
     } finally {
       captchaLoading = false;
     }
@@ -87,7 +89,10 @@
       .catch(() => {});
   });
 
-  $: if (isOpen) {
+  // Guard against reactive reset on mode or input changes — only initialize when opening
+  let prevIsOpen = false;
+  $: if (isOpen && !prevIsOpen) {
+    prevIsOpen = true;
     mode = initialMode;
     errorMessage = '';
     successMessage = '';
@@ -97,14 +102,29 @@
     email = '';
     oauthProvider = null;
     captchaAnswer = '';
-    if (mode === 'login' || mode === 'register' || mode === 'reset') {
+    if (initialMode === 'login' || initialMode === 'register' || initialMode === 'reset') {
       fetchCaptcha();
     }
+  } else if (!isOpen && prevIsOpen) {
+    prevIsOpen = false;
+    errorMessage = '';
+    successMessage = '';
   }
 
   async function handleAuth() {
     errorMessage = '';
     successMessage = '';
+
+    if (captchaLoading) {
+      errorMessage = 'Security captcha is still loading. Please wait a moment.';
+      return;
+    }
+
+    if (!captchaToken) {
+      errorMessage = 'Security verification is missing. Please click refresh to load a new code.';
+      fetchCaptcha();
+      return;
+    }
 
     if (!captchaAnswer.trim()) {
       errorMessage = 'Please enter the security verification captcha.';
@@ -168,6 +188,17 @@
   async function handleResetPassword() {
     errorMessage = '';
     successMessage = '';
+
+    if (captchaLoading) {
+      errorMessage = 'Security captcha is still loading. Please wait a moment.';
+      return;
+    }
+
+    if (!captchaToken) {
+      errorMessage = 'Security verification is missing. Please click refresh to load a new code.';
+      fetchCaptcha();
+      return;
+    }
 
     if (!captchaAnswer.trim()) {
       errorMessage = 'Please enter the security verification captcha.';

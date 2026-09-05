@@ -50,7 +50,7 @@ export function generateCaptcha(jwtSecret: string): CaptchaChallenge {
 
   // 3. Generate visual SVG with distortion, curves, and noise
   const width = 160;
-  const height = 46;
+  const height = 40;
 
   // Visual text characters with randomized position, rotation, and colors
   const textElements: string[] = [];
@@ -58,10 +58,10 @@ export function generateCaptcha(jwtSecret: string): CaptchaChallenge {
 
   for (let i = 0; i < code.length; i++) {
     const char = code[i];
-    const x = 16 + i * 28 + crypto.randomInt(-2, 3);
-    const y = 30 + crypto.randomInt(-3, 4);
-    const angle = crypto.randomInt(-20, 21);
-    const fontSize = crypto.randomInt(22, 27);
+    const x = 16 + i * 27 + crypto.randomInt(-2, 3);
+    const y = 27 + crypto.randomInt(-2, 3);
+    const angle = crypto.randomInt(-16, 17);
+    const fontSize = crypto.randomInt(20, 24);
     const color = charColors[crypto.randomInt(0, charColors.length)];
     const fontFamily = i % 2 === 0 ? 'Courier New, monospace' : 'Georgia, serif';
 
@@ -74,31 +74,31 @@ export function generateCaptcha(jwtSecret: string): CaptchaChallenge {
   const lines: string[] = [];
   const lineColors = ['#94a3b8', '#64748b', '#cbd5e1', '#a855f7', '#3b82f6'];
   for (let i = 0; i < 3; i++) {
-    const yStart = crypto.randomInt(10, height - 10);
+    const yStart = crypto.randomInt(8, height - 8);
     const cp1x = crypto.randomInt(30, 70);
-    const cp1y = crypto.randomInt(5, height - 5);
+    const cp1y = crypto.randomInt(4, height - 4);
     const cp2x = crypto.randomInt(90, 130);
-    const cp2y = crypto.randomInt(5, height - 5);
-    const yEnd = crypto.randomInt(10, height - 10);
+    const cp2y = crypto.randomInt(4, height - 4);
+    const yEnd = crypto.randomInt(8, height - 8);
     const stroke = lineColors[crypto.randomInt(0, lineColors.length)];
-    const strokeWidth = (crypto.randomInt(14, 24) / 10).toFixed(1);
+    const strokeWidth = (crypto.randomInt(12, 22) / 10).toFixed(1);
 
     lines.push(
       `<path d="M 0 ${yStart} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${width} ${yEnd}" stroke="${stroke}" stroke-width="${strokeWidth}" fill="none" opacity="0.65" />`
     );
   }
 
-  // Generate 25 randomized noise dots
+  // Generate 20 randomized noise dots
   const dots: string[] = [];
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 20; i++) {
     const cx = crypto.randomInt(2, width - 2);
     const cy = crypto.randomInt(2, height - 2);
-    const r = (crypto.randomInt(8, 22) / 10).toFixed(1);
+    const r = (crypto.randomInt(8, 20) / 10).toFixed(1);
     const dotColor = lineColors[crypto.randomInt(0, lineColors.length)];
     dots.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${dotColor}" opacity="0.4" />`);
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="select-none pointer-events-none">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" style="width:100%;height:100%;display:block;" class="select-none pointer-events-none">
     <rect width="100%" height="100%" fill="#F8FAFC" rx="4" />
     <rect width="100%" height="100%" fill="none" stroke="#E2E8F0" stroke-width="1" rx="4" />
     ${dots.join('\n    ')}
