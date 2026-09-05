@@ -32,10 +32,31 @@
   let attachConfirmPassword: string = '';
   let attachLoading: boolean = false;
 
+  import { onMount } from 'svelte';
+
+  // OAuth Configuration State
+  let oauthConfig = {
+    googleClientId: null as string | null,
+    githubClientId: null as string | null,
+    devMode: false,
+  };
+
   // OAuth Interactive Dialog State
   let oauthProvider: 'google' | 'github' | null = null;
   let oauthEmailOrUser: string = '';
   let oauthLoading: boolean = false;
+
+  onMount(() => {
+    fetch('/api/auth/oauth/config')
+      .then(r => r.json())
+      .then(cfg => {
+        oauthConfig = cfg;
+        if (cfg.googleClientId && typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+          initGoogleSignIn(cfg.googleClientId);
+        }
+      })
+      .catch(() => {});
+  });
 
   $: if (isOpen) {
     mode = initialMode;
@@ -65,7 +86,9 @@
 
     loading = true;
     const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
-    const body = mode === 'login' ? { username: username.trim(), password } : { username: username.trim(), password, email: email.trim() || undefined };
+    const body = mode === 'login'
+      ? { username: username.trim(), password }
+      : { username: username.trim(), password, email: email.trim() || undefined };
 
     try {
       const res = await fetch(url, {
@@ -73,22 +96,29 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // Body was not JSON
+      }
 
       if (!res.ok) {
-        errorMessage = data.error || 'Authentication failed.';
+        errorMessage = data?.error || `Authentication request failed (${res.status}).`;
         loading = false;
         return;
       }
 
       authStore.setUser(data.user, data.token);
-      await authStore.checkAuth();
+      authStore.checkAuth().catch(() => {});
       successMessage = mode === 'register' ? 'Account created! Entering...' : 'Welcome back! Entering...';
       setTimeout(() => {
         dispatch('close');
       }, 500);
-    } catch {
-      errorMessage = 'Network error. Please try again.';
+    } catch (err: any) {
+      errorMessage = err?.message && !err.message.includes('fetch')
+        ? err.message
+        : 'Network connection failed. Please ensure the server is running and reachable.';
     } finally {
       loading = false;
     }
@@ -123,11 +153,12 @@
           newPassword: resetNewPassword,
         }),
       });
-      const data = await res.json();
+      let data: any = null;
+      try { data = await res.json(); } catch {}
       if (!res.ok) {
-        errorMessage = data.error || 'Failed to reset password.';
+        errorMessage = data?.error || 'Failed to reset password.';
       } else {
-        successMessage = data.message || 'Password reset successfully. You can now sign in.';
+        successMessage = data?.message || 'Password reset successfully. You can now sign in.';
         setTimeout(() => {
           mode = 'login';
           username = resetUsername.trim();
@@ -170,12 +201,13 @@
           newPassword: attachNewPassword,
         }),
       });
-      const data = await res.json();
+      let data: any = null;
+      try { data = await res.json(); } catch {}
       if (!res.ok) {
-        errorMessage = data.error || 'Failed to attach password.';
+        errorMessage = data?.error || 'Failed to attach password.';
       } else {
         successMessage = 'Master password attached to account!';
-        await authStore.checkAuth();
+        authStore.checkAuth().catch(() => {});
         setTimeout(() => {
           dispatch('close');
         }, 800);
@@ -187,15 +219,96 @@
     }
   }
 
-  // Open OAuth Dialog
-  function openOAuthPrompt(provider: 'google' | 'github') {
-    oauthProvider = provider;
-    oauthEmailOrUser = provider === 'google' ? 'logician@gmail.com' : 'logician_coder';
-    errorMessage = '';
-    successMessage = '';
+  function initGoogleSignIn(clientId: string) {
+    if (typeof window === 'undefined' || !(window as any).google?.accounts?.id) return;
+    try {
+      (window as any).google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredentialResponse,
+      });
+    } catch (err) {
+      console.warn('Google Sign-In init error:', err);
+    }
   }
 
-  // Execute OAuth Sign In
+  async function handleGoogleCredentialResponse(response: any) {
+    if (!response?.credential) return;
+    loading = true;
+    errorMessage = '';
+    try {
+      const res = await fetch('/api/auth/oauth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+      let data: any = null;
+      try { data = await res.json(); } catch {}
+      if (!res.ok) {
+        errorMessage = data?.error || 'Google sign-in failed.';
+        return;
+      }
+      authStore.setUser(data.user, data.token);
+      authStore.checkAuth().catch(() => {});
+      successMessage = 'Signed in with Google!';
+      setTimeout(() => dispatch('close'), 600);
+    } catch {
+      errorMessage = 'Network error during Google sign-in.';
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Trigger Google Sign-In
+  function triggerGoogleSignIn() {
+    errorMessage = '';
+    successMessage = '';
+
+    // If real Google Client ID is configured and Google SDK is loaded
+    if (oauthConfig.googleClientId && typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+      try {
+        initGoogleSignIn(oauthConfig.googleClientId);
+        (window as any).google.accounts.id.prompt();
+        return;
+      } catch (err) {
+        console.warn('Google prompt fallback:', err);
+      }
+    }
+
+    // If devMode is enabled (local development or ALLOW_DEV_OAUTH)
+    if (oauthConfig.devMode) {
+      oauthProvider = 'google';
+      oauthEmailOrUser = 'google_logician@gmail.com';
+      return;
+    }
+
+    // In production without Google Client ID
+    errorMessage = 'Google Sign-In is not configured for this deployment (GOOGLE_CLIENT_ID missing). Please use Username & Password.';
+  }
+
+  // Trigger GitHub Sign-In
+  function triggerGitHubSignIn() {
+    errorMessage = '';
+    successMessage = '';
+
+    // If real GitHub Client ID is configured
+    if (oauthConfig.githubClientId) {
+      const redirectUri = encodeURIComponent(window.location.origin);
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${oauthConfig.githubClientId}&scope=read:user,user:email&redirect_uri=${redirectUri}`;
+      return;
+    }
+
+    // If devMode is enabled (local development or ALLOW_DEV_OAUTH)
+    if (oauthConfig.devMode) {
+      oauthProvider = 'github';
+      oauthEmailOrUser = 'github_logician';
+      return;
+    }
+
+    // In production without GitHub Client ID
+    errorMessage = 'GitHub Sign-In is not configured for this deployment (GITHUB_CLIENT_ID missing). Please use Username & Password.';
+  }
+
+  // Execute Simulated Dev OAuth Sign In
   async function handleOAuthExecute() {
     if (!oauthProvider) return;
     oauthLoading = true;
@@ -212,24 +325,18 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      let data: any = null;
+      try { data = await res.json(); } catch {}
       if (!res.ok) {
-        errorMessage = data.error || `Failed to sign in with ${oauthProvider}.`;
+        errorMessage = data?.error || `Failed to sign in with ${oauthProvider}.`;
       } else {
         authStore.setUser(data.user, data.token);
-        await authStore.checkAuth();
+        authStore.checkAuth().catch(() => {});
         oauthProvider = null;
-
-        // If account has no attached password, require/prompt them to attach one!
-        if (data.user && data.user.hasPassword === false) {
-          mode = 'attach-password';
-          successMessage = `Authenticated via ${oauthProvider === 'google' ? 'Google' : 'GitHub'}. Please attach a master password.`;
-        } else {
-          successMessage = `Signed in with ${oauthProvider === 'google' ? 'Google' : 'GitHub'}!`;
-          setTimeout(() => {
-            dispatch('close');
-          }, 600);
-        }
+        successMessage = `Signed in with ${oauthProvider === 'google' ? 'Google' : 'GitHub'}!`;
+        setTimeout(() => {
+          dispatch('close');
+        }, 600);
       }
     } catch {
       errorMessage = `Network error connecting to ${oauthProvider}.`;
@@ -327,7 +434,7 @@
               <!-- Google Button -->
               <button
                 type="button"
-                on:click={() => openOAuthPrompt('google')}
+                on:click={triggerGoogleSignIn}
                 class="h-10 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-colors bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 shadow-sm"
               >
                 <svg class="w-4 h-4" viewBox="0 0 24 24">
@@ -342,7 +449,7 @@
               <!-- GitHub Button -->
               <button
                 type="button"
-                on:click={() => openOAuthPrompt('github')}
+                on:click={triggerGitHubSignIn}
                 class="h-10 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-colors bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 shadow-sm"
               >
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -498,7 +605,7 @@
             <div class="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                on:click={() => openOAuthPrompt('google')}
+                on:click={triggerGoogleSignIn}
                 class="h-8 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer transition-colors bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
               >
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
@@ -512,7 +619,7 @@
 
               <button
                 type="button"
-                on:click={() => openOAuthPrompt('github')}
+                on:click={triggerGitHubSignIn}
                 class="h-8 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer transition-colors bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
               >
                 <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -694,7 +801,7 @@
         </form>
       {/if}
 
-      <!-- OAUTH INTERACTIVE MODAL OVERLAY -->
+      <!-- OAUTH DEVELOPER/DEV-MODE CLEARANCE MODAL -->
       {#if oauthProvider}
         <div
           class="absolute inset-0 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-sm z-20 p-6 flex flex-col justify-center space-y-4 font-sans text-xs"
@@ -713,28 +820,31 @@
                   <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
                 </svg>
               {/if}
-              <h3 class="font-bold text-sm uppercase tracking-wider">
-                Sign in with {oauthProvider === 'google' ? 'Google' : 'GitHub'}
-              </h3>
+              <div>
+                <h3 class="font-bold text-sm uppercase tracking-wider">
+                  {oauthProvider === 'google' ? 'Google' : 'GitHub'} Sign-In
+                </h3>
+                <span class="text-[9px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold block">
+                  Developer Mode Test Clearance
+                </span>
+              </div>
             </div>
             <button
               type="button"
               on:click={() => (oauthProvider = null)}
-              class="text-neutral-500 hover:text-black dark:hover:text-white cursor-pointer"
+              class="text-neutral-500 hover:text-black dark:hover:text-white cursor-pointer p-1"
             >
               ✕
             </button>
           </div>
 
           <p class="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            {oauthProvider === 'google'
-              ? 'Enter your Google email to authenticate or link your logician account:'
-              : 'Enter your GitHub username to authenticate or link your logician account:'}
+            Fast 1-click test authentication for local development and preview environments without requiring OAuth API credentials.
           </p>
 
           <div>
             <label for="oauth-input" class="block text-[10px] uppercase font-bold text-neutral-500 mb-1">
-              {oauthProvider === 'google' ? 'Google Email' : 'GitHub Username'}
+              {oauthProvider === 'google' ? 'Test Google Email / Handle' : 'Test GitHub Username'}
             </label>
             <input
               id="oauth-input"
@@ -748,7 +858,7 @@
             <button
               type="button"
               on:click={() => (oauthProvider = null)}
-              class="flex-1 h-9 border border-neutral-300 dark:border-neutral-700 text-xs uppercase font-bold cursor-pointer hover:border-neutral-900 dark:hover:border-white"
+              class="flex-1 h-10 border border-neutral-300 dark:border-neutral-700 text-xs uppercase font-bold cursor-pointer hover:border-neutral-900 dark:hover:border-white"
             >
               Cancel
             </button>
@@ -756,9 +866,9 @@
               type="button"
               disabled={oauthLoading || !oauthEmailOrUser.trim()}
               on:click={handleOAuthExecute}
-              class="flex-1 h-9 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs uppercase font-bold tracking-wider cursor-pointer hover:opacity-90 disabled:opacity-40"
+              class="flex-[2] h-10 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs uppercase font-bold tracking-wider cursor-pointer hover:opacity-90 disabled:opacity-40"
             >
-              {oauthLoading ? 'Verifying...' : `Continue with ${oauthProvider === 'google' ? 'Google' : 'GitHub'}`}
+              {oauthLoading ? 'Authenticating...' : `Sign In with ${oauthProvider === 'google' ? 'Google' : 'GitHub'}`}
             </button>
           </div>
         </div>

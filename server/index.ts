@@ -56,7 +56,7 @@ app.use((_req, res, next) => {
   res.setHeader('X-DNS-Prefetch-Control', 'off');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'none'; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://accounts.google.com/gsi/; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com https://accounts.google.com/gsi/;"
   );
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
@@ -64,31 +64,45 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Restricted CORS whitelist
-const TRUSTED_ORIGINS = new Set([
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:5174',
-]);
-if (process.env.APP_URL) TRUSTED_ORIGINS.add(process.env.APP_URL);
-if (process.env.VERCEL_URL) TRUSTED_ORIGINS.add(`https://${process.env.VERCEL_URL}`);
+// Resilient CORS configuration
+function isAllowedOrigin(origin: string | undefined, hostHeader: string | undefined): boolean {
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    // Allow same-origin (Host matches Origin)
+    if (hostHeader && (url.host === hostHeader || url.hostname === hostHeader.split(':')[0])) {
+      return true;
+    }
+    // Allow local development
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      return true;
+    }
+    // Allow all Vercel deployments (*.vercel.app)
+    if (url.hostname.endsWith('.vercel.app')) {
+      return true;
+    }
+    // Allow configured custom domain
+    if (process.env.APP_URL && origin === process.env.APP_URL) {
+      return true;
+    }
+    if (process.env.VERCEL_URL && url.host === process.env.VERCEL_URL) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
 
-app.use(
+app.use((req, res, next) => {
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (
-        TRUSTED_ORIGINS.has(origin) ||
-        (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:'))
-      ) {
+      if (isAllowedOrigin(origin, req.headers.host)) {
         return callback(null, true);
       }
-      return callback(new Error('Cross-Origin Request Blocked by CORS policy: Origin not authorized.'));
+      return callback(null, false);
     },
     credentials: true,
-  })
-);
+  })(req, res, next);
+});
 
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
@@ -680,6 +694,15 @@ app.post('/api/user/report', (req: AuthenticatedRequest, res) => {
   }
 });
 
+// Public OAuth configuration endpoint
+app.get('/api/auth/oauth/config', (_req, res) => {
+  res.json({
+    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+    githubClientId: process.env.GITHUB_CLIENT_ID || null,
+    devMode: Boolean(process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEV_OAUTH),
+  });
+});
+
 // OAuth Handlers (Google & GitHub) with Real Server-side Verification
 app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
   const { idToken, credential, email: clientEmail, name: clientName } = req.body;
@@ -706,11 +729,12 @@ app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
       return res.status(502).json({ error: 'Failed to reach Google token verification service.' });
     }
   } else {
-    // In production, reject unverified OAuth calls without a cryptographic token
+    // In production without ALLOW_DEV_OAUTH, reject unverified OAuth calls
     if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_OAUTH) {
-      return res.status(400).json({ error: 'Google idToken/credential is required in production environment.' });
+      return res.status(400).json({ error: 'Google credential token is required in production environment.' });
     }
-    verifiedGoogleId = req.body.googleId || `goog_${crypto.randomBytes(6).toString('hex')}`;
+    const safeSeed = verifiedEmail ? verifiedEmail.toLowerCase().replace(/[^a-z0-9]/g, '_') : crypto.randomBytes(4).toString('hex');
+    verifiedGoogleId = req.body.googleId || `goog_${safeSeed}`;
   }
 
   try {
@@ -732,7 +756,19 @@ app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
     if (existing) {
       const token = jwt.sign({ id: existing.id, username: existing.username }, JWT_SECRET, { expiresIn: '30d' });
       setAuthCookie(res, token);
-      return res.json({ success: true, token, user: { id: existing.id, username: existing.username, hasPassword: Boolean(existing.has_password ?? 1) } });
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: existing.id,
+          username: existing.username,
+          avatarColor: existing.avatar_color || '#2563EB',
+          avatarIcon: existing.avatar_icon || '⊢',
+          streakCount: existing.streak_count || 0,
+          bestStreak: existing.best_streak || 0,
+          hasPassword: Boolean(existing.has_password ?? 1),
+        }
+      });
     }
 
     // Auto-create user from Google (requires password to be attached later)
@@ -745,12 +781,27 @@ app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
 
     const id = crypto.randomUUID();
     const tempHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
-    db.prepare('INSERT INTO users (id, username, email, password_hash, google_id, has_password) VALUES (?, ?, ?, ?, ?, 0)')
-      .run(id, finalUsername, verifiedEmail || null, tempHash, verifiedGoogleId);
+    const colors = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
+    const avatarColor = colors[Math.floor(Math.random() * colors.length)];
+
+    db.prepare('INSERT INTO users (id, username, email, password_hash, avatar_color, google_id, has_password) VALUES (?, ?, ?, ?, ?, ?, 0)')
+      .run(id, finalUsername, verifiedEmail || null, tempHash, avatarColor, verifiedGoogleId);
 
     const token = jwt.sign({ id, username: finalUsername }, JWT_SECRET, { expiresIn: '30d' });
     setAuthCookie(res, token);
-    res.json({ success: true, token, user: { id, username: finalUsername, hasPassword: false } });
+    res.json({
+      success: true,
+      token,
+      user: {
+        id,
+        username: finalUsername,
+        avatarColor,
+        avatarIcon: '⊢',
+        streakCount: 0,
+        bestStreak: 0,
+        hasPassword: false
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ error: 'Google authentication error.' });
   }
@@ -794,11 +845,12 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
       return res.status(502).json({ error: 'Failed to communicate with GitHub OAuth service.' });
     }
   } else {
-    // In production, reject unverified OAuth calls without authorization code
+    // In production without ALLOW_DEV_OAUTH, reject unverified OAuth calls without authorization code
     if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_OAUTH) {
       return res.status(400).json({ error: 'GitHub authorization code is required in production.' });
     }
-    verifiedGithubId = req.body.githubId || `gh_${crypto.randomBytes(6).toString('hex')}`;
+    const safeSeed = verifiedUsername ? verifiedUsername.toLowerCase().replace(/[^a-z0-9]/g, '_') : crypto.randomBytes(4).toString('hex');
+    verifiedGithubId = req.body.githubId || `gh_${safeSeed}`;
   }
 
   try {
@@ -812,7 +864,19 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
     if (existing) {
       const token = jwt.sign({ id: existing.id, username: existing.username }, JWT_SECRET, { expiresIn: '30d' });
       setAuthCookie(res, token);
-      return res.json({ success: true, token, user: { id: existing.id, username: existing.username, hasPassword: Boolean(existing.has_password ?? 1) } });
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: existing.id,
+          username: existing.username,
+          avatarColor: existing.avatar_color || '#2563EB',
+          avatarIcon: existing.avatar_icon || '⊢',
+          streakCount: existing.streak_count || 0,
+          bestStreak: existing.best_streak || 0,
+          hasPassword: Boolean(existing.has_password ?? 1),
+        }
+      });
     }
 
     // Auto-create from GitHub (requires password to be attached later)
@@ -825,12 +889,27 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
 
     const id = crypto.randomUUID();
     const tempHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
-    db.prepare('INSERT INTO users (id, username, password_hash, github_id, has_password) VALUES (?, ?, ?, ?, 0)')
-      .run(id, finalUsername, tempHash, verifiedGithubId);
+    const colors = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
+    const avatarColor = colors[Math.floor(Math.random() * colors.length)];
+
+    db.prepare('INSERT INTO users (id, username, password_hash, avatar_color, github_id, has_password) VALUES (?, ?, ?, ?, ?, 0)')
+      .run(id, finalUsername, tempHash, avatarColor, verifiedGithubId);
 
     const token = jwt.sign({ id, username: finalUsername }, JWT_SECRET, { expiresIn: '30d' });
     setAuthCookie(res, token);
-    res.json({ success: true, token, user: { id, username: finalUsername, hasPassword: false } });
+    res.json({
+      success: true,
+      token,
+      user: {
+        id,
+        username: finalUsername,
+        avatarColor,
+        avatarIcon: '⊢',
+        streakCount: 0,
+        bestStreak: 0,
+        hasPassword: false
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ error: 'GitHub authentication error.' });
   }

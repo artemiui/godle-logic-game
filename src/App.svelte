@@ -48,8 +48,32 @@
       document.documentElement.classList.remove('dark');
     }
 
-    // Check URL parameters for direct mode switch or landing
+    // Check for GitHub OAuth callback code
     const params = new URLSearchParams(window.location.search);
+    const githubCode = params.get('code');
+    if (githubCode) {
+      fetch('/api/auth/oauth/github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: githubCode }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.token && data.user) {
+            authStore.setUser(data.user, data.token);
+            authStore.checkAuth();
+            showLanding = false;
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          params.delete('code');
+          const newQuery = params.toString();
+          const newUrl = window.location.pathname + (newQuery ? `?${newQuery}` : '');
+          window.history.replaceState({}, '', newUrl);
+        });
+    }
+
     const mode = params.get('mode');
     if (mode === 'frenzy') {
       activeTabStore.set('frenzy');
