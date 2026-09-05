@@ -17,6 +17,9 @@ import { promisify } from 'node:util';
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'goodle-super-secret-key-copi-19-rules';
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  WARNING: JWT_SECRET is not set. Using insecure default. Set JWT_SECRET env var in production!');
+}
 
 // Seed starter community theorems if table is empty
 try {
@@ -48,12 +51,12 @@ app.disable('x-powered-by');
 app.use((_req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-XSS-Protection', '0');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-DNS-Prefetch-Control', 'off');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/ https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://www.google.com/recaptcha/; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'none'; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com;"
   );
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
@@ -147,7 +150,16 @@ app.use('/api/auth/register', authRateLimiter);
 app.use('/api/auth/reset-password', authRateLimiter);
 app.use('/api/auth/attach-password', authRateLimiter);
 app.use('/api/auth/oauth', authRateLimiter);
+app.use('/api/auth/change-password', authRateLimiter);
+app.use('/api/auth/update-profile', authRateLimiter);
+app.use('/api/user/report', authRateLimiter);
+app.use('/api/user/reset-stats', authRateLimiter);
+app.use('/api/user/delete-account', authRateLimiter);
 app.use('/api/logic/assess', logicRateLimiter);
+app.use('/api/logic/validate-step', logicRateLimiter);
+app.use('/api/logic/hint', logicRateLimiter);
+app.use('/api/community/theorems', logicRateLimiter);
+app.use('/api/puzzles/share', logicRateLimiter);
 
 // Cookie helper with secure flag in production
 function setAuthCookie(res: express.Response, token: string) {
@@ -214,6 +226,9 @@ app.post('/api/auth/register', async (req, res) => {
 
   if (username.trim().length < 3) {
     return res.status(400).json({ error: 'Username must be at least 3 characters.' });
+  }
+  if (username.trim().length > 32) {
+    return res.status(400).json({ error: 'Username must be at most 32 characters.' });
   }
   if (password.length < 6) {
     return res.status(400).json({ error: 'Password must be at least 6 characters.' });
@@ -383,7 +398,7 @@ app.post('/api/auth/verify-captcha', async (req, res) => {
   const secretKey = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
 
   try {
-    if (token === 'dev-bypass' || token === 'test-clearance') {
+    if (process.env.NODE_ENV !== 'production' && (token === 'dev-bypass' || token === 'test-clearance')) {
       return res.json({ success: true });
     }
 
@@ -414,7 +429,7 @@ app.post('/api/auth/verify-captcha', async (req, res) => {
     }
   } catch (err: any) {
     console.warn('reCAPTCHA siteverify exception:', err.message);
-    res.json({ success: true, warning: 'Bypassed due to network reachability' });
+    res.status(502).json({ success: false, error: 'Unable to verify captcha. Please try again later.' });
   }
 });
 
@@ -455,6 +470,14 @@ app.post('/api/auth/attach-password', async (req: AuthenticatedRequest, res) => 
   }
 
   try {
+    const user = db.prepare('SELECT has_password FROM users WHERE id = ?').get(req.user.id) as any;
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    if (user.has_password) {
+      return res.status(403).json({ error: 'This account already has a password. Use the change-password endpoint instead.' });
+    }
+
     const newHash = await hashPassword(newPassword);
     db.prepare('UPDATE users SET password_hash = ?, has_password = 1 WHERE id = ?').run(newHash, req.user.id);
     res.json({ success: true, message: 'Password attached successfully. You can now sign in using your username and password.' });
@@ -508,6 +531,9 @@ app.post('/api/auth/update-profile', (req: AuthenticatedRequest, res) => {
       const trimmed = username.trim();
       if (trimmed.length < 3) {
         return res.status(400).json({ error: 'Username must be at least 3 characters.' });
+      }
+      if (trimmed.length > 32) {
+        return res.status(400).json({ error: 'Username must be at most 32 characters.' });
       }
       const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(trimmed, req.user.id);
       if (existing) {
@@ -813,10 +839,34 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
 app.post('/api/auth/oauth/disconnect', (req: AuthenticatedRequest, res) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized.' });
   const { provider } = req.body;
+
+  if (provider !== 'google' && provider !== 'github') {
+    return res.status(400).json({ error: 'Invalid provider. Must be "google" or "github".' });
+  }
+
   try {
+    // Safety check: ensure user retains at least one auth method after disconnecting
+    const user = db.prepare('SELECT has_password, google_id, github_id FROM users WHERE id = ?').get(req.user.id) as any;
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const hasPassword = Boolean(user.has_password);
+    const hasGoogle = Boolean(user.google_id);
+    const hasGithub = Boolean(user.github_id);
+
+    // Count remaining auth methods after disconnection
+    let remaining = (hasPassword ? 1 : 0)
+      + (provider === 'google' ? 0 : (hasGoogle ? 1 : 0))
+      + (provider === 'github' ? 0 : (hasGithub ? 1 : 0));
+
+    if (remaining === 0) {
+      return res.status(400).json({
+        error: 'Cannot disconnect your only sign-in method. Attach a password or connect another provider first.'
+      });
+    }
+
     if (provider === 'google') {
       db.prepare('UPDATE users SET google_id = NULL WHERE id = ?').run(req.user.id);
-    } else if (provider === 'github') {
+    } else {
       db.prepare('UPDATE users SET github_id = NULL WHERE id = ?').run(req.user.id);
     }
     res.json({ success: true, message: `Disconnected ${provider} account.` });
@@ -1107,7 +1157,10 @@ app.get('/api/frenzy/generate', (req, res) => {
 app.post('/api/frenzy/submit', (req: AuthenticatedRequest, res) => {
   const { seed, heartsLeft, score, timeSeconds, won, playerName } = req.body;
   const userId = req.user?.id || null;
-  const name = req.user?.username || playerName || 'Anonymous Logician';
+  // Authenticated users always use their real username; guests get a sanitized name
+  const name = req.user?.username
+    || (typeof playerName === 'string' ? playerName.trim().slice(0, 32) : '')
+    || 'Anonymous Logician';
 
   try {
     const id = crypto.randomUUID();
@@ -1192,7 +1245,7 @@ app.post('/api/community/theorems', (req: AuthenticatedRequest, res) => {
     }
 
     const id = crypto.randomUUID();
-    const creator = req.user?.username || req.body.creatorUsername || 'Anonymous Logician';
+    const creator = req.user?.username || 'Anonymous Logician';
     const diff = difficulty || 'medium';
 
     db.prepare(`
