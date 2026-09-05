@@ -19,7 +19,6 @@ export interface User {
   leaderboardStanding?: string;
   activityMap?: Record<string, number>;
   optOutLeaderboard?: boolean;
-  googleConnected?: boolean;
   githubConnected?: boolean;
   hasPassword?: boolean;
   createdAt?: string;

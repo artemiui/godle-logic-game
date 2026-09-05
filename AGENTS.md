@@ -259,8 +259,6 @@ Ensure the problem is solvable: test with `solveProblem(premises, conclusion)` f
   in production (not the hardcoded fallback).
 - [ ] **Token expiry**: Verify 30-day expiry is appropriate for your threat model.
 - [ ] **Auth middleware coverage**: Verify all protected endpoints check `req.user` presence.
-- [ ] **OAuth token verification**: Verify Google ID tokens are validated server-side via
-  `oauth2.googleapis.com/tokeninfo` with audience check.
 - [ ] **GitHub code exchange**: Verify authorization codes are exchanged server-side with
   valid `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
 - [ ] **Password reset**: Verify email matching is enforced before permitting resets.
@@ -510,7 +508,7 @@ Manual verification checklist for UI changes:
 - [ ] Environment variables configured in Vercel dashboard
 - [ ] `JWT_SECRET` is NOT the default fallback
 - [ ] `RECAPTCHA_SECRET_KEY` is NOT the Google test key
-- [ ] OAuth credentials (`GOOGLE_CLIENT_ID`, `GITHUB_*`) are set
+- [ ] OAuth credentials (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`) are set
 
 ### 8.2 Git Workflow
 
@@ -632,7 +630,7 @@ When migrating from SQLite to PostgreSQL/Turso:
 ### 10.2 Security Incident
 
 1. **Rotate `JWT_SECRET`** immediately — this invalidates all active sessions.
-2. **Rotate OAuth credentials** if compromised (`GOOGLE_CLIENT_ID`, `GITHUB_CLIENT_*`).
+2. **Rotate OAuth credentials** if compromised (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`).
 3. **Rotate `RECAPTCHA_SECRET_KEY`** if bot traffic is detected.
 4. **Audit `profile_reports` table** for abuse reports.
 5. **Review rate limiter logs** for unusual IP patterns.

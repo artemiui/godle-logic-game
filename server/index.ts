@@ -11,6 +11,7 @@ import { solveProblem, getProofHint } from '../src/logic/solver';
 import { generateProblem, encodeProblemToShareCode, decodeProblemFromShareCode } from '../src/logic/generator';
 import { getDailyProblem, COPI_PRESET_PROBLEMS, COMMUNITY_DEFAULT_PROBLEMS } from '../src/logic/presets';
 import { parseFormula } from '../src/logic/parser';
+import { generateCaptcha, verifyCaptcha } from './captcha';
 
 import { promisify } from 'node:util';
 
@@ -68,7 +69,7 @@ app.use((_req, res, next) => {
   res.setHeader('X-DNS-Prefetch-Control', 'off');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://accounts.google.com/gsi/; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com https://accounts.google.com/gsi/;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://www.google.com; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com;"
   );
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
@@ -267,10 +268,26 @@ app.use(authMiddleware as any);
 // AUTH ROUTES
 // -------------------------------------------------------------
 
+// Cryptographic Visual Captcha Generation Endpoint
+app.get('/api/auth/captcha', (_req, res) => {
+  try {
+    const challenge = generateCaptcha(JWT_SECRET);
+    res.json(challenge);
+  } catch {
+    res.status(500).json({ error: 'Failed to generate captcha challenge.' });
+  }
+});
+
 app.post('/api/auth/register', async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, password, email, captchaToken, captchaAnswer } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required.' });
+  }
+
+  // Security Captcha Verification - No developer skips
+  const captchaResult = verifyCaptcha(captchaToken, captchaAnswer, JWT_SECRET);
+  if (!captchaResult.valid) {
+    return res.status(400).json({ error: captchaResult.error || 'Captcha verification failed.' });
   }
 
   if (username.trim().length < 3) {
@@ -316,9 +333,15 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, captchaToken, captchaAnswer } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required.' });
+  }
+
+  // Security Captcha Verification - No developer skips
+  const captchaResult = verifyCaptcha(captchaToken, captchaAnswer, JWT_SECRET);
+  if (!captchaResult.valid) {
+    return res.status(400).json({ error: captchaResult.error || 'Captcha verification failed.' });
   }
 
   try {
@@ -362,7 +385,7 @@ app.get('/api/auth/me', async (req: AuthenticatedRequest, res) => {
   }
 
   try {
-    const user = (await db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, has_password, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id)) as any;
+    const user = (await db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, github_id, has_password, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id)) as any;
     if (!user) {
       return res.json({ user: null });
     }
@@ -413,7 +436,6 @@ app.get('/api/auth/me', async (req: AuthenticatedRequest, res) => {
         avatarIcon: user.avatar_icon || '⊢',
         avatarImage: user.avatar_image || '',
         optOutLeaderboard: Boolean(user.opt_out_leaderboard),
-        googleConnected: Boolean(user.google_id),
         githubConnected: Boolean(user.github_id),
         hasPassword: Boolean(user.has_password ?? 1),
         streakCount: user.streak_count || 0,
@@ -433,49 +455,14 @@ app.get('/api/auth/me', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-// Google reCAPTCHA Verification Endpoint
+// Captcha Verification Endpoint (Strict - No developer skips)
 app.post('/api/auth/verify-captcha', async (req, res) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ success: false, error: 'Captcha token is required.' });
+  const { token, answer } = req.body;
+  const result = verifyCaptcha(token, answer, JWT_SECRET);
+  if (!result.valid) {
+    return res.status(400).json({ success: false, error: result.error || 'Captcha validation failed.' });
   }
-
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
-
-  try {
-    if (process.env.NODE_ENV !== 'production' && (token === 'dev-bypass' || token === 'test-clearance')) {
-      return res.json({ success: true });
-    }
-
-    const params = new URLSearchParams({
-      secret: secretKey,
-      response: token,
-      remoteip: (req.ip || '').replace(/^::ffff:/, '')
-    });
-
-    const googleRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString()
-    });
-
-    const data = await googleRes.json() as any;
-    if (data.success) {
-      return res.json({ success: true });
-    } else {
-      if (secretKey === '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe') {
-        return res.json({ success: true, note: 'Approved via reCAPTCHA test keys' });
-      }
-      return res.status(400).json({
-        success: false,
-        error: 'reCAPTCHA validation failed. Please try again.',
-        codes: data['error-codes']
-      });
-    }
-  } catch (err: any) {
-    console.warn('reCAPTCHA siteverify exception:', err.message);
-    res.status(502).json({ success: false, error: 'Unable to verify captcha. Please try again later.' });
-  }
+  return res.json({ success: true });
 });
 
 app.post('/api/auth/change-password', async (req: AuthenticatedRequest, res) => {
@@ -531,12 +518,19 @@ app.post('/api/auth/attach-password', async (req: AuthenticatedRequest, res) => 
   }
 });
 
-// Password Reset System for login menu (Patched: Requires registered recovery email)
+// Password Reset System for login menu (Patched: Requires registered recovery email & captcha)
 app.post('/api/auth/reset-password', async (req, res) => {
-  const { username, email, newPassword } = req.body;
+  const { username, email, newPassword, captchaToken, captchaAnswer } = req.body;
   if (!username || !newPassword) {
     return res.status(400).json({ error: 'Username and new password are required.' });
   }
+
+  // Security Captcha Verification - No developer skips
+  const captchaResult = verifyCaptcha(captchaToken, captchaAnswer, JWT_SECRET);
+  if (!captchaResult.valid) {
+    return res.status(400).json({ error: captchaResult.error || 'Captcha verification failed.' });
+  }
+
   if (newPassword.length < 6) {
     return res.status(400).json({ error: 'New password must be at least 6 characters.' });
   }
@@ -610,7 +604,7 @@ app.post('/api/auth/update-profile', async (req: AuthenticatedRequest, res) => {
       await db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email || null, req.user.id);
     }
 
-    const updated = await db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id) as any;
+    const updated = await db.prepare('SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, github_id, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?').get(req.user.id) as any;
     const token = jwt.sign({ id: updated.id, username: updated.username }, JWT_SECRET, { expiresIn: '30d' });
     setAuthCookie(res, token);
 
@@ -627,7 +621,6 @@ app.post('/api/auth/update-profile', async (req: AuthenticatedRequest, res) => {
         avatarIcon: updated.avatar_icon,
         avatarImage: updated.avatar_image || '',
         optOutLeaderboard: Boolean(updated.opt_out_leaderboard),
-        googleConnected: Boolean(updated.google_id),
         githubConnected: Boolean(updated.github_id),
         streakCount: updated.streak_count,
         bestStreak: updated.best_streak,
@@ -728,116 +721,12 @@ app.post('/api/user/report', async (req: AuthenticatedRequest, res) => {
 // Public OAuth configuration endpoint
 app.get('/api/auth/oauth/config', async (_req, res) => {
   res.json({
-    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
     githubClientId: process.env.GITHUB_CLIENT_ID || null,
     devMode: Boolean(process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEV_OAUTH),
   });
 });
 
-// OAuth Handlers (Google & GitHub) with Real Server-side Verification
-app.post('/api/auth/oauth/google', async (req: AuthenticatedRequest, res) => {
-  const { idToken, credential, email: clientEmail, name: clientName } = req.body;
-  const tokenToVerify = idToken || credential;
-  let verifiedEmail = clientEmail;
-  let verifiedName = clientName;
-  let verifiedGoogleId: string | null = null;
-
-  // Real Google OAuth Server-side Verification
-  if (tokenToVerify) {
-    try {
-      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenToVerify)}`);
-      if (!googleRes.ok) {
-        return res.status(401).json({ error: 'Invalid Google authentication token.' });
-      }
-      const tokenInfo = await googleRes.json() as any;
-      if (process.env.GOOGLE_CLIENT_ID && tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
-        return res.status(401).json({ error: 'Google token audience mismatch.' });
-      }
-      verifiedEmail = tokenInfo.email;
-      verifiedName = tokenInfo.name || tokenInfo.email?.split('@')[0];
-      verifiedGoogleId = tokenInfo.sub;
-    } catch {
-      return res.status(502).json({ error: 'Failed to reach Google token verification service.' });
-    }
-  } else {
-    // In production without ALLOW_DEV_OAUTH, reject unverified OAuth calls
-    if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_OAUTH) {
-      return res.status(400).json({ error: 'Google credential token is required in production environment.' });
-    }
-    const safeSeed = verifiedEmail ? verifiedEmail.toLowerCase().replace(/[^a-z0-9]/g, '_') : crypto.randomBytes(4).toString('hex');
-    verifiedGoogleId = req.body.googleId || `goog_${safeSeed}`;
-  }
-
-  try {
-    if (req.user) {
-      // Link Google to existing user
-      await db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(verifiedGoogleId, req.user.id);
-      return res.json({ success: true, message: 'Google account linked successfully.' });
-    }
-
-    // Sign in or register via Google
-    let existing = await db.prepare('SELECT * FROM users WHERE google_id = ?').get(verifiedGoogleId) as any;
-    if (!existing && verifiedEmail) {
-      existing = await db.prepare('SELECT * FROM users WHERE email = ?').get(verifiedEmail) as any;
-      if (existing) {
-        await db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(verifiedGoogleId, existing.id);
-      }
-    }
-
-    if (existing) {
-      const token = jwt.sign({ id: existing.id, username: existing.username }, JWT_SECRET, { expiresIn: '30d' });
-      setAuthCookie(res, token);
-      return res.json({
-        success: true,
-        token,
-        user: {
-          id: existing.id,
-          username: existing.username,
-          avatarColor: existing.avatar_color || '#2563EB',
-          avatarIcon: existing.avatar_icon || '⊢',
-          streakCount: existing.streak_count || 0,
-          bestStreak: existing.best_streak || 0,
-          hasPassword: Boolean(existing.has_password ?? 1),
-        }
-      });
-    }
-
-    // Auto-create user from Google (requires password to be attached later)
-    const baseUsername = (verifiedName || verifiedEmail?.split('@')[0] || 'google_logician').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16);
-    let finalUsername = baseUsername;
-    let counter = 1;
-    while (await db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
-      finalUsername = `${baseUsername}_${counter++}`;
-    }
-
-    const id = crypto.randomUUID();
-    const tempHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
-    const colors = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
-    const avatarColor = colors[Math.floor(Math.random() * colors.length)];
-
-    await db.prepare('INSERT INTO users (id, username, email, password_hash, avatar_color, google_id, has_password) VALUES (?, ?, ?, ?, ?, ?, 0)')
-      .run(id, finalUsername, verifiedEmail || null, tempHash, avatarColor, verifiedGoogleId);
-
-    const token = jwt.sign({ id, username: finalUsername }, JWT_SECRET, { expiresIn: '30d' });
-    setAuthCookie(res, token);
-    res.json({
-      success: true,
-      token,
-      user: {
-        id,
-        username: finalUsername,
-        avatarColor,
-        avatarIcon: '⊢',
-        streakCount: 0,
-        bestStreak: 0,
-        hasPassword: false
-      }
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Google authentication error.' });
-  }
-});
-
+// OAuth Handler (GitHub) with Real Server-side Verification
 app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
   const { code, githubUsername: clientUsername } = req.body;
   let verifiedUsername = clientUsername;
@@ -950,36 +839,30 @@ app.post('/api/auth/oauth/disconnect', async (req: AuthenticatedRequest, res) =>
   if (!req.user) return res.status(401).json({ error: 'Unauthorized.' });
   const { provider } = req.body;
 
-  if (provider !== 'google' && provider !== 'github') {
-    return res.status(400).json({ error: 'Invalid provider. Must be "google" or "github".' });
+  if (provider !== 'github') {
+    return res.status(400).json({ error: 'Invalid provider. Must be "github".' });
   }
 
   try {
     // Safety check: ensure user retains at least one auth method after disconnecting
-    const user = await db.prepare('SELECT has_password, google_id, github_id FROM users WHERE id = ?').get(req.user.id) as any;
+    const user = await db.prepare('SELECT has_password, github_id FROM users WHERE id = ?').get(req.user.id) as any;
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
     const hasPassword = Boolean(user.has_password);
-    const hasGoogle = Boolean(user.google_id);
     const hasGithub = Boolean(user.github_id);
 
-    // Count remaining auth methods after disconnection
-    let remaining = (hasPassword ? 1 : 0)
-      + (provider === 'google' ? 0 : (hasGoogle ? 1 : 0))
-      + (provider === 'github' ? 0 : (hasGithub ? 1 : 0));
+    if (!hasGithub) {
+      return res.status(400).json({ error: 'GitHub account is not linked.' });
+    }
 
-    if (remaining === 0) {
+    if (!hasPassword) {
       return res.status(400).json({
-        error: 'Cannot disconnect your only sign-in method. Attach a password or connect another provider first.'
+        error: 'Cannot disconnect your only sign-in method. Attach a password first.'
       });
     }
 
-    if (provider === 'google') {
-      await db.prepare('UPDATE users SET google_id = NULL WHERE id = ?').run(req.user.id);
-    } else {
-      await db.prepare('UPDATE users SET github_id = NULL WHERE id = ?').run(req.user.id);
-    }
-    res.json({ success: true, message: `Disconnected ${provider} account.` });
+    await db.prepare('UPDATE users SET github_id = NULL WHERE id = ?').run(req.user.id);
+    res.json({ success: true, message: 'Disconnected GitHub account.' });
   } catch {
     res.status(500).json({ error: 'Failed to disconnect account.' });
   }

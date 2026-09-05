@@ -293,7 +293,7 @@
   }
 
   // Settings: OAuth Connect / Disconnect
-  async function handleOAuthToggle(provider: 'google' | 'github', currentlyConnected: boolean) {
+  async function handleOAuthToggle(provider: 'github', currentlyConnected: boolean) {
     oauthMessage = '';
     oauthError = '';
     isConnectingOAuth = true;
@@ -312,23 +312,20 @@
         });
         const data = await res.json();
         if (res.ok) {
-          oauthMessage = data.message || `Disconnected ${provider}.`;
+          oauthMessage = data.message || 'Disconnected GitHub account.';
           await authStore.checkAuth();
         } else {
-          oauthError = data.error || `Failed to disconnect ${provider}.`;
+          oauthError = data.error || 'Failed to disconnect GitHub account.';
         }
       } else {
-        // Connect / Link
-        const endpoint = provider === 'google' ? '/api/auth/oauth/google' : '/api/auth/oauth/github';
-        const res = await fetch(endpoint, {
+        // Connect / Link GitHub
+        const res = await fetch('/api/auth/oauth/github', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: 'Bearer ' + token,
           },
           body: JSON.stringify({
-            email: $authStore.user?.email || `${$authStore.user?.username}@oauth.mock`,
-            name: $authStore.user?.username,
             githubUsername: $authStore.user?.username,
           }),
         });
@@ -574,7 +571,7 @@
           <div class="p-3 border border-amber-400/80 bg-amber-50/40 dark:bg-amber-950/20 flex items-center justify-between text-xs font-sans">
             <div>
               <div class="font-bold text-amber-800 dark:text-amber-300">⚠ No master password attached</div>
-              <div class="text-[10px] text-neutral-500 dark:text-neutral-400">Attach a password to allow signing in without Google/GitHub.</div>
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400">Attach a password to allow signing in without GitHub.</div>
             </div>
             <button
               type="button"
@@ -942,13 +939,13 @@
             </button>
           </form>
 
-          <!-- Section 3: Connected Accounts (Google / GitHub) -->
+          <!-- Section 3: Connected Accounts (GitHub OAuth) -->
           <div class="p-4 border border-neutral-200 dark:border-neutral-800 bg-neutral-50/40 dark:bg-neutral-900/30 space-y-3">
             <div class="font-bold uppercase tracking-wider text-[11px] text-neutral-950 dark:text-neutral-50">
               Connected Accounts (OAuth)
             </div>
             <p class="text-[11px] text-neutral-600 dark:text-neutral-400">
-              Link third-party identities for instant authentication.
+              Link your GitHub identity for instant authentication.
             </p>
 
             {#if oauthMessage}
@@ -963,33 +960,6 @@
             {/if}
 
             <div class="space-y-2">
-              <!-- Google Account -->
-              <div class="flex items-center justify-between p-2.5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
-                    G
-                  </div>
-                  <div>
-                    <div class="font-bold text-xs">Google</div>
-                    <div class="text-[10px] text-neutral-400">
-                      {$authStore.user.googleConnected ? 'Connected' : 'Not linked'}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isConnectingOAuth}
-                  on:click={() => handleOAuthToggle('google', Boolean($authStore.user?.googleConnected))}
-                  class="px-2.5 py-1 border text-[10px] uppercase font-bold tracking-wider cursor-pointer transition-colors {
-                    $authStore.user.googleConnected
-                      ? 'border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-rose-500 hover:text-rose-600'
-                      : 'border-neutral-900 dark:border-white bg-neutral-950 dark:bg-white text-white dark:text-neutral-950'
-                  }"
-                >
-                  {$authStore.user.googleConnected ? 'Disconnect' : 'Connect'}
-                </button>
-              </div>
 
               <!-- GitHub Account -->
               <div class="flex items-center justify-between p-2.5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">

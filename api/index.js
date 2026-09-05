@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import crypto from "node:crypto";
+import crypto2 from "node:crypto";
 import jwt from "jsonwebtoken";
 import path2 from "node:path";
 import fs2 from "node:fs";
@@ -1856,6 +1856,127 @@ function getDailyProblem(dateStr, difficulty) {
   };
 }
 
+// server/captcha.ts
+import crypto from "node:crypto";
+var CAPTCHA_CHARS = "2345679ACDEFGHJKLMNPQRSTUVWXYZ";
+var CAPTCHA_LENGTH = 5;
+var CAPTCHA_EXPIRY_MS = 10 * 60 * 1e3;
+var usedNonces = /* @__PURE__ */ new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, exp] of usedNonces.entries()) {
+    if (now > exp) {
+      usedNonces.delete(id);
+    }
+  }
+}, 5 * 60 * 1e3).unref();
+function generateCaptcha(jwtSecret) {
+  let code = "";
+  for (let i = 0; i < CAPTCHA_LENGTH; i++) {
+    const idx = crypto.randomInt(0, CAPTCHA_CHARS.length);
+    code += CAPTCHA_CHARS[idx];
+  }
+  const id = crypto.randomUUID();
+  const exp = Date.now() + CAPTCHA_EXPIRY_MS;
+  const answerHash = crypto.createHmac("sha256", jwtSecret).update(code.toUpperCase()).digest("hex");
+  const payload = JSON.stringify({ id, answerHash, exp });
+  const payloadB64 = Buffer.from(payload).toString("base64url");
+  const signature = crypto.createHmac("sha256", jwtSecret).update(payloadB64).digest("base64url");
+  const token = `${payloadB64}.${signature}`;
+  const width = 160;
+  const height = 46;
+  const textElements = [];
+  const charColors = ["#0f172a", "#1e293b", "#334155", "#1e1b4b", "#022c22", "#3b0764"];
+  for (let i = 0; i < code.length; i++) {
+    const char = code[i];
+    const x = 16 + i * 28 + crypto.randomInt(-2, 3);
+    const y = 30 + crypto.randomInt(-3, 4);
+    const angle = crypto.randomInt(-20, 21);
+    const fontSize = crypto.randomInt(22, 27);
+    const color = charColors[crypto.randomInt(0, charColors.length)];
+    const fontFamily = i % 2 === 0 ? "Courier New, monospace" : "Georgia, serif";
+    textElements.push(
+      `<text x="${x}" y="${y}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="bold" fill="${color}" transform="rotate(${angle} ${x} ${y})">${char}</text>`
+    );
+  }
+  const lines = [];
+  const lineColors = ["#94a3b8", "#64748b", "#cbd5e1", "#a855f7", "#3b82f6"];
+  for (let i = 0; i < 3; i++) {
+    const yStart = crypto.randomInt(10, height - 10);
+    const cp1x = crypto.randomInt(30, 70);
+    const cp1y = crypto.randomInt(5, height - 5);
+    const cp2x = crypto.randomInt(90, 130);
+    const cp2y = crypto.randomInt(5, height - 5);
+    const yEnd = crypto.randomInt(10, height - 10);
+    const stroke = lineColors[crypto.randomInt(0, lineColors.length)];
+    const strokeWidth = (crypto.randomInt(14, 24) / 10).toFixed(1);
+    lines.push(
+      `<path d="M 0 ${yStart} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${width} ${yEnd}" stroke="${stroke}" stroke-width="${strokeWidth}" fill="none" opacity="0.65" />`
+    );
+  }
+  const dots = [];
+  for (let i = 0; i < 25; i++) {
+    const cx = crypto.randomInt(2, width - 2);
+    const cy = crypto.randomInt(2, height - 2);
+    const r = (crypto.randomInt(8, 22) / 10).toFixed(1);
+    const dotColor = lineColors[crypto.randomInt(0, lineColors.length)];
+    dots.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${dotColor}" opacity="0.4" />`);
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="select-none pointer-events-none">
+    <rect width="100%" height="100%" fill="#F8FAFC" rx="4" />
+    <rect width="100%" height="100%" fill="none" stroke="#E2E8F0" stroke-width="1" rx="4" />
+    ${dots.join("\n    ")}
+    ${lines.join("\n    ")}
+    ${textElements.join("\n    ")}
+  </svg>`.trim();
+  return { token, svg };
+}
+function verifyCaptcha(token, userAnswer, jwtSecret) {
+  if (!token || typeof token !== "string") {
+    return { valid: false, error: "Captcha token is missing. Please refresh and try again." };
+  }
+  if (!userAnswer || typeof userAnswer !== "string" || !userAnswer.trim()) {
+    return { valid: false, error: "Please enter the security captcha code." };
+  }
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return { valid: false, error: "Invalid captcha format." };
+  }
+  const [payloadB64, signature] = parts;
+  const expectedSignature = crypto.createHmac("sha256", jwtSecret).update(payloadB64).digest("base64url");
+  try {
+    const sigBuf = Buffer.from(signature, "utf8");
+    const expectedSigBuf = Buffer.from(expectedSignature, "utf8");
+    if (sigBuf.length !== expectedSigBuf.length || !crypto.timingSafeEqual(sigBuf, expectedSigBuf)) {
+      return { valid: false, error: "Captcha signature verification failed." };
+    }
+  } catch {
+    return { valid: false, error: "Captcha signature verification failed." };
+  }
+  let payload;
+  try {
+    const jsonStr = Buffer.from(payloadB64, "base64url").toString("utf8");
+    payload = JSON.parse(jsonStr);
+  } catch {
+    return { valid: false, error: "Malformed captcha payload." };
+  }
+  if (Date.now() > payload.exp) {
+    return { valid: false, error: "Captcha has expired. Please refresh the captcha code." };
+  }
+  if (usedNonces.has(payload.id)) {
+    return { valid: false, error: "Captcha has already been used. Please solve a new challenge." };
+  }
+  usedNonces.set(payload.id, payload.exp);
+  const normalizedUserAnswer = userAnswer.trim().toUpperCase();
+  const userAnswerHash = crypto.createHmac("sha256", jwtSecret).update(normalizedUserAnswer).digest("hex");
+  const answerBuf = Buffer.from(userAnswerHash, "utf8");
+  const expectedAnswerBuf = Buffer.from(payload.answerHash, "utf8");
+  if (answerBuf.length !== expectedAnswerBuf.length || !crypto.timingSafeEqual(answerBuf, expectedAnswerBuf)) {
+    return { valid: false, error: "Incorrect captcha code. Please try again." };
+  }
+  return { valid: true };
+}
+
 // server/index.ts
 import { promisify } from "node:util";
 var app = express();
@@ -1908,7 +2029,7 @@ app.use((_req, res, next) => {
   res.setHeader("X-DNS-Prefetch-Control", "off");
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://accounts.google.com/gsi/; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com https://accounts.google.com/gsi/;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://www.google.com; img-src 'self' data: blob: https:; connect-src 'self' https://www.google.com https://api.github.com;"
   );
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
@@ -2018,9 +2139,9 @@ function setAuthCookie(res, token) {
     maxAge: 30 * 24 * 60 * 60 * 1e3
   });
 }
-var scryptAsync = promisify(crypto.scrypt);
+var scryptAsync = promisify(crypto2.scrypt);
 async function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString("hex");
+  const salt = crypto2.randomBytes(16).toString("hex");
   const derivedKey = await scryptAsync(password, salt, 64);
   return `${salt}:${derivedKey.toString("hex")}`;
 }
@@ -2029,7 +2150,7 @@ async function verifyPassword(password, combined) {
   if (!salt || !key) return false;
   const keyBuffer = Buffer.from(key, "hex");
   const derivedKey = await scryptAsync(password, salt, 64);
-  return crypto.timingSafeEqual(keyBuffer, derivedKey);
+  return crypto2.timingSafeEqual(keyBuffer, derivedKey);
 }
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -2066,10 +2187,22 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 app.use(authMiddleware);
+app.get("/api/auth/captcha", (_req, res) => {
+  try {
+    const challenge = generateCaptcha(JWT_SECRET);
+    res.json(challenge);
+  } catch {
+    res.status(500).json({ error: "Failed to generate captcha challenge." });
+  }
+});
 app.post("/api/auth/register", async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, password, email, captchaToken, captchaAnswer } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required." });
+  }
+  const captchaResult = verifyCaptcha(captchaToken, captchaAnswer, JWT_SECRET);
+  if (!captchaResult.valid) {
+    return res.status(400).json({ error: captchaResult.error || "Captcha verification failed." });
   }
   if (username.trim().length < 3) {
     return res.status(400).json({ error: "Username must be at least 3 characters." });
@@ -2081,7 +2214,7 @@ app.post("/api/auth/register", async (req, res) => {
     return res.status(400).json({ error: "Password must be at least 6 characters." });
   }
   try {
-    const id = crypto.randomUUID();
+    const id = crypto2.randomUUID();
     const passwordHash = await hashPassword(password);
     const colors = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#DB2777"];
     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
@@ -2109,9 +2242,13 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 app.post("/api/auth/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, captchaToken, captchaAnswer } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required." });
+  }
+  const captchaResult = verifyCaptcha(captchaToken, captchaAnswer, JWT_SECRET);
+  if (!captchaResult.valid) {
+    return res.status(400).json({ error: captchaResult.error || "Captcha verification failed." });
   }
   try {
     const user = await db.prepare("SELECT * FROM users WHERE username = ?").get(username.trim());
@@ -2148,7 +2285,7 @@ app.get("/api/auth/me", async (req, res) => {
     return res.json({ user: null });
   }
   try {
-    const user = await db.prepare("SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, has_password, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?").get(req.user.id);
+    const user = await db.prepare("SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, github_id, has_password, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?").get(req.user.id);
     if (!user) {
       return res.json({ user: null });
     }
@@ -2190,7 +2327,6 @@ app.get("/api/auth/me", async (req, res) => {
         avatarIcon: user.avatar_icon || "\u22A2",
         avatarImage: user.avatar_image || "",
         optOutLeaderboard: Boolean(user.opt_out_leaderboard),
-        googleConnected: Boolean(user.google_id),
         githubConnected: Boolean(user.github_id),
         hasPassword: Boolean(user.has_password ?? 1),
         streakCount: user.streak_count || 0,
@@ -2210,42 +2346,12 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 app.post("/api/auth/verify-captcha", async (req, res) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ success: false, error: "Captcha token is required." });
+  const { token, answer } = req.body;
+  const result = verifyCaptcha(token, answer, JWT_SECRET);
+  if (!result.valid) {
+    return res.status(400).json({ success: false, error: result.error || "Captcha validation failed." });
   }
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY || "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
-  try {
-    if (process.env.NODE_ENV !== "production" && (token === "dev-bypass" || token === "test-clearance")) {
-      return res.json({ success: true });
-    }
-    const params = new URLSearchParams({
-      secret: secretKey,
-      response: token,
-      remoteip: (req.ip || "").replace(/^::ffff:/, "")
-    });
-    const googleRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString()
-    });
-    const data = await googleRes.json();
-    if (data.success) {
-      return res.json({ success: true });
-    } else {
-      if (secretKey === "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe") {
-        return res.json({ success: true, note: "Approved via reCAPTCHA test keys" });
-      }
-      return res.status(400).json({
-        success: false,
-        error: "reCAPTCHA validation failed. Please try again.",
-        codes: data["error-codes"]
-      });
-    }
-  } catch (err) {
-    console.warn("reCAPTCHA siteverify exception:", err.message);
-    res.status(502).json({ success: false, error: "Unable to verify captcha. Please try again later." });
-  }
+  return res.json({ success: true });
 });
 app.post("/api/auth/change-password", async (req, res) => {
   if (!req.user) {
@@ -2294,9 +2400,13 @@ app.post("/api/auth/attach-password", async (req, res) => {
   }
 });
 app.post("/api/auth/reset-password", async (req, res) => {
-  const { username, email, newPassword } = req.body;
+  const { username, email, newPassword, captchaToken, captchaAnswer } = req.body;
   if (!username || !newPassword) {
     return res.status(400).json({ error: "Username and new password are required." });
+  }
+  const captchaResult = verifyCaptcha(captchaToken, captchaAnswer, JWT_SECRET);
+  if (!captchaResult.valid) {
+    return res.status(400).json({ error: captchaResult.error || "Captcha verification failed." });
   }
   if (newPassword.length < 6) {
     return res.status(400).json({ error: "New password must be at least 6 characters." });
@@ -2363,7 +2473,7 @@ app.post("/api/auth/update-profile", async (req, res) => {
     if (email !== void 0) {
       await db.prepare("UPDATE users SET email = ? WHERE id = ?").run(email || null, req.user.id);
     }
-    const updated = await db.prepare("SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, google_id, github_id, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?").get(req.user.id);
+    const updated = await db.prepare("SELECT id, username, email, bio, avatar_color, avatar_icon, avatar_image, opt_out_leaderboard, github_id, streak_count, best_streak, last_played_date, created_at FROM users WHERE id = ?").get(req.user.id);
     const token = jwt.sign({ id: updated.id, username: updated.username }, JWT_SECRET, { expiresIn: "30d" });
     setAuthCookie(res, token);
     res.json({
@@ -2379,7 +2489,6 @@ app.post("/api/auth/update-profile", async (req, res) => {
         avatarIcon: updated.avatar_icon,
         avatarImage: updated.avatar_image || "",
         optOutLeaderboard: Boolean(updated.opt_out_leaderboard),
-        googleConnected: Boolean(updated.google_id),
         githubConnected: Boolean(updated.github_id),
         streakCount: updated.streak_count,
         bestStreak: updated.best_streak,
@@ -2454,7 +2563,7 @@ app.post("/api/user/report", async (req, res) => {
     return res.status(400).json({ error: "Reported username and reason are required." });
   }
   try {
-    const reportId = crypto.randomUUID();
+    const reportId = crypto2.randomUUID();
     const reporterId = req.user?.id || "anonymous";
     await db.prepare(`
       INSERT INTO profile_reports (id, reporter_user_id, reported_username, reason, details)
@@ -2467,98 +2576,9 @@ app.post("/api/user/report", async (req, res) => {
 });
 app.get("/api/auth/oauth/config", async (_req, res) => {
   res.json({
-    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
     githubClientId: process.env.GITHUB_CLIENT_ID || null,
     devMode: Boolean(process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_OAUTH)
   });
-});
-app.post("/api/auth/oauth/google", async (req, res) => {
-  const { idToken, credential, email: clientEmail, name: clientName } = req.body;
-  const tokenToVerify = idToken || credential;
-  let verifiedEmail = clientEmail;
-  let verifiedName = clientName;
-  let verifiedGoogleId = null;
-  if (tokenToVerify) {
-    try {
-      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenToVerify)}`);
-      if (!googleRes.ok) {
-        return res.status(401).json({ error: "Invalid Google authentication token." });
-      }
-      const tokenInfo = await googleRes.json();
-      if (process.env.GOOGLE_CLIENT_ID && tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
-        return res.status(401).json({ error: "Google token audience mismatch." });
-      }
-      verifiedEmail = tokenInfo.email;
-      verifiedName = tokenInfo.name || tokenInfo.email?.split("@")[0];
-      verifiedGoogleId = tokenInfo.sub;
-    } catch {
-      return res.status(502).json({ error: "Failed to reach Google token verification service." });
-    }
-  } else {
-    if (process.env.NODE_ENV === "production" && !process.env.ALLOW_DEV_OAUTH) {
-      return res.status(400).json({ error: "Google credential token is required in production environment." });
-    }
-    const safeSeed = verifiedEmail ? verifiedEmail.toLowerCase().replace(/[^a-z0-9]/g, "_") : crypto.randomBytes(4).toString("hex");
-    verifiedGoogleId = req.body.googleId || `goog_${safeSeed}`;
-  }
-  try {
-    if (req.user) {
-      await db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(verifiedGoogleId, req.user.id);
-      return res.json({ success: true, message: "Google account linked successfully." });
-    }
-    let existing = await db.prepare("SELECT * FROM users WHERE google_id = ?").get(verifiedGoogleId);
-    if (!existing && verifiedEmail) {
-      existing = await db.prepare("SELECT * FROM users WHERE email = ?").get(verifiedEmail);
-      if (existing) {
-        await db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(verifiedGoogleId, existing.id);
-      }
-    }
-    if (existing) {
-      const token2 = jwt.sign({ id: existing.id, username: existing.username }, JWT_SECRET, { expiresIn: "30d" });
-      setAuthCookie(res, token2);
-      return res.json({
-        success: true,
-        token: token2,
-        user: {
-          id: existing.id,
-          username: existing.username,
-          avatarColor: existing.avatar_color || "#2563EB",
-          avatarIcon: existing.avatar_icon || "\u22A2",
-          streakCount: existing.streak_count || 0,
-          bestStreak: existing.best_streak || 0,
-          hasPassword: Boolean(existing.has_password ?? 1)
-        }
-      });
-    }
-    const baseUsername = (verifiedName || verifiedEmail?.split("@")[0] || "google_logician").toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 16);
-    let finalUsername = baseUsername;
-    let counter = 1;
-    while (await db.prepare("SELECT id FROM users WHERE username = ?").get(finalUsername)) {
-      finalUsername = `${baseUsername}_${counter++}`;
-    }
-    const id = crypto.randomUUID();
-    const tempHash = await hashPassword(crypto.randomBytes(16).toString("hex"));
-    const colors = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#DB2777"];
-    const avatarColor = colors[Math.floor(Math.random() * colors.length)];
-    await db.prepare("INSERT INTO users (id, username, email, password_hash, avatar_color, google_id, has_password) VALUES (?, ?, ?, ?, ?, ?, 0)").run(id, finalUsername, verifiedEmail || null, tempHash, avatarColor, verifiedGoogleId);
-    const token = jwt.sign({ id, username: finalUsername }, JWT_SECRET, { expiresIn: "30d" });
-    setAuthCookie(res, token);
-    res.json({
-      success: true,
-      token,
-      user: {
-        id,
-        username: finalUsername,
-        avatarColor,
-        avatarIcon: "\u22A2",
-        streakCount: 0,
-        bestStreak: 0,
-        hasPassword: false
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Google authentication error." });
-  }
 });
 app.post("/api/auth/oauth/github", async (req, res) => {
   const { code, githubUsername: clientUsername } = req.body;
@@ -2598,7 +2618,7 @@ app.post("/api/auth/oauth/github", async (req, res) => {
     if (process.env.NODE_ENV === "production" && !process.env.ALLOW_DEV_OAUTH) {
       return res.status(400).json({ error: "GitHub authorization code is required in production." });
     }
-    const safeSeed = verifiedUsername ? verifiedUsername.toLowerCase().replace(/[^a-z0-9]/g, "_") : crypto.randomBytes(4).toString("hex");
+    const safeSeed = verifiedUsername ? verifiedUsername.toLowerCase().replace(/[^a-z0-9]/g, "_") : crypto2.randomBytes(4).toString("hex");
     verifiedGithubId = req.body.githubId || `gh_${safeSeed}`;
   }
   try {
@@ -2630,8 +2650,8 @@ app.post("/api/auth/oauth/github", async (req, res) => {
     while (await db.prepare("SELECT id FROM users WHERE username = ?").get(finalUsername)) {
       finalUsername = `${baseUsername}_${counter++}`;
     }
-    const id = crypto.randomUUID();
-    const tempHash = await hashPassword(crypto.randomBytes(16).toString("hex"));
+    const id = crypto2.randomUUID();
+    const tempHash = await hashPassword(crypto2.randomBytes(16).toString("hex"));
     const colors = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#DB2777"];
     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
     await db.prepare("INSERT INTO users (id, username, password_hash, avatar_color, github_id, has_password) VALUES (?, ?, ?, ?, ?, 0)").run(id, finalUsername, tempHash, avatarColor, verifiedGithubId);
@@ -2657,27 +2677,24 @@ app.post("/api/auth/oauth/github", async (req, res) => {
 app.post("/api/auth/oauth/disconnect", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Unauthorized." });
   const { provider } = req.body;
-  if (provider !== "google" && provider !== "github") {
-    return res.status(400).json({ error: 'Invalid provider. Must be "google" or "github".' });
+  if (provider !== "github") {
+    return res.status(400).json({ error: 'Invalid provider. Must be "github".' });
   }
   try {
-    const user = await db.prepare("SELECT has_password, google_id, github_id FROM users WHERE id = ?").get(req.user.id);
+    const user = await db.prepare("SELECT has_password, github_id FROM users WHERE id = ?").get(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found." });
     const hasPassword = Boolean(user.has_password);
-    const hasGoogle = Boolean(user.google_id);
     const hasGithub = Boolean(user.github_id);
-    let remaining = (hasPassword ? 1 : 0) + (provider === "google" ? 0 : hasGoogle ? 1 : 0) + (provider === "github" ? 0 : hasGithub ? 1 : 0);
-    if (remaining === 0) {
+    if (!hasGithub) {
+      return res.status(400).json({ error: "GitHub account is not linked." });
+    }
+    if (!hasPassword) {
       return res.status(400).json({
-        error: "Cannot disconnect your only sign-in method. Attach a password or connect another provider first."
+        error: "Cannot disconnect your only sign-in method. Attach a password first."
       });
     }
-    if (provider === "google") {
-      await db.prepare("UPDATE users SET google_id = NULL WHERE id = ?").run(req.user.id);
-    } else {
-      await db.prepare("UPDATE users SET github_id = NULL WHERE id = ?").run(req.user.id);
-    }
-    res.json({ success: true, message: `Disconnected ${provider} account.` });
+    await db.prepare("UPDATE users SET github_id = NULL WHERE id = ?").run(req.user.id);
+    res.json({ success: true, message: "Disconnected GitHub account." });
   } catch {
     res.status(500).json({ error: "Failed to disconnect account." });
   }
@@ -2770,7 +2787,7 @@ app.post("/api/user/saved-proofs", async (req, res) => {
     return res.status(400).json({ error: "Title, premises, and conclusion are required." });
   }
   try {
-    const id = crypto.randomUUID();
+    const id = crypto2.randomUUID();
     await db.prepare(`
       INSERT INTO user_saved_proofs (id, user_id, title, difficulty, premises_json, conclusion_json, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -2875,7 +2892,7 @@ app.post("/api/wordle/submit", async (req, res) => {
   const userId = req.user?.id;
   try {
     if (userId) {
-      const id = crypto.randomUUID();
+      const id = crypto2.randomUUID();
       await db.prepare(`
         INSERT INTO wordle_completions (id, user_id, date, difficulty, step_count, duration_seconds)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -2914,7 +2931,7 @@ app.post("/api/frenzy/submit", async (req, res) => {
   const userId = req.user?.id || null;
   const name = req.user?.username || (typeof playerName === "string" ? playerName.trim().slice(0, 32) : "") || "Anonymous Logician";
   try {
-    const id = crypto.randomUUID();
+    const id = crypto2.randomUUID();
     await db.prepare(`
       INSERT INTO frenzy_records (id, user_id, player_name, seed, hearts_left, score, time_seconds, won)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -2982,7 +2999,7 @@ app.post("/api/community/theorems", async (req, res) => {
         error: "Theorem cannot be proven valid under Copi's 19 rules. Only logically valid, provable theorems can be accepted into the Community Library."
       });
     }
-    const id = crypto.randomUUID();
+    const id = crypto2.randomUUID();
     const creator = req.user?.username || "Anonymous Logician";
     const diff = difficulty || "medium";
     await db.prepare(`
@@ -3012,9 +3029,9 @@ app.post("/api/community/theorems", async (req, res) => {
 app.post("/api/puzzles/share", async (req, res) => {
   const { title, difficulty, premises, conclusion } = req.body;
   const creator = req.user?.username || "Logician";
-  const shareCode = `goodle-${crypto.randomBytes(4).toString("hex")}`;
+  const shareCode = `goodle-${crypto2.randomBytes(4).toString("hex")}`;
   try {
-    const id = crypto.randomUUID();
+    const id = crypto2.randomUUID();
     await db.prepare(`
       INSERT INTO shared_puzzles (id, share_code, title, difficulty, premises_json, conclusion_json, creator_username)
       VALUES (?, ?, ?, ?, ?, ?, ?)

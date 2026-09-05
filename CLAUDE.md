@@ -102,7 +102,7 @@
 - **Server**: Express.js 4 with TypeScript (run via `tsx`)
 - **Database**: Native `node:sqlite` (`DatabaseSync` in Node.js 22+) in WAL mode
 - **Auth**: Async scrypt password hashing + JWT (30-day tokens) via httpOnly cookies
-- **OAuth**: Server-side Google ID token verification + GitHub code exchange
+- **OAuth**: Server-side GitHub OAuth authorization code exchange
 - **Bot Protection**: Google reCAPTCHA v2 with server-side siteverify
 - **Security**: Custom security headers (CSP, HSTS, X-Frame-Options), CORS whitelist,
   sliding-window rate limiting, timing-safe password comparison
@@ -215,7 +215,6 @@ node -e "fetch('http://127.0.0.1:3001/api/wordle/today').then(r=>r.json()).then(
 | `DATABASE_DIR`        | Optional     | `<cwd>/data`                                       | Directory for SQLite DB file                       |
 | `DATABASE_PATH`       | Optional     | `<DATABASE_DIR>/goodle.db`                         | Exact path to SQLite file                          |
 | `RECAPTCHA_SECRET_KEY`| Optional     | Google public test key                             | reCAPTCHA server-side verification secret           |
-| `GOOGLE_CLIENT_ID`    | **Production** | —                                                | Validates `aud` claim in Google ID tokens          |
 | `GITHUB_CLIENT_ID`    | **Production** | —                                                | GitHub OAuth app client ID                         |
 | `GITHUB_CLIENT_SECRET`| **Production** | —                                                | GitHub OAuth app client secret                     |
 | `ALLOW_DEV_OAUTH`     | Optional     | —                                                  | Bypasses real OAuth verification (dev/testing only) |
@@ -339,9 +338,8 @@ All endpoints are defined in `server/index.ts`. Rate-limited routes are marked w
 | POST   | `/api/auth/attach-password` | Required | Attach password to OAuth-only accounts (sets `has_password=1`) |
 | POST   | `/api/auth/reset-password`  | Public   | Reset password (requires matching registered email on file)     |
 | POST   | `/api/auth/update-profile`  | Required | Update username, bio, avatar, email, leaderboard opt-out       |
-| POST   | `/api/auth/oauth/google`    | Optional | Google OAuth: verify ID token, link/create/login account        |
 | POST   | `/api/auth/oauth/github`    | Optional | GitHub OAuth: exchange code, link/create/login account          |
-| POST   | `/api/auth/oauth/disconnect`| Required | Unlink Google or GitHub provider                                |
+| POST   | `/api/auth/oauth/disconnect`| Required | Unlink GitHub provider                                          |
 
 ### User Management (`/api/user/*`)
 
@@ -405,15 +403,13 @@ All endpoints are defined in `server/index.ts`. Rate-limited routes are marked w
 3. **Client Storage**: Token also stored in `localStorage('goodle_token')` for SPA persistence.
    `authStore.checkAuth()` validates on app mount via `GET /api/auth/me`.
 
-### OAuth 2.0 Flows
-- **Google**: Client sends `idToken` → server verifies via `oauth2.googleapis.com/tokeninfo`
-  → validates `aud` matches `GOOGLE_CLIENT_ID` → links/creates/logs in user.
+### OAuth 2.0 Flow
 - **GitHub**: Client sends authorization `code` → server exchanges for access token via
   `github.com/login/oauth/access_token` → fetches profile from `api.github.com/user` →
   links/creates/logs in user.
 - **Password Attachment**: OAuth-only accounts (`has_password=0`) are prompted to attach a
   master password. Without it, they can only authenticate via their OAuth provider.
-- **Provider Disconnection**: Users can unlink Google/GitHub via `POST /api/auth/oauth/disconnect`.
+- **Provider Disconnection**: Users can unlink GitHub via `POST /api/auth/oauth/disconnect`.
 
 ### Password Reset
 - Requires the account to have a registered recovery email on file.
@@ -640,7 +636,7 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 ### Production Checklist
 1. Set `JWT_SECRET` to a cryptographically random string
 2. Set `RECAPTCHA_SECRET_KEY` to your production reCAPTCHA secret
-3. Set `GOOGLE_CLIENT_ID`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
+3. Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
 4. Set `APP_URL` to your production domain
 5. Set `NODE_ENV=production` for HSTS, secure cookies, strict OAuth
 6. Replace SQLite with a persistent database for Vercel (SQLite on `/tmp` is ephemeral)
