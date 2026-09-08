@@ -2,11 +2,14 @@
   import { createEventDispatcher } from 'svelte';
   import { themeStore, toggleTheme } from '../stores/theme';
   import type { ActiveTab } from '../stores/auth';
+  import { CHANGELOG } from '../data/changelog';
 
   const dispatch = createEventDispatcher<{
     enter: void;
     navigate: ActiveTab;
   }>();
+
+  let showAllChangelog: boolean = false;
 </script>
 
 <div class="fixed inset-0 z-50 bg-[#FAFAFA] dark:bg-[#0A0A0A] text-neutral-900 dark:text-neutral-100 overflow-y-auto overflow-x-hidden flex flex-col justify-between font-sans transition-colors duration-300 selection:bg-neutral-900 selection:text-white dark:selection:bg-white dark:selection:text-neutral-950">
@@ -235,6 +238,102 @@
         </div>
       </button>
 
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- CHRONOLOGICAL SYSTEM CHANGELOG -->
+    <!-- ================================================================= -->
+    <div class="w-full mt-16 sm:mt-24 pt-12 border-t border-neutral-200/80 dark:border-neutral-800/80">
+      <div class="mb-6">
+        <span class="font-sans font-medium text-[10px] tracking-widest uppercase text-neutral-400 dark:text-neutral-500 block mb-1">
+          System Updates
+        </span>
+        <h2 class="font-serif text-2xl sm:text-3xl font-medium text-neutral-950 dark:text-white">
+          Changelog
+        </h2>
+      </div>
+
+      <!-- Latest Version Card -->
+      {#if CHANGELOG.length > 0}
+        {@const latest = CHANGELOG[0]}
+        <div class="p-5 sm:p-6 rounded-xl border border-neutral-200/90 dark:border-neutral-800/90 bg-white/40 dark:bg-neutral-950/40 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-xs font-bold text-neutral-950 dark:text-white">
+                {latest.version}
+              </span>
+              <span class="text-[9px] font-sans px-2 py-0.5 rounded-full border border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-black font-semibold">
+                {latest.tag}
+              </span>
+            </div>
+            <span class="text-[11px] font-sans text-neutral-400">
+              {latest.date}
+            </span>
+          </div>
+
+          <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-900 dark:text-neutral-100">
+            {latest.title}
+          </h3>
+
+          <ul class="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400 pl-4 list-disc marker:text-neutral-400 leading-relaxed font-sans">
+            {#each latest.highlights as highlight}
+              <li>{highlight}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
+
+      <!-- Expandable Earlier Versions -->
+      {#if showAllChangelog}
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {#each CHANGELOG.slice(1) as entry}
+            <div class="p-5 rounded-xl border border-neutral-200/90 dark:border-neutral-800/90 bg-white/30 dark:bg-neutral-950/30 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs font-bold text-neutral-950 dark:text-white">
+                    {entry.version}
+                  </span>
+                  <span class="text-[9px] font-sans px-2 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-900">
+                    {entry.tag}
+                  </span>
+                </div>
+                <span class="text-[11px] font-sans text-neutral-400">
+                  {entry.date}
+                </span>
+              </div>
+
+              <h3 class="font-serif text-base font-medium text-neutral-900 dark:text-neutral-100">
+                {entry.title}
+              </h3>
+
+              <ul class="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400 pl-4 list-disc marker:text-neutral-400 leading-relaxed font-sans">
+                {#each entry.highlights as highlight}
+                  <li>{highlight}</li>
+                {/each}
+              </ul>
+            </div>
+          {/each}
+        </div>
+        <div class="mt-4 pt-1">
+          <button
+            type="button"
+            on:click={() => (showAllChangelog = false)}
+            class="text-xs font-sans text-neutral-500 hover:text-black dark:hover:text-white underline underline-offset-4 cursor-pointer transition-colors"
+          >
+            Show less ↑
+          </button>
+        </div>
+      {:else if CHANGELOG.length > 1}
+        <div class="mt-4 pt-1">
+          <button
+            type="button"
+            on:click={() => (showAllChangelog = true)}
+            class="text-xs font-sans text-neutral-500 hover:text-black dark:hover:text-white underline underline-offset-4 cursor-pointer transition-colors"
+          >
+            View more ({CHANGELOG.length - 1} earlier {CHANGELOG.length - 1 === 1 ? 'version' : 'versions'}) ↓
+          </button>
+        </div>
+      {/if}
     </div>
 
   </main>

@@ -109,17 +109,21 @@
 
   <!-- Main View Router -->
   <main class="flex-1">
-    {#if $activeTabStore === 'wordle'}
-      <WordleMode />
-    {:else if $activeTabStore === 'frenzy'}
-      <FrenzyMode />
-    {:else if $activeTabStore === 'sandbox'}
-      <SandboxMode />
-    {:else if $activeTabStore === 'tutorial'}
+    <div class={$activeTabStore === 'wordle' ? 'block' : 'hidden'}>
+      <WordleMode hibernated={$activeTabStore !== 'wordle'} />
+    </div>
+    <div class={$activeTabStore === 'frenzy' ? 'block' : 'hidden'}>
+      <FrenzyMode hibernated={$activeTabStore !== 'frenzy'} />
+    </div>
+    <div class={$activeTabStore === 'sandbox' ? 'block' : 'hidden'}>
+      <SandboxMode hibernated={$activeTabStore !== 'sandbox'} />
+    </div>
+    <div class={$activeTabStore === 'tutorial' ? 'block' : 'hidden'}>
       <TutorialView />
-    {:else if $activeTabStore === 'about'}
+    </div>
+    <div class={$activeTabStore === 'about' ? 'block' : 'hidden'}>
       <AboutView />
-    {/if}
+    </div>
   </main>
 
   <!-- Minimal Editorial Footer -->

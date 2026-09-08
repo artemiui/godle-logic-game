@@ -14,6 +14,8 @@
   import StepInput from './StepInput.svelte';
   import ShareModal from './ShareModal.svelte';
 
+  export let hibernated: boolean = false;
+
   let activeSubTab: 'library' | 'generator' | 'custom' = 'library';
   let libraryFilter: 'copi' | 'community' | 'saved' = 'copi';
   let communityTheorems: Problem[] = [];
@@ -942,6 +944,7 @@
     {steps}
     conclusion={problem.conclusion}
     isComplete={isWon}
+    {hibernated}
     on:undoStep={handleUndo}
     on:citeLine={handleCiteLine}
   />
@@ -951,6 +954,7 @@
     <StepInput
       bind:this={stepInputComponent}
       existingSteps={steps}
+      {hibernated}
       on:submitStep={handleAddStep}
     />
   {/if}

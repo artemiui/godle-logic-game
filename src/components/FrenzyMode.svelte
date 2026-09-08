@@ -23,12 +23,26 @@
   let errorMessage: string = '';
   let penaltyShake: boolean = false;
   let shareTextCopied: boolean = false;
+  export let hibernated: boolean = false;
 
   let timer: number = 0;
   let timerInterval: any = null;
   let score: number = 0;
 
   let stepInputComponent: any;
+
+  $: if (hibernated) {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  } else if (isPlaying && !isGameOver && !isWon && !timerInterval) {
+    timerInterval = setInterval(() => {
+      if (!isGameOver && !isWon) {
+        timer++;
+      }
+    }, 1000);
+  }
 
   function generateRandomSeed(): string {
     return `omega-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -362,6 +376,7 @@
       conclusion={problem.conclusion}
       isComplete={isWon}
       canUndo={false}
+      {hibernated}
       on:citeLine={handleCiteLine}
     />
 
@@ -370,6 +385,7 @@
       <StepInput
         bind:this={stepInputComponent}
         existingSteps={steps}
+        {hibernated}
         on:submitStep={handleAddStep}
       />
     {/if}

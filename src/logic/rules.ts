@@ -373,8 +373,8 @@ function isAssociationDirect(a: Formula, b: Formula): boolean {
   return false;
 }
 
-function isDistributionDirect(a: Formula, b: Formula): boolean {
-  // [P • (Q ∨ R)] <=> [(P • Q) ∨ (P • R)]
+function isDistOneWay(a: Formula, b: Formula): boolean {
+  // [P • (Q ∨ R)] => [(P • Q) ∨ (P • R)]
   if (a.type === 'and' && a.right.type === 'or' && b.type === 'or') {
     const p = a.left;
     const q = a.right.left;
@@ -390,12 +390,8 @@ function isDistributionDirect(a: Formula, b: Formula): boolean {
       }
     }
   }
-  // Reverse: [(P • Q) ∨ (P • R)] <=> [P • (Q ∨ R)]
-  if (b.type === 'and' && b.right.type === 'or' && a.type === 'or') {
-    return isDistributionDirect(b, a);
-  }
 
-  // [P ∨ (Q • R)] <=> [(P ∨ Q) • (P ∨ R)]
+  // [P ∨ (Q • R)] => [(P ∨ Q) • (P ∨ R)]
   if (a.type === 'or' && a.right.type === 'and' && b.type === 'and') {
     const p = a.left;
     const q = a.right.left;
@@ -411,13 +407,14 @@ function isDistributionDirect(a: Formula, b: Formula): boolean {
       }
     }
   }
-  // Reverse: [(P ∨ Q) • (P ∨ R)] <=> [P ∨ (Q • R)]
-  if (b.type === 'or' && b.right.type === 'and' && a.type === 'and') {
-    return isDistributionDirect(b, a);
-  }
 
   return false;
 }
+
+function isDistributionDirect(a: Formula, b: Formula): boolean {
+  return isDistOneWay(a, b) || isDistOneWay(b, a);
+}
+
 
 function isDoubleNegationDirect(a: Formula, b: Formula): boolean {
   // P <=> ~~P

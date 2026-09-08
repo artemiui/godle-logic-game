@@ -126,6 +126,8 @@ goodle/
 │   ├── db.ts                  # Database init, schema, migrations (node:sqlite)
 │   └── index.ts               # Express app: middleware, auth, all API routes (~1141 lines)
 ├── src/
+│   ├── data/
+│   │   └── changelog.ts       # Version changelog entries (shared single source of truth)
 │   ├── types/
 │   │   └── logic.ts           # Formula AST, RuleId, ProofStep, Problem, game state types
 │   ├── logic/
@@ -136,16 +138,17 @@ goodle/
 │   │   ├── checker.ts         # validateProofStep — step validation pipeline
 │   │   ├── solver.ts          # BFS proof search (solveProblem), hint generator (getProofHint)
 │   │   ├── generator.ts       # Seeded PRNG (Mulberry32), 15 problem templates, share encoding
-│   │   └── presets.ts         # 13 Copi textbook problems, getDailyProblem hash selector
+│   │   └── presets.ts         # 96 Copi textbook problems, getDailyProblem hash selector
 │   ├── components/
 │   │   ├── Header.svelte      # Navbar, tabs, notation switcher, user avatar & streak
-│   │   ├── LaTeX.svelte       # KaTeX reactive renderer with notation-aware fallback
-│   │   ├── ProofTable.svelte  # Formal 2-column proof table with clickable citations
-│   │   ├── StepInput.svelte   # Formula input, rule picker, citation chips, live preview
+│   │   ├── LaTeX.svelte       # KaTeX reactive renderer with notation-aware fallback & hibernation
+│   │   ├── ProofTable.svelte  # Formal 2-column proof table with clickable citations & hibernation
+│   │   ├── StepInput.svelte   # Formula input, rule picker, citation chips, live preview, rules guide
+│   │   ├── RulesReferenceModal.svelte # In-game 19 Copi rules reference drawer with search & 1-click select
 │   │   ├── SymbolKeyboard.svelte  # Virtual logic symbol keypad (notation-adaptive)
-│   │   ├── WordleMode.svelte  # Daily challenge (3 stages: easy/medium/hard)
-│   │   ├── FrenzyMode.svelte  # Survival mode (3 hearts, timer, seeded problems)
-│   │   ├── SandboxMode.svelte # Library browser, generator, custom problem creator
+│   │   ├── WordleMode.svelte  # Daily challenge (3 stages: easy/medium/hard) with state retention
+│   │   ├── FrenzyMode.svelte  # Survival mode (3 hearts, timer, seeded problems) with pause/resume
+│   │   ├── SandboxMode.svelte # Library browser, generator, custom problem creator with state retention
 │   │   ├── TutorialView.svelte    # Interactive 19-rule encyclopedia with practice sandbox
 │   │   ├── AuthModal.svelte       # Login, register, reset password, OAuth, attach password
 │   │   ├── ProfileModal.svelte    # Profile editor, activity heatmap, account settings, danger zone
@@ -154,8 +157,8 @@ goodle/
 │   │   ├── SettingsModal.svelte   # Theme toggle & notation selector with live preview
 │   │   ├── ShareModal.svelte      # Canvas proof card renderer, social sharing, clipboard
 │   │   ├── CaptchaGate.svelte     # reCAPTCHA gate with dev bypass fallback
-│   │   ├── LandingPage.svelte     # Minimalist Truth Trees landing page & interactive tableau
-│   │   └── AboutView.svelte       # About tab: Copi & UP Diliman PHILO 11 heritage, creator, repo
+│   │   ├── LandingPage.svelte     # Minimalist Truth Trees landing page, 4 feature cards, synced changelog
+│   │   └── AboutView.svelte       # About tab: Copi heritage, PHILO 12, creator, repo, synced changelog
 │   ├── stores/
 │   │   ├── auth.ts            # authStore (user, token, captcha), notationStore, activeTabStore
 │   │   └── theme.ts           # themeStore (light/dark), toggleTheme, isSettingsOpen
@@ -518,7 +521,7 @@ Tokenizer accepts all four notation systems simultaneously:
 - Share encoding: JSON → Base64 for shareable puzzle codes.
 
 ### Daily Problem Selector (`src/logic/presets.ts`)
-- 13 canonical Copi textbook problems across 3 difficulties.
+- 96 canonical Copi textbook problems across 3 difficulties (32 easy, 32 medium, 32 hard).
 - `getDailyProblem(dateStr, difficulty)`: Java-style polynomial hash of date string, modular
   index into difficulty-filtered preset set.
 
@@ -527,27 +530,31 @@ Tokenizer accepts all four notation systems simultaneously:
 ## 🧩 Component Architecture
 
 ### View Router (`App.svelte`)
-Declarative tab router: `$activeTabStore` switches between `WordleMode`, `FrenzyMode`,
-`SandboxMode`, `TutorialView`. Modals are rendered at the bottom of the DOM tree.
+Persistent tab containers: `$activeTabStore` switches between `WordleMode`, `FrenzyMode`,
+`SandboxMode`, `TutorialView`, and `AboutView` using hidden container toggling (`class:hidden={$activeTabStore !== '...'}`)
+and passing `hibernated={$activeTabStore !== '...'}` down to proof components. This guarantees
+solving progress, citations, input drafts, and timer state are completely preserved across tab switches,
+while KaTeX math rendering is hibernated in the background for zero rendering overhead.
 
 ### Game Mode Components
 
 | Component           | Purpose                                     | Key Features                                     |
 |---------------------|---------------------------------------------|--------------------------------------------------|
-| `WordleMode`        | Daily 3-stage challenge (easy→medium→hard) | Hint API, confetti, stage progression             |
-| `FrenzyMode`        | Survival mode (3 hearts, timer)             | Penalty shake, seeded problems, score submission  |
-| `SandboxMode`       | Library + generator + custom problems       | Solver assessment, proof saving, share codes      |
+| `WordleMode`        | Daily 3-stage challenge (easy→medium→hard) | Progress retention, KaTeX hibernation, hint API, stage progression |
+| `FrenzyMode`        | Survival mode (3 hearts, timer)             | Auto-pause on tab switch, penalty shake, seeded challenges |
+| `SandboxMode`       | Library + generator + custom problems       | Progress retention, solver assessment, theorem library |
 | `TutorialView`      | Interactive 19-rule encyclopedia            | Filterable rule list, practice sandbox per rule   |
-| `AboutView`         | Context, links, creator & philosophical roots | Heritage, UP Diliman PHILO 11, open source links |
+| `AboutView`         | Context, links, creator & philosophical roots | Heritage, UP Diliman PHILO 12, synced changelog   |
 
 ### Core Proof Components
 
-| Component         | Purpose                                       | Events                            |
-|-------------------|-----------------------------------------------|-----------------------------------|
-| `ProofTable`      | Formal proof display with clickable lines     | `citeLine`, `undoStep`            |
-| `StepInput`       | Formula input (keyword auto-conversion) + rule picker + citation chips | `submitStep` |
-| `SymbolKeyboard`  | Virtual keypad (notation-adaptive)            | `insert`, `backspace`, `clear`    |
-| `LaTeX`           | KaTeX renderer (formula or raw LaTeX string)  | —                                 |
+| Component              | Purpose                                       | Events                            |
+|------------------------|-----------------------------------------------|-----------------------------------|
+| `ProofTable`           | Formal proof display with clickable lines     | `citeLine`, `undoStep` (supports `hibernated`) |
+| `StepInput`            | Formula input (keyword auto-conversion) + rule picker + citation chips + Rules Guide trigger | `submitStep` (supports `hibernated`) |
+| `RulesReferenceModal`  | Copi's 19 rules in-game reference drawer with live search, formal schemas, and 1-click rule selection | `selectRule`, `close`             |
+| `SymbolKeyboard`       | Virtual keypad (notation-adaptive)            | `insert`, `backspace`, `clear`    |
+| `LaTeX`                | KaTeX renderer with dynamic notation & hibernation support | —                                 |
 
 ### Modal Components
 
@@ -559,8 +566,9 @@ Declarative tab router: `$activeTabStore` switches between `WordleMode`, `Frenzy
 | `StatsModal`          | Daily stats + frenzy leaderboard                     |
 | `SettingsModal`       | Theme toggle + notation selector with live preview   |
 | `ShareModal`          | Canvas proof card renderer + social sharing          |
+| `RulesReferenceModal` | In-game rules reference modal with search & 1-click select |
 | `CaptchaGate`         | reCAPTCHA overlay with dev bypass                    |
-| `LandingPage`         | Minimalist Truth Trees hero & interactive tableau    |
+| `LandingPage`         | Minimalist Truth Trees hero, 4 feature cards, synced changelog |
 
 ### Inter-Component Communication
 - **Event dispatching**: Components use `createEventDispatcher()` with typed payloads.

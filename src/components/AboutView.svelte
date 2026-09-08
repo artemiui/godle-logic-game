@@ -1,5 +1,8 @@
 <script lang="ts">
   import { activeTabStore } from '../stores/auth';
+  import { CHANGELOG } from '../data/changelog';
+
+  let showAllChangelog: boolean = false;
 </script>
 
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 text-neutral-900 dark:text-neutral-100 font-sans">
@@ -12,7 +15,7 @@
       </span>
       <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
       <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
-        v1.0
+        {CHANGELOG[0]?.version || 'v1.1.0'}
       </span>
     </div>
     <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-neutral-950 dark:text-white mb-4">
@@ -128,6 +131,89 @@
       </div>
     </section>
 
+    <!-- Section: Changelog & System History -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline border-b border-neutral-200/60 dark:border-neutral-800/60 pb-10">
+      <div class="md:col-span-4">
+        <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
+          Changelog
+        </h2>
+        <span class="text-xs font-sans text-neutral-500">System History & Releases</span>
+      </div>
+      <div class="md:col-span-8 space-y-6 text-sm">
+        {#if CHANGELOG.length > 0}
+          {@const latest = CHANGELOG[0]}
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <span class="font-mono text-xs font-bold text-neutral-950 dark:text-white">
+                {latest.version}
+              </span>
+              <span class="text-[10px] font-sans px-2 py-0.5 rounded-full border border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-black font-semibold">
+                {latest.tag}
+              </span>
+              <span class="text-xs font-sans text-neutral-500">
+                {latest.date}
+              </span>
+            </div>
+            <h3 class="font-serif text-base font-medium text-neutral-900 dark:text-neutral-100">
+              {latest.title}
+            </h3>
+            <ul class="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400 pl-4 list-disc marker:text-neutral-400 leading-relaxed">
+              {#each latest.highlights as highlight}
+                <li>{highlight}</li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+
+        {#if showAllChangelog}
+          <div class="space-y-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+            {#each CHANGELOG.slice(1) as entry}
+              <div class="space-y-2.5">
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <span class="font-mono text-xs font-bold text-neutral-950 dark:text-white">
+                    {entry.version}
+                  </span>
+                  <span class="text-[10px] font-sans px-2 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-900">
+                    {entry.tag}
+                  </span>
+                  <span class="text-xs font-sans text-neutral-500">
+                    {entry.date}
+                  </span>
+                </div>
+                <h3 class="font-serif text-base font-medium text-neutral-900 dark:text-neutral-100">
+                  {entry.title}
+                </h3>
+                <ul class="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400 pl-4 list-disc marker:text-neutral-400 leading-relaxed">
+                  {#each entry.highlights as highlight}
+                    <li>{highlight}</li>
+                  {/each}
+                </ul>
+              </div>
+            {/each}
+          </div>
+          <div class="pt-1">
+            <button
+              type="button"
+              on:click={() => (showAllChangelog = false)}
+              class="text-xs font-sans text-neutral-500 hover:text-black dark:hover:text-white underline underline-offset-4 cursor-pointer transition-colors"
+            >
+              Show less ↑
+            </button>
+          </div>
+        {:else if CHANGELOG.length > 1}
+          <div class="pt-1">
+            <button
+              type="button"
+              on:click={() => (showAllChangelog = true)}
+              class="text-xs font-sans text-neutral-500 hover:text-black dark:hover:text-white underline underline-offset-4 cursor-pointer transition-colors"
+            >
+              View more ({CHANGELOG.length - 1} earlier {CHANGELOG.length - 1 === 1 ? 'version' : 'versions'}) ↓
+            </button>
+          </div>
+        {/if}
+      </div>
+    </section>
+
     <!-- Section: Roadmap -->
     <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline pb-6">
       <div class="md:col-span-4">
@@ -138,18 +224,18 @@
       </div>
       <div class="md:col-span-8 space-y-5 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
-          gödle is evolving from an elementary propositional deduction sandbox into an expansive platform for formal philosophical and mathematical reasoning. With the <span class="font-sans font-medium text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">v1.0</span> release delivering persistent logician identities and cloud synchronization, our upcoming research and development cycles focus on expanding beyond standard sentential logic.
+          gödle is evolving from an elementary propositional deduction sandbox into an expansive platform for formal philosophical and mathematical reasoning. With the <span class="font-sans font-medium text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">{CHANGELOG[0]?.version || 'v1.1.0'}</span> release delivering textbook-verified canonical rotations and active solving tooling, our upcoming research and development cycles focus on expanding beyond standard sentential logic.
         </p>
 
         <div class="space-y-4">
-          <!-- Milestone 1: v1.0 Accounts -->
+          <!-- Milestone 1: Accounts & Persistence -->
           <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 space-y-2">
             <div class="flex items-center justify-between gap-2">
               <span class="font-sans text-xs font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
                 <span>Account System & Cloud Sync</span>
               </span>
               <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
-                v1.0 · Live & Active
+                Live & Active
               </span>
             </div>
             <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
@@ -164,7 +250,7 @@
                 <span>Expanding Beyond Propositional Logic</span>
               </span>
               <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800/40">
-                Post-v1.0 · Research & Design
+                Next Stage · Research & Design
               </span>
             </div>
             <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-2">

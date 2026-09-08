@@ -523,7 +523,7 @@ function isAssociationDirect(a, b) {
   }
   return false;
 }
-function isDistributionDirect(a, b) {
+function isDistOneWay(a, b) {
   if (a.type === "and" && a.right.type === "or" && b.type === "or") {
     const p = a.left;
     const q = a.right.left;
@@ -533,9 +533,6 @@ function isDistributionDirect(a, b) {
         return true;
       }
     }
-  }
-  if (b.type === "and" && b.right.type === "or" && a.type === "or") {
-    return isDistributionDirect(b, a);
   }
   if (a.type === "or" && a.right.type === "and" && b.type === "and") {
     const p = a.left;
@@ -547,10 +544,10 @@ function isDistributionDirect(a, b) {
       }
     }
   }
-  if (b.type === "or" && b.right.type === "and" && a.type === "and") {
-    return isDistributionDirect(b, a);
-  }
   return false;
+}
+function isDistributionDirect(a, b) {
+  return isDistOneWay(a, b) || isDistOneWay(b, a);
 }
 function isDoubleNegationDirect(a, b) {
   if (b.type === "not" && b.operand.type === "not") {
@@ -1687,6 +1684,309 @@ var COPI_PRESET_PROBLEMS = [
     ],
     conclusion: parseFormula("(A \u2022 B) \u2228 C")
   },
+  {
+    id: "copi-ex-6",
+    title: "Addition & Ponens to Conjunction",
+    description: "Use Addition to construct the antecedent, then simplify the compound consequent.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("(D \u2228 E) \u2283 (F \u2022 G)"),
+      parseFormula("D")
+    ],
+    conclusion: parseFormula("F")
+  },
+  {
+    id: "copi-ex-7",
+    title: "Nested Conditional Discharge",
+    description: "Extract the conjunct to unlock nested Modus Ponens.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("N \u2283 [(N \u2022 O) \u2283 P]"),
+      parseFormula("N \u2022 O")
+    ],
+    conclusion: parseFormula("P")
+  },
+  {
+    id: "copi-ex-8",
+    title: "Tollens Chaining",
+    description: "Combine Hypothetical Syllogism with Modus Tollens to derive the negated antecedent.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("Q \u2283 R"),
+      parseFormula("R \u2283 S"),
+      parseFormula("~S")
+    ],
+    conclusion: parseFormula("~Q")
+  },
+  {
+    id: "copi-ex-9",
+    title: "Self-Implication Resolution",
+    description: "Convert self-implication via Material Implication and Double Negation to deduce the atom.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("~A \u2283 A")
+    ],
+    conclusion: parseFormula("A")
+  },
+  {
+    id: "copi-ex-10",
+    title: "De Morgan Disjunction Negation",
+    description: "Apply De Morgan to a negated disjunction to derive the negated antecedent.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("T \u2283 U"),
+      parseFormula("~(U \u2228 V)")
+    ],
+    conclusion: parseFormula("~T")
+  },
+  {
+    id: "copi-ex-11",
+    title: "Commutative Ponens & Simplification",
+    description: "Commute disjunctive premises before applying Modus Ponens.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("(C \u2228 D) \u2283 (E \u2022 F)"),
+      parseFormula("D \u2228 C")
+    ],
+    conclusion: parseFormula("E")
+  },
+  {
+    id: "copi-ex-12",
+    title: "Conjunctive Antecedent Simplification",
+    description: "Simplify conjunction to extract the antecedent for Modus Ponens.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("D \u2283 E"),
+      parseFormula("D \u2022 F")
+    ],
+    conclusion: parseFormula("E")
+  },
+  {
+    id: "copi-ex-13",
+    title: "Conjunction to Disjunction",
+    description: "Conjoin premises and disjunctively introduce a conclusion variable.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("G"),
+      parseFormula("H")
+    ],
+    conclusion: parseFormula("(G \u2022 H) \u2228 I")
+  },
+  {
+    id: "copi-ex-14",
+    title: "Detached Consequent Addition",
+    description: "Detach the consequent via Modus Ponens, then augment it with Addition.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("J \u2283 K"),
+      parseFormula("J")
+    ],
+    conclusion: parseFormula("K \u2228 L")
+  },
+  {
+    id: "copi-ex-15",
+    title: "Negated Consequent Tollens",
+    description: "Double negate the affirmed premise to fulfill Modus Tollens.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("S \u2283 ~T"),
+      parseFormula("T")
+    ],
+    conclusion: parseFormula("~S")
+  },
+  {
+    id: "copi-ex-16",
+    title: "Compound Denial Elimination",
+    description: "Simplify the negated conjunct to perform Disjunctive Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("~V \u2022 ~W"),
+      parseFormula("V \u2228 X")
+    ],
+    conclusion: parseFormula("X")
+  },
+  {
+    id: "copi-ex-17",
+    title: "Premise-Consequent Conjunction",
+    description: "Infer the consequent via Modus Ponens and conjoin it with the antecedent.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("Y \u2283 Z"),
+      parseFormula("Y")
+    ],
+    conclusion: parseFormula("Y \u2022 Z")
+  },
+  {
+    id: "copi-ex-18",
+    title: "Absorption to Hypothetical Syllogism",
+    description: "Absorb the consequent into the conditional before chaining with Hypothetical Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("A \u2283 B"),
+      parseFormula("(A \u2022 B) \u2283 C")
+    ],
+    conclusion: parseFormula("A \u2283 C")
+  },
+  {
+    id: "copi-ex-19",
+    title: "Chained Conditional Simplification",
+    description: "Extract conditional conjunct and link with Hypothetical Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("D \u2283 E"),
+      parseFormula("(E \u2283 F) \u2022 (F \u2283 D)")
+    ],
+    conclusion: parseFormula("D \u2283 F")
+  },
+  {
+    id: "copi-ex-20",
+    title: "Selective Dilemma Branching",
+    description: "Simplify conditional conjunction and derive disjunctive outcome.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("(G \u2283 H) \u2022 (I \u2283 J)"),
+      parseFormula("G")
+    ],
+    conclusion: parseFormula("H \u2228 J")
+  },
+  {
+    id: "copi-ex-21",
+    title: "Absorbed Conjunction Refutation",
+    description: "Employ Absorption to align the consequent with a negated conjunction.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("~(K \u2022 L)"),
+      parseFormula("K \u2283 L")
+    ],
+    conclusion: parseFormula("~K")
+  },
+  {
+    id: "copi-ex-22",
+    title: "Disjunctive Antecedent Discharge",
+    description: "Build the disjunctive antecedent via Addition to execute Modus Ponens.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("(W \u2228 X) \u2283 Y"),
+      parseFormula("W")
+    ],
+    conclusion: parseFormula("Y")
+  },
+  {
+    id: "copi-ex-23",
+    title: "Conjunctive Implication Chaining",
+    description: "Absorb the conditional premise and resolve by Hypothetical Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("(Z \u2022 A) \u2283 (B \u2022 C)"),
+      parseFormula("Z \u2283 A")
+    ],
+    conclusion: parseFormula("Z \u2283 (B \u2022 C)")
+  },
+  {
+    id: "copi-ex-24",
+    title: "Higher-Order Implication Modus Ponens",
+    description: "Absorb conditional to unlock nested implication antecedent.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("D \u2283 E"),
+      parseFormula("[D \u2283 (D \u2022 E)] \u2283 (F \u2283 ~G)")
+    ],
+    conclusion: parseFormula("F \u2283 ~G")
+  },
+  {
+    id: "copi-ex-25",
+    title: "Disjunctive Conditional Bridge",
+    description: "Eliminate disjunctive premise and chain with Hypothetical Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("(E \u2022 F) \u2228 (G \u2283 H)"),
+      parseFormula("I \u2283 G"),
+      parseFormula("~(E \u2022 F)")
+    ],
+    conclusion: parseFormula("I \u2283 H")
+  },
+  {
+    id: "copi-ex-26",
+    title: "Cascading Disjunctive Syllogisms",
+    description: "Execute consecutive Disjunctive Syllogisms using Double Negation.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("J \u2228 K"),
+      parseFormula("~K \u2228 (L \u2283 J)"),
+      parseFormula("~J")
+    ],
+    conclusion: parseFormula("L \u2283 J")
+  },
+  {
+    id: "copi-ex-27",
+    title: "Triple Conditional Syllogism",
+    description: "Chain three implications successively using Hypothetical Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("Q \u2283 (R \u2228 S)"),
+      parseFormula("(T \u2022 U) \u2283 R"),
+      parseFormula("(R \u2228 S) \u2283 (T \u2022 U)")
+    ],
+    conclusion: parseFormula("Q \u2283 R")
+  },
+  {
+    id: "copi-ex-28",
+    title: "Elementary Denial Disjunction",
+    description: "Double negate the premise to discharge the disjunction via Disjunctive Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("~N \u2228 A"),
+      parseFormula("N")
+    ],
+    conclusion: parseFormula("A")
+  },
+  {
+    id: "copi-ex-29",
+    title: "Direct Alternative Elimination",
+    description: "Commute disjunction to eliminate the negated disjunct directly.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("C \u2228 V"),
+      parseFormula("~V")
+    ],
+    conclusion: parseFormula("C")
+  },
+  {
+    id: "copi-ex-30",
+    title: "Serial Modus Ponens",
+    description: "Chain two conditionals together and detach the final negated conclusion.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("F \u2283 R"),
+      parseFormula("R \u2283 ~E"),
+      parseFormula("F")
+    ],
+    conclusion: parseFormula("~E")
+  },
+  {
+    id: "copi-ex-31",
+    title: "Affirmation to Elimination",
+    description: "Detach the negation via Modus Ponens to eliminate the alternative in Disjunctive Syllogism.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("M \u2283 ~R"),
+      parseFormula("R \u2228 V"),
+      parseFormula("M")
+    ],
+    conclusion: parseFormula("V")
+  },
+  {
+    id: "copi-ex-32",
+    title: "Alternative to Conditional Detachment",
+    description: "Resolve the disjunction and immediately detach the target consequent.",
+    difficulty: "easy",
+    premises: [
+      parseFormula("U \u2283 C"),
+      parseFormula("L \u2228 U"),
+      parseFormula("~L")
+    ],
+    conclusion: parseFormula("C")
+  },
   // MEDIUM / ADEPT
   {
     id: "copi-med-1",
@@ -1737,6 +2037,312 @@ var COPI_PRESET_PROBLEMS = [
     ],
     conclusion: parseFormula("C")
   },
+  {
+    id: "copi-med-5",
+    title: "Cascading Syllogisms",
+    description: "Sequence Disjunctive Syllogism and Addition across two conditional stages.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(N \u2228 O) \u2283 P"),
+      parseFormula("(P \u2228 Q) \u2283 R"),
+      parseFormula("Q \u2228 N"),
+      parseFormula("~Q")
+    ],
+    conclusion: parseFormula("R")
+  },
+  {
+    id: "copi-med-6",
+    title: "Disjunctive Distribution & Implication",
+    description: "Distribute disjunction over conjunction, then convert the simplified disjunct to a conditional.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("~B \u2228 (C \u2022 D)")
+    ],
+    conclusion: parseFormula("B \u2283 C")
+  },
+  {
+    id: "copi-med-7",
+    title: "Implication, Tautology & Tollens",
+    description: "Eliminate redundant disjuncts with Tautology before applying Modus Tollens.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("O \u2283 P"),
+      parseFormula("P \u2283 ~P")
+    ],
+    conclusion: parseFormula("~O")
+  },
+  {
+    id: "copi-med-8",
+    title: "Hypothetical Exportation & Absorption",
+    description: "Export nested conditionals and absorb hypotheses to chain a deduction.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("Q \u2283 (R \u2283 S)"),
+      parseFormula("Q \u2283 R")
+    ],
+    conclusion: parseFormula("Q \u2283 S")
+  },
+  {
+    id: "copi-med-9",
+    title: "De Morgan to Hypothetical Syllogism",
+    description: "Unpack compound negation with De Morgan and Double Negation to bridge conditionals.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("A \u2283 ~B"),
+      parseFormula("~(C \u2022 ~A)")
+    ],
+    conclusion: parseFormula("C \u2283 ~B")
+  },
+  {
+    id: "copi-med-10",
+    title: "Disjunction Modus Tollens",
+    description: "Double negate the consequent to execute Modus Tollens against a disjunctive antecedent.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(J \u2228 K) \u2283 ~L"),
+      parseFormula("L")
+    ],
+    conclusion: parseFormula("~J")
+  },
+  {
+    id: "copi-med-11",
+    title: "Nested Exportation & Absorption",
+    description: "Compound antecedents via Absorption and Exportation to prove direct implication.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("M \u2283 N"),
+      parseFormula("M \u2283 (N \u2283 O)")
+    ],
+    conclusion: parseFormula("M \u2283 O")
+  },
+  {
+    id: "copi-med-12",
+    title: "Conjunctive Triple Reordering",
+    description: "Regroup and commute nested conjunctions by Association and Commutation.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("B \u2022 (C \u2022 D)")
+    ],
+    conclusion: parseFormula("C \u2022 (D \u2022 B)")
+  },
+  {
+    id: "copi-med-13",
+    title: "Disjunctive Conjunction Resolution",
+    description: "Distribute disjunction over conjunction, then simplify to the target outcome.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("H \u2228 (I \u2022 J)")
+    ],
+    conclusion: parseFormula("H \u2228 I")
+  },
+  {
+    id: "copi-med-14",
+    title: "Material Implication to Exportation",
+    description: "Transform negated disjunct into implication and export into a compound antecedent.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("~K \u2228 (L \u2283 M)")
+    ],
+    conclusion: parseFormula("(K \u2022 L) \u2283 M")
+  },
+  {
+    id: "copi-med-15",
+    title: "Conjunctive Consequent Regrouping",
+    description: "Absorb the antecedent into the conditional, then associate the nested conjunction.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(N \u2022 O) \u2283 P")
+    ],
+    conclusion: parseFormula("(N \u2022 O) \u2283 [N \u2022 (O \u2022 P)]")
+  },
+  {
+    id: "copi-med-16",
+    title: "Nested Conditional Extraction",
+    description: "Export nested conditional premises and chain with Hypothetical Syllogism.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("Q \u2283 [R \u2283 (S \u2283 T)]"),
+      parseFormula("Q \u2283 (Q \u2022 R)")
+    ],
+    conclusion: parseFormula("Q \u2283 (S \u2283 T)")
+  },
+  {
+    id: "copi-med-17",
+    title: "Transposition Syllogism",
+    description: "Transpose the contrapositive premise to chain with Hypothetical Syllogism.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("W \u2283 X"),
+      parseFormula("~Y \u2283 ~X")
+    ],
+    conclusion: parseFormula("W \u2283 Y")
+  },
+  {
+    id: "copi-med-18",
+    title: "Double Negated Transposition",
+    description: "Transpose conditional premise with double negated consequents.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("C \u2283 ~D"),
+      parseFormula("~E \u2283 D")
+    ],
+    conclusion: parseFormula("C \u2283 ~~E")
+  },
+  {
+    id: "copi-med-19",
+    title: "Conjunctive Exportation Syllogism",
+    description: "Export nested implications to align with conjunctive consequents.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("H \u2283 (I \u2022 J)"),
+      parseFormula("I \u2283 (J \u2283 K)")
+    ],
+    conclusion: parseFormula("H \u2283 K")
+  },
+  {
+    id: "copi-med-20",
+    title: "Dilemma Tautological Collapse",
+    description: "Apply Constructive Dilemma across shared consequents and reduce via Tautology.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(L \u2283 M) \u2022 (N \u2283 M)"),
+      parseFormula("L \u2228 N")
+    ],
+    conclusion: parseFormula("M")
+  },
+  {
+    id: "copi-med-21",
+    title: "Disjunctive Consequent Association",
+    description: "Reassociate disjunctive consequent terms inside a conditional.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("I \u2283 [J \u2228 (K \u2228 L)]")
+    ],
+    conclusion: parseFormula("I \u2283 [(J \u2228 K) \u2228 L]")
+  },
+  {
+    id: "copi-med-22",
+    title: "Disjunctive Subsumption Chain",
+    description: "Export conjunction from antecedent and chain with Hypothetical Syllogism.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(W \u2022 X) \u2283 Y"),
+      parseFormula("(X \u2283 Y) \u2283 Z")
+    ],
+    conclusion: parseFormula("W \u2283 Z")
+  },
+  {
+    id: "copi-med-23",
+    title: "Compound De Morgan Tollens",
+    description: "Construct negated disjunction using De Morgan to trigger Modus Tollens.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(A \u2022 B) \u2283 (C \u2228 D)"),
+      parseFormula("~C \u2022 ~D")
+    ],
+    conclusion: parseFormula("~(A \u2022 B)")
+  },
+  {
+    id: "copi-med-24",
+    title: "De Morgan Double Negation Extraction",
+    description: "Apply De Morgan to compound negation and simplify using Double Negation.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("~(F \u2228 ~A)")
+    ],
+    conclusion: parseFormula("A")
+  },
+  {
+    id: "copi-med-25",
+    title: "Exportation Modus Ponens Cascade",
+    description: "Export conjunction from implication, then execute sequential Modus Ponens.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(G \u2022 S) \u2283 D"),
+      parseFormula("(S \u2283 D) \u2283 P"),
+      parseFormula("G")
+    ],
+    conclusion: parseFormula("P")
+  },
+  {
+    id: "copi-med-26",
+    title: "Affirmed Contradiction Tollens",
+    description: "Chain conditionals with Hypothetical Syllogism, then apply Modus Tollens.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("G \u2283 F"),
+      parseFormula("F \u2283 ~P"),
+      parseFormula("P")
+    ],
+    conclusion: parseFormula("~G")
+  },
+  {
+    id: "copi-med-27",
+    title: "Tautologous Dilemma Branching",
+    description: "Commute conditional conjunction to align antecedents with Constructive Dilemma.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(~A \u2283 D) \u2022 (A \u2283 I)"),
+      parseFormula("A \u2228 ~A")
+    ],
+    conclusion: parseFormula("D \u2228 I")
+  },
+  {
+    id: "copi-med-28",
+    title: "Destructive Dilemma Transformation",
+    description: "Transpose conditionals to deduce negated antecedents via Constructive Dilemma.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(P \u2283 Q) \u2022 (R \u2283 S)"),
+      parseFormula("~Q \u2228 ~S")
+    ],
+    conclusion: parseFormula("~P \u2228 ~R")
+  },
+  {
+    id: "copi-med-29",
+    title: "Conjunctive Dilemma Extraction",
+    description: "Simplify conditional, apply Modus Tollens, and resolve the remaining disjunct.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(P \u2283 Q) \u2022 (P \u2228 R)"),
+      parseFormula("~Q")
+    ],
+    conclusion: parseFormula("R")
+  },
+  {
+    id: "copi-med-30",
+    title: "Disjunctive Consequent Refutation",
+    description: "Derive negated disjunction with Modus Tollens and expand via De Morgan.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("(A \u2228 B) \u2283 C"),
+      parseFormula("~C")
+    ],
+    conclusion: parseFormula("~A \u2022 ~B")
+  },
+  {
+    id: "copi-med-31",
+    title: "Implication Chaining Tollens",
+    description: "Convert disjunction to conditional and chain with Modus Tollens.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("A \u2283 B"),
+      parseFormula("~B \u2228 C"),
+      parseFormula("~C")
+    ],
+    conclusion: parseFormula("~A")
+  },
+  {
+    id: "copi-med-32",
+    title: "Equivalence Negation Tollens",
+    description: "Expand Material Equivalence to conditional and apply Modus Tollens.",
+    difficulty: "medium",
+    premises: [
+      parseFormula("P \u2261 Q"),
+      parseFormula("~P")
+    ],
+    conclusion: parseFormula("~Q")
+  },
   // HARD / MASTER
   {
     id: "copi-hard-1",
@@ -1786,6 +2392,332 @@ var COPI_PRESET_PROBLEMS = [
       parseFormula("A \u2022 (B \u2228 C)"),
       parseFormula("~(A \u2022 B)"),
       parseFormula("(A \u2022 C) \u2283 (D \u2022 E)")
+    ],
+    conclusion: parseFormula("D")
+  },
+  {
+    id: "copi-hard-5",
+    title: "De Morgan, Tollens & Exportation",
+    description: "Resolve compound negations via De Morgan and Disjunctive Syllogism.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(D \u2022 ~E) \u2283 F"),
+      parseFormula("~(E \u2228 F)")
+    ],
+    conclusion: parseFormula("~D")
+  },
+  {
+    id: "copi-hard-6",
+    title: "Complex Distribution & Conditional Extraction",
+    description: "Distribute disjunction over conjunction to extract conditional antecedent.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("R \u2228 (S \u2022 ~T)"),
+      parseFormula("(R \u2228 S) \u2283 (U \u2228 ~T)")
+    ],
+    conclusion: parseFormula("T \u2283 U")
+  },
+  {
+    id: "copi-hard-7",
+    title: "Double Dilemma & De Morgan Extraction",
+    description: "Unpack double negations to construct disjunctive alternatives for Constructive Dilemma.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(~V \u2283 W) \u2022 (X \u2283 W)"),
+      parseFormula("~( ~X \u2022 V )")
+    ],
+    conclusion: parseFormula("W")
+  },
+  {
+    id: "copi-hard-8",
+    title: "Disjunction to Conjunction Contradiction",
+    description: "Derive conjunct negations to assemble the contradiction of a compound disjunction.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(X \u2228 Y) \u2283 (X \u2022 Y)"),
+      parseFormula("~(X \u2228 Y)")
+    ],
+    conclusion: parseFormula("~(X \u2022 Y)")
+  },
+  {
+    id: "copi-hard-9",
+    title: "Disjunction Elimination & Dilemma",
+    description: "Eliminate guarded disjunctions with Double Negation and Disjunctive Syllogism to trigger Constructive Dilemma.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("~B \u2228 [(C \u2283 D) \u2022 (E \u2283 D)]"),
+      parseFormula("B \u2022 (C \u2228 E)")
+    ],
+    conclusion: parseFormula("D")
+  },
+  {
+    id: "copi-hard-10",
+    title: "Dilemma with Conjunction Negation",
+    description: "Execute Constructive Dilemma under negated consequent disjunctions.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(M \u2283 N) \u2022 (O \u2283 P)"),
+      parseFormula("~N \u2228 ~P"),
+      parseFormula("~(M \u2022 O) \u2283 Q")
+    ],
+    conclusion: parseFormula("Q")
+  },
+  {
+    id: "copi-hard-11",
+    title: "Master Multi-Step Reduction",
+    description: "Copi's definitive 11-step formal proof combining De Morgan, Modus Tollens, and Tautology.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(R \u2228 S) \u2283 (T \u2022 U)"),
+      parseFormula("~R \u2283 (V \u2283 ~V)"),
+      parseFormula("~T")
+    ],
+    conclusion: parseFormula("~V")
+  },
+  {
+    id: "copi-hard-12",
+    title: "Conjunctive Consequent Refutation",
+    description: "Apply Modus Tollens against conjunction, expand via De Morgan and simplify.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2228 B) \u2283 (C \u2022 D)"),
+      parseFormula("~(C \u2022 D)")
+    ],
+    conclusion: parseFormula("~A")
+  },
+  {
+    id: "copi-hard-13",
+    title: "Equivalence Contrapositive Denial",
+    description: "Collapse equivalence via Material Equivalence and refute antecedent with Modus Tollens.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("~[(U \u2283 V) \u2022 (V \u2283 U)]"),
+      parseFormula("(W \u2261 X) \u2283 (U \u2261 V)")
+    ],
+    conclusion: parseFormula("~(W \u2261 X)")
+  },
+  {
+    id: "copi-hard-14",
+    title: "Compound Conjunction Commutation",
+    description: "Commute and associate nested compound conjunctions to execute Modus Ponens.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("[(E \u2228 F) \u2022 (G \u2228 H)] \u2283 (F \u2022 I)"),
+      parseFormula("(G \u2228 H) \u2022 (E \u2228 F)")
+    ],
+    conclusion: parseFormula("F \u2022 I")
+  },
+  {
+    id: "copi-hard-15",
+    title: "Exported Triple Syllogism",
+    description: "Export and chain nested conditionals across complex biconditionals.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(P \u2283 Q) \u2283 [(R \u2228 S) \u2283 (T \u2261 U)]"),
+      parseFormula("[(R \u2228 S) \u2283 (T \u2261 U)] \u2283 [(R \u2228 S) \u2283 Q]")
+    ],
+    conclusion: parseFormula("(P \u2283 Q) \u2283 [(R \u2228 S) \u2283 Q]")
+  },
+  {
+    id: "copi-hard-16",
+    title: "Conjunctive Dilemma Denial",
+    description: "Construct negated antecedent conjunction using De Morgan and Constructive Dilemma.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(C \u2283 H) \u2022 (A \u2283 L)"),
+      parseFormula("(H \u2022 L) \u2283 ~M"),
+      parseFormula("M")
+    ],
+    conclusion: parseFormula("~(C \u2022 A)")
+  },
+  {
+    id: "copi-hard-17",
+    title: "Cascading Dilemma Refutation",
+    description: "Execute constructive dilemma under negated disjunctive consequents.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2283 B) \u2022 (C \u2283 D)"),
+      parseFormula("(B \u2228 D) \u2283 E"),
+      parseFormula("~(E \u2228 F)")
+    ],
+    conclusion: parseFormula("~(A \u2228 C)")
+  },
+  {
+    id: "copi-hard-18",
+    title: "Conjunctive Denial Cascade",
+    description: "Double negate premise, apply Modus Tollens twice and extract via De Morgan.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(P \u2228 Q) \u2283 (R \u2022 S)"),
+      parseFormula("(R \u2228 T) \u2283 ~U"),
+      parseFormula("U")
+    ],
+    conclusion: parseFormula("~P")
+  },
+  {
+    id: "copi-hard-19",
+    title: "Chained Disjunctive Progression",
+    description: "Progress through multiple stages of Addition, Modus Ponens, and Simplification.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(K \u2228 L) \u2283 (M \u2022 N)"),
+      parseFormula("(N \u2228 O) \u2283 (P \u2022 Q)"),
+      parseFormula("K")
+    ],
+    conclusion: parseFormula("P")
+  },
+  {
+    id: "copi-hard-20",
+    title: "Parallel Dilemma Combination",
+    description: "Execute constructive dilemmas across split conjunctions and conjoin results.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2283 B) \u2022 (C \u2283 D)"),
+      parseFormula("(E \u2283 F) \u2022 (G \u2283 H)"),
+      parseFormula("(A \u2228 E) \u2022 (C \u2228 G)")
+    ],
+    conclusion: parseFormula("(B \u2228 F) \u2022 (D \u2228 H)")
+  },
+  {
+    id: "copi-hard-21",
+    title: "Double Detachment Chaining",
+    description: "Deconstruct compound antecedent and sequentially detach nested implications.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("P \u2283 (Q \u2283 R)"),
+      parseFormula("Q \u2283 (R \u2283 S)"),
+      parseFormula("P \u2022 Q")
+    ],
+    conclusion: parseFormula("S")
+  },
+  {
+    id: "copi-hard-22",
+    title: "Disjunctive Distribution Extraction",
+    description: "Distribute disjunction, eliminate contradictions via Disjunctive Syllogism and extract conclusion.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2228 B) \u2022 (A \u2228 C)"),
+      parseFormula("(B \u2228 C) \u2283 (D \u2022 E)"),
+      parseFormula("~A")
+    ],
+    conclusion: parseFormula("D")
+  },
+  {
+    id: "copi-hard-23",
+    title: "Double Negation De Morgan Tollens",
+    description: "Combine Double Negation with De Morgan and Modus Tollens to refute antecedent.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("P \u2283 ~Q"),
+      parseFormula("~(R \u2022 ~P)"),
+      parseFormula("Q")
+    ],
+    conclusion: parseFormula("~R")
+  },
+  {
+    id: "copi-hard-24",
+    title: "Disjunctive Product Simplification",
+    description: "Eliminate false disjunctive product via Disjunctive Syllogism and extract conjunct.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2022 B) \u2228 (C \u2022 D)"),
+      parseFormula("~(A \u2022 B)")
+    ],
+    conclusion: parseFormula("C")
+  },
+  {
+    id: "copi-hard-25",
+    title: "De Morgan Tollens to Syllogism",
+    description: "Unite negated disjuncts with De Morgan, apply Modus Tollens and resolve disjunction.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(E \u2228 F) \u2283 (G \u2228 H)"),
+      parseFormula("~G \u2022 ~H"),
+      parseFormula("E \u2228 I")
+    ],
+    conclusion: parseFormula("I")
+  },
+  {
+    id: "copi-hard-26",
+    title: "Exported Consequent Chaining",
+    description: "Export nested implications, extract antecedents, and detach final result.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("A \u2283 (B \u2283 C)"),
+      parseFormula("A \u2283 (C \u2283 D)"),
+      parseFormula("A \u2022 B")
+    ],
+    conclusion: parseFormula("D")
+  },
+  {
+    id: "copi-hard-27",
+    title: "Equivalence Transitivity Detachment",
+    description: "Deconstruct two equivalences into implications and chain detachments.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("P \u2261 Q"),
+      parseFormula("Q \u2261 R"),
+      parseFormula("P")
+    ],
+    conclusion: parseFormula("R")
+  },
+  {
+    id: "copi-hard-28",
+    title: "Disjunctive Stepping Stones",
+    description: "Construct successive disjunctive antecedents via Addition across chained implications.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2228 B) \u2283 C"),
+      parseFormula("(C \u2228 D) \u2283 (E \u2022 F)"),
+      parseFormula("A")
+    ],
+    conclusion: parseFormula("E")
+  },
+  {
+    id: "copi-hard-29",
+    title: "De Morgan Dilemma Elimination",
+    description: "Expand negated disjunction to refute antecedent and resolve final alternative.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(M \u2228 N) \u2283 (O \u2022 P)"),
+      parseFormula("~(O \u2228 Q)"),
+      parseFormula("M \u2228 R")
+    ],
+    conclusion: parseFormula("R")
+  },
+  {
+    id: "copi-hard-30",
+    title: "Conjunctive Denial of Disjunction",
+    description: "Conjoin two independent negations and apply De Morgan to trigger Modus Tollens.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("A \u2283 (B \u2228 C)"),
+      parseFormula("~B"),
+      parseFormula("~C")
+    ],
+    conclusion: parseFormula("~A")
+  },
+  {
+    id: "copi-hard-31",
+    title: "Constructive Dilemma Elimination",
+    description: "Execute Constructive Dilemma across disjunctive alternatives and eliminate with Disjunctive Syllogism.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(P \u2283 Q) \u2022 (R \u2283 S)"),
+      parseFormula("P \u2228 R"),
+      parseFormula("~Q")
+    ],
+    conclusion: parseFormula("S")
+  },
+  {
+    id: "copi-hard-32",
+    title: "Conjunctive Detachment Syllogism",
+    description: "Detach intermediate conditional terms from conjunction and sequentially resolve.",
+    difficulty: "hard",
+    premises: [
+      parseFormula("(A \u2022 B) \u2283 C"),
+      parseFormula("B \u2283 (C \u2283 D)"),
+      parseFormula("A \u2022 B")
     ],
     conclusion: parseFormula("D")
   }

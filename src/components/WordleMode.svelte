@@ -12,6 +12,8 @@
 
   type Difficulty = 'easy' | 'medium' | 'hard';
 
+  export let hibernated: boolean = false;
+
   let selectedDifficulty: Difficulty = 'easy';
   let dateStr: string = new Date().toISOString().split('T')[0];
   let problem: Problem = getDailyProblem(dateStr, selectedDifficulty);
@@ -410,6 +412,7 @@
     {steps}
     conclusion={problem.conclusion}
     isComplete={isWon || hasReachedConclusion}
+    {hibernated}
     on:undoStep={handleUndo}
     on:citeLine={handleCiteLine}
   />
@@ -419,6 +422,7 @@
     <StepInput
       bind:this={stepInputComponent}
       existingSteps={steps}
+      {hibernated}
       on:submitStep={handleAddStep}
     />
   {/if}

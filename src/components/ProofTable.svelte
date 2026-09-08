@@ -9,6 +9,7 @@
   export let conclusion: Formula;
   export let isComplete: boolean = false;
   export let canUndo: boolean = true;
+  export let hibernated: boolean = false;
 
   const dispatch = createEventDispatcher<{
     undoStep: void;
@@ -36,7 +37,7 @@
         </span>
         <div class="font-serif text-3xl sm:text-4xl text-neutral-950 dark:text-neutral-50 flex items-baseline gap-3 tracking-tight">
           <span class="font-sans text-xl sm:text-2xl text-neutral-500 dark:text-neutral-400 font-light">∴</span>
-          <LaTeX formula={conclusion} />
+          <LaTeX formula={conclusion} {hibernated} />
         </div>
       </div>
 
@@ -76,7 +77,7 @@
 
           <!-- Formula -->
           <div class="col-span-7 sm:col-span-8 px-3 text-lg sm:text-xl text-neutral-950 dark:text-neutral-100 flex items-center flex-wrap gap-2">
-            <LaTeX formula={step.formula} />
+            <LaTeX formula={step.formula} {hibernated} />
             {#if isTarget}
               <span class="text-[9px] font-sans uppercase tracking-wider border border-neutral-950 dark:border-white px-1.5 py-0.5 ml-2 font-bold">
                 Proven

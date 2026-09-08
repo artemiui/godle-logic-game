@@ -9,21 +9,27 @@
   export let style: NotationStyle | null = null;
   export let displayMode: boolean = false;
   export let className: string = '';
+  export let hibernated: boolean = false;
+
+  let cachedHtml: string = '';
 
   $: effectiveStyle = style || $notationStore;
   $: renderedLatex = formula ? formulaToLaTeX(formula, effectiveStyle) : latex;
 
-  $: html = (() => {
-    if (!renderedLatex) return '';
+  $: if (!hibernated && renderedLatex) {
     try {
-      return katex.renderToString(renderedLatex, {
+      cachedHtml = katex.renderToString(renderedLatex, {
         displayMode,
         throwOnError: false,
       });
     } catch {
-      return renderedLatex;
+      cachedHtml = renderedLatex;
     }
-  })();
+  } else if (!renderedLatex) {
+    cachedHtml = '';
+  }
+
+  $: html = cachedHtml;
 </script>
 
 <span class="inline-flex items-center {className}">

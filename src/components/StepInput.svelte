@@ -7,9 +7,11 @@
   import { replaceFormulaKeywords } from '../logic/latex';
   import LaTeX from './LaTeX.svelte';
   import SymbolKeyboard from './SymbolKeyboard.svelte';
+  import RulesReferenceModal from './RulesReferenceModal.svelte';
 
   export let existingSteps: ProofStep[] = [];
   export let disabled: boolean = false;
+  export let hibernated: boolean = false;
 
   const dispatch = createEventDispatcher<{
     submitStep: {
@@ -25,6 +27,7 @@
   let citationInput: string = '';
   let validationError: string = '';
   let showKeyboard: boolean = false;
+  let showRulesReference: boolean = false;
   let inputElement: HTMLInputElement | null = null;
 
   $: selectedRule = RULE_MAP.get(selectedRuleId);
@@ -198,7 +201,7 @@
           <span class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Preview:</span>
           {#if parsed.formula}
             <div class="font-serif text-base text-neutral-950 dark:text-neutral-100">
-              <LaTeX formula={parsed.formula} />
+              <LaTeX formula={parsed.formula} {hibernated} />
             </div>
           {:else}
             <span class="text-rose-600 dark:text-rose-400 italic text-[11px]">{parsed.error}</span>
@@ -226,9 +229,19 @@
   <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
     <!-- Rule Select -->
     <div class="sm:col-span-6 space-y-1">
-      <label for="step-rule-select" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
-        Justification Rule
-      </label>
+      <div class="flex items-center justify-between">
+        <label for="step-rule-select" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+          Justification Rule
+        </label>
+        <button
+          type="button"
+          on:click={() => (showRulesReference = true)}
+          class="text-[10px] font-sans text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white underline underline-offset-2 flex items-center gap-1 cursor-pointer transition-colors"
+          title="Open Rules Reference Guide"
+        >
+          <span>Rules Guide ↗</span>
+        </button>
+      </div>
       <select
         id="step-rule-select"
         bind:value={selectedRuleId}
@@ -307,3 +320,13 @@
     <span class="opacity-60 text-[10px]">[ Enter ↵ ]</span>
   </button>
 </div>
+
+<RulesReferenceModal
+  isOpen={showRulesReference}
+  activeRuleId={selectedRuleId}
+  on:selectRule={(e) => {
+    selectedRuleId = e.detail;
+    showRulesReference = false;
+  }}
+  on:close={() => (showRulesReference = false)}
+/>

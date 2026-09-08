@@ -7,3 +7,5 @@ data/*.db-shm
 .DS_Store
 Thumbs.db
 backups/
+renders/
+
