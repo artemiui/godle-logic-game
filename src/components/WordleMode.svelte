@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import confetti from 'canvas-confetti';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
   import { getDailyProblem } from '../logic/presets';
@@ -25,6 +25,7 @@
     isPremise: true,
   }));
   let isWon: boolean = false;
+  let isStageSolved: boolean = false;
   let showShareModal: boolean = false;
   let errorMessage: string = '';
   let hintMessage: string = '';
@@ -44,6 +45,80 @@
     medium: false,
     hard: false,
   };
+
+  let countdownStr: string = '00:00:00';
+  let countdownInterval: any = null;
+
+  interface StageCompletion {
+    solved: boolean;
+    steps: ProofStep[];
+    durationSeconds: number;
+    solvedAt: string;
+  }
+
+  function loadLocalCompletions(date: string): Partial<Record<Difficulty, StageCompletion>> {
+    try {
+      const all = JSON.parse(localStorage.getItem('goodle_daily_completions') || '{}');
+      return all[date] || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveLocalCompletion(date: string, diff: Difficulty, data: StageCompletion) {
+    try {
+      const all = JSON.parse(localStorage.getItem('goodle_daily_completions') || '{}');
+      if (!all[date]) all[date] = {};
+      all[date][diff] = data;
+      localStorage.setItem('goodle_daily_completions', JSON.stringify(all));
+    } catch {}
+  }
+
+  function getNextUtcMidnight(): Date {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+  }
+
+  function updateCountdown() {
+    const now = new Date();
+    const nextReset = getNextUtcMidnight();
+    const diffMs = nextReset.getTime() - now.getTime();
+    if (diffMs <= 0) {
+      countdownStr = '00:00:00';
+      const newDateStr = new Date().toISOString().split('T')[0];
+      if (newDateStr !== dateStr) {
+        dateStr = newDateStr;
+        initProblem(selectedDifficulty);
+      }
+      return;
+    }
+    const totalSec = Math.floor(diffMs / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    countdownStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function startCountdown() {
+    stopCountdown();
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+  }
+
+  function stopCountdown() {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+  }
+
+  $: if (hibernated) {
+    stopCountdown();
+  } else {
+    if (!countdownInterval) {
+      startCountdown();
+    }
+  }
 
   function checkIfSaved() {
     if (!problem) return;
@@ -149,39 +224,93 @@
 
   async function initProblem(diff: Difficulty) {
     selectedDifficulty = diff;
+    errorMessage = '';
+    hintMessage = '';
+    copiedShareText = false;
+
+    // 1. Sync completed badges from local storage for today
+    const localToday = loadLocalCompletions(dateStr);
+    (['easy', 'medium', 'hard'] as Difficulty[]).forEach(d => {
+      if (localToday[d]?.solved) {
+        completedStages[d] = true;
+      }
+    });
+
+    // 2. Check if selected stage is already solved locally
+    const localStage = localToday[diff];
+    if (localStage?.solved && localStage.steps?.length) {
+      isStageSolved = true;
+      isWon = true;
+      steps = localStage.steps;
+      durationSeconds = localStage.durationSeconds || 0;
+    } else {
+      isStageSolved = false;
+      isWon = false;
+      startTime = Date.now();
+    }
+
     let loadedProb: Problem = getDailyProblem(dateStr, diff);
+
+    // 3. Query server for today's problem and server-side completion record
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     try {
-      const res = await fetch(`/api/wordle/today?date=${dateStr}&difficulty=${diff}`);
+      const res = await fetch(`/api/wordle/today?date=${dateStr}&difficulty=${diff}`, { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.problem) {
           loadedProb = data.problem;
         }
+        if (Array.isArray(data.completedDifficulties)) {
+          data.completedDifficulties.forEach((d: Difficulty) => {
+            completedStages[d] = true;
+          });
+        }
+        if (data.isSolved) {
+          isStageSolved = true;
+          isWon = true;
+          if (data.solvedSteps && Array.isArray(data.solvedSteps) && data.solvedSteps.length > 0) {
+            steps = data.solvedSteps;
+          }
+          saveLocalCompletion(dateStr, diff, {
+            solved: true,
+            steps,
+            durationSeconds: durationSeconds || 0,
+            solvedAt: new Date().toISOString(),
+          });
+        }
       }
     } catch {}
 
     problem = loadedProb;
-    steps = problem.premises.map((p, idx) => ({
-      stepNumber: idx + 1,
-      formula: p,
-      rule: 'premise' as const,
-      citations: [],
-      isPremise: true,
-    }));
-    isWon = false;
-    errorMessage = '';
-    hintMessage = '';
-    startTime = Date.now();
-    copiedShareText = false;
+
+    // 4. If unsolved, initialize steps to problem premises
+    if (!isStageSolved) {
+      steps = problem.premises.map((p, idx) => ({
+        stepNumber: idx + 1,
+        formula: p,
+        rule: 'premise' as const,
+        citations: [],
+        isPremise: true,
+      }));
+    }
   }
 
   onMount(() => {
+    startCountdown();
     initProblem('easy');
+  });
+
+  onDestroy(() => {
+    stopCountdown();
   });
 
   $: hasReachedConclusion = steps.some(s => formulasEqual(s.formula, problem.conclusion));
 
   function handleAddStep(event: CustomEvent<{ formula: Formula; formulaRaw: string; ruleId: RuleId; citations: number[] }>) {
+    if (isStageSolved) return;
     errorMessage = '';
     const { formula, ruleId, citations } = event.detail;
 
@@ -206,6 +335,7 @@
   }
 
   function handleUndo() {
+    if (isStageSolved) return;
     if (steps.filter(s => s.rule !== 'premise').length === 0) return;
     steps = steps.slice(0, -1);
     isWon = false;
@@ -219,16 +349,46 @@
   }
 
   async function handleWin() {
+    if (isStageSolved) return;
     isWon = true;
+    isStageSolved = true;
     completedStages[selectedDifficulty] = true;
     durationSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+
+    // Save to local storage
+    saveLocalCompletion(dateStr, selectedDifficulty, {
+      solved: true,
+      steps,
+      durationSeconds,
+      solvedAt: new Date().toISOString(),
+    });
+
+    // Save to server
+    const token = $authStore.token || localStorage.getItem('goodle_token');
+    try {
+      await fetch('/api/wordle/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          date: dateStr,
+          difficulty: selectedDifficulty,
+          stepCount: steps.filter(s => s.rule !== 'premise').length,
+          durationSeconds,
+          steps,
+        }),
+      });
+    } catch {}
+
     try {
       confetti({ particleCount: 40, spread: 50 });
     } catch {}
   }
 
   async function requestHint() {
-    if (isWon || isRequestingHint) return;
+    if (isWon || isStageSolved || isRequestingHint) return;
     isRequestingHint = true;
     hintMessage = '';
     try {
@@ -278,13 +438,24 @@
   <div class="space-y-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
     <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
       <div>
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-          Daily Problem • {dateStr}
-        </span>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300">
+            Daily Problem • {dateStr}
+          </span>
+          <span class="text-[10px] font-mono text-neutral-600 dark:text-neutral-300">
+            • Reset in {countdownStr} (00:00 UTC)
+          </span>
+        </div>
         <div class="flex items-center gap-2.5 flex-wrap">
           <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
             {problem.title}
           </h1>
+          {#if isStageSolved}
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-600/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-sans font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Solved</span>
+            </span>
+          {/if}
           <button
             type="button"
             on:click={toggleSaveToSandboxLibrary}
@@ -331,7 +502,7 @@
       <button
         type="button"
         on:click={requestHint}
-        disabled={isWon || isRequestingHint}
+        disabled={isWon || isStageSolved || isRequestingHint}
         title={isRequestingHint ? 'Analyzing…' : 'Request Hint'}
         class="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white cursor-pointer self-start sm:self-auto transition-colors disabled:opacity-40"
       >
@@ -351,7 +522,7 @@
         }"
       >
         <span>01 Novice</span>
-        {#if completedStages.easy}<span class="text-[10px]">✓</span>{/if}
+        {#if completedStages.easy}<span class="text-[11px] text-emerald-500 dark:text-emerald-400 font-bold">✓</span>{/if}
       </button>
 
       <button
@@ -364,7 +535,7 @@
         }"
       >
         <span>02 Adept</span>
-        {#if completedStages.medium}<span class="text-[10px]">✓</span>{/if}
+        {#if completedStages.medium}<span class="text-[11px] text-emerald-500 dark:text-emerald-400 font-bold">✓</span>{/if}
       </button>
 
       <button
@@ -377,9 +548,27 @@
         }"
       >
         <span>03 Master</span>
-        {#if completedStages.hard}<span class="text-[10px]">✓</span>{/if}
+        {#if completedStages.hard}<span class="text-[11px] text-emerald-500 dark:text-emerald-400 font-bold">✓</span>{/if}
       </button>
     </div>
+
+    <!-- Stage Solved Callout Banner -->
+    {#if isStageSolved}
+      <div class="py-2.5 px-3.5 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-sans">
+        <div class="flex items-center gap-2">
+          <span class="font-sans font-semibold uppercase tracking-wider text-[10px] bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 px-1.5 py-0.5 rounded">
+            ✓ Solved
+          </span>
+          <span class="text-neutral-800 dark:text-neutral-200">
+            Stage {selectedDifficulty === 'easy' ? '01 (Novice)' : selectedDifficulty === 'medium' ? '02 (Adept)' : '03 (Master)'} completed for today.
+          </span>
+        </div>
+        <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-mono text-[11px]">
+          <span class="font-sans text-neutral-500">Next challenge in:</span>
+          <span class="font-bold text-neutral-900 dark:text-neutral-100">{countdownStr}</span>
+        </div>
+      </div>
+    {/if}
 
     <!-- Hint Footnote if Loaded -->
     {#if hintMessage}
@@ -411,14 +600,15 @@
   <ProofTable
     {steps}
     conclusion={problem.conclusion}
-    isComplete={isWon || hasReachedConclusion}
+    isComplete={isWon || isStageSolved || hasReachedConclusion}
+    canUndo={!isStageSolved}
     {hibernated}
     on:undoStep={handleUndo}
     on:citeLine={handleCiteLine}
   />
 
   <!-- Deduction Step Input Bar (Shown only if not completed) -->
-  {#if !isWon && !hasReachedConclusion}
+  {#if !isWon && !hasReachedConclusion && !isStageSolved}
     <StepInput
       bind:this={stepInputComponent}
       existingSteps={steps}
@@ -428,19 +618,29 @@
   {/if}
 
   <!-- Minimal Completion Banner -->
-  {#if isWon || hasReachedConclusion}
+  {#if isWon || hasReachedConclusion || isStageSolved}
     <div class="border border-neutral-900 dark:border-white p-6 bg-white dark:bg-neutral-950 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
         <div>
-          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-0.5">
-            Validation Complete
-          </span>
+          <div class="flex items-center gap-2 mb-0.5">
+            <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300">
+              Validation Complete
+            </span>
+            <span class="text-[10px] font-sans uppercase font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40 dark:border-emerald-800/40">
+              Stage {selectedDifficulty === 'easy' ? '01' : selectedDifficulty === 'medium' ? '02' : '03'} Solved
+            </span>
+          </div>
           <h3 class="font-serif text-2xl text-neutral-950 dark:text-neutral-50">
             Statement Formally Proven
           </h3>
         </div>
-        <div class="font-sans text-xs text-neutral-600 dark:text-neutral-300">
-          {steps.filter(s => s.rule !== 'premise').length} steps · {durationSeconds}s
+        <div class="font-sans text-xs text-neutral-600 dark:text-neutral-300 sm:text-right">
+          <div>{steps.filter(s => s.rule !== 'premise').length} deduction {steps.filter(s => s.rule !== 'premise').length === 1 ? 'step' : 'steps'}{durationSeconds > 0 ? ` · ${durationSeconds}s` : ''}</div>
+          <div class="font-mono text-[11px] text-neutral-600 dark:text-neutral-300 mt-1 flex items-center gap-1.5 sm:justify-end">
+            <span class="font-sans text-neutral-500">Next daily reset:</span>
+            <span class="font-bold text-neutral-900 dark:text-neutral-100">{countdownStr}</span>
+            <span class="text-[10px] text-neutral-400 font-sans">(00:00 UTC)</span>
+          </div>
         </div>
       </div>
 
@@ -462,14 +662,26 @@
           {copiedShareText ? '✓ Copied' : 'Quick Copy Text'}
         </button>
 
-        {#if selectedDifficulty !== 'hard'}
+        {#if selectedDifficulty === 'easy'}
           <button
             type="button"
             on:click={nextStage}
             class="h-9 px-4 border border-neutral-900 dark:border-white text-neutral-950 dark:text-white font-sans text-xs uppercase tracking-wider hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
           >
-            Next Stage →
+            Proceed to Stage 02 Adept →
           </button>
+        {:else if selectedDifficulty === 'medium'}
+          <button
+            type="button"
+            on:click={nextStage}
+            class="h-9 px-4 border border-neutral-900 dark:border-white text-neutral-950 dark:text-white font-sans text-xs uppercase tracking-wider hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
+          >
+            Proceed to Stage 03 Master →
+          </button>
+        {:else}
+          <div class="text-xs font-sans text-neutral-600 dark:text-neutral-300 flex items-center gap-1.5 ml-auto sm:ml-0">
+            <span class="font-medium text-emerald-600 dark:text-emerald-400">✓ All daily stages completed</span>
+          </div>
         {/if}
       </div>
     </div>

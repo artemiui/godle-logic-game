@@ -1042,9 +1042,34 @@ app.post('/api/logic/assess', async (req, res) => {
 // DAILY WORDLE API
 // -------------------------------------------------------------
 
-app.get('/api/wordle/today', async (req, res) => {
-  const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+app.get('/api/wordle/today', async (req: AuthenticatedRequest, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const reqDate = (req.query.date as string) || today;
+  if (reqDate > today) {
+    return res.status(403).json({ error: 'Future daily problems cannot be viewed before reset.' });
+  }
+  const date = reqDate;
   const difficulty = ((req.query.difficulty as string) || 'easy') as 'easy' | 'medium' | 'hard';
+
+  // Fetch completion status for authenticated users
+  let completedDifficulties: string[] = [];
+  let solvedSteps: any = null;
+  if (req.user?.id) {
+    try {
+      const compRows = (await db.prepare(`
+        SELECT difficulty, proof_steps_json
+        FROM wordle_completions
+        WHERE user_id = ? AND date = ?
+      `).all(req.user.id, date)) as any[];
+      completedDifficulties = compRows.map(r => r.difficulty);
+      const currentComp = compRows.find(r => r.difficulty === difficulty);
+      if (currentComp?.proof_steps_json) {
+        try {
+          solvedSteps = JSON.parse(currentComp.proof_steps_json);
+        } catch {}
+      }
+    } catch {}
+  }
 
   try {
     const commRows = await db.prepare(`
@@ -1085,45 +1110,68 @@ app.get('/api/wordle/today', async (req, res) => {
       title: chosen.isCommunity ? chosen.title : 'Daily gödle: ' + chosen.title,
     };
 
-    res.json({ problem, date, difficulty });
+    res.json({
+      problem,
+      date,
+      difficulty,
+      completedDifficulties,
+      isSolved: completedDifficulties.includes(difficulty),
+      solvedSteps,
+    });
   } catch {
     const problem = getDailyProblem(date, difficulty);
-    res.json({ problem, date, difficulty });
+    res.json({
+      problem,
+      date,
+      difficulty,
+      completedDifficulties,
+      isSolved: completedDifficulties.includes(difficulty),
+      solvedSteps,
+    });
   }
 });
 
 app.post('/api/wordle/submit', async (req: AuthenticatedRequest, res) => {
-  const { date, difficulty, stepCount, durationSeconds } = req.body;
+  const { date, difficulty, stepCount, durationSeconds, steps } = req.body;
   const userId = req.user?.id;
 
   try {
     if (userId) {
-      const id = crypto.randomUUID();
-      await db.prepare(`
-        INSERT INTO wordle_completions (id, user_id, date, difficulty, step_count, duration_seconds)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(id, userId, date, difficulty, stepCount, durationSeconds);
+      // Prevent duplicate insertions
+      const existing = (await db.prepare(`
+        SELECT id FROM wordle_completions
+        WHERE user_id = ? AND date = ? AND difficulty = ?
+      `).get(userId, date, difficulty)) as any;
 
-      // Update user streak if not already recorded today
-      const user = (await db.prepare('SELECT streak_count, best_streak, last_played_date FROM users WHERE id = ?').get(userId)) as any;
+      if (!existing) {
+        const id = crypto.randomUUID();
+        const stepsJson = steps ? JSON.stringify(steps) : null;
+        await db.prepare(`
+          INSERT INTO wordle_completions (id, user_id, date, difficulty, step_count, duration_seconds, proof_steps_json)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(id, userId, date, difficulty, stepCount, durationSeconds, stepsJson);
 
-      if (user) {
-        let newStreak = user.streak_count;
-        const lastDate = user.last_played_date;
-        const today = new Date(date);
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        // Update user streak if not already recorded today
+        const user = (await db.prepare('SELECT streak_count, best_streak, last_played_date FROM users WHERE id = ?').get(userId)) as any;
 
-        if (lastDate === yesterdayStr) {
-          newStreak += 1;
-        } else if (lastDate !== date) {
-          newStreak = 1;
+        if (user) {
+          let newStreak = user.streak_count;
+          const lastDate = user.last_played_date;
+          const today = new Date(date);
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+          if (lastDate === yesterdayStr) {
+            newStreak += 1;
+          } else if (lastDate !== date) {
+            newStreak = 1;
+          }
+
+          const bestStreak = Math.max(newStreak, user.best_streak || 0);
+          await db.prepare('UPDATE users SET streak_count = ?, best_streak = ?, last_played_date = ? WHERE id = ?')
+            .run(newStreak, bestStreak, date, userId);
         }
-
-        const bestStreak = Math.max(newStreak, user.best_streak || 0);
-        await db.prepare('UPDATE users SET streak_count = ?, best_streak = ?, last_played_date = ? WHERE id = ?')
-          .run(newStreak, bestStreak, date, userId);
       }
     }
 

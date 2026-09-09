@@ -82,6 +82,7 @@ export async function initDb(): Promise<void> {
           difficulty TEXT NOT NULL,
           step_count INTEGER NOT NULL,
           duration_seconds INTEGER NOT NULL,
+          proof_steps_json TEXT DEFAULT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         );
@@ -160,6 +161,7 @@ export async function initDb(): Promise<void> {
       await safeAlter("ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT NULL;");
       await safeAlter("ALTER TABLE users ADD COLUMN github_id TEXT DEFAULT NULL;");
       await safeAlter("ALTER TABLE users ADD COLUMN has_password INTEGER DEFAULT 1;");
+      await safeAlter("ALTER TABLE wordle_completions ADD COLUMN proof_steps_json TEXT DEFAULT NULL;");
 
       console.log('✅ Database schema verified');
     } catch (err: any) {

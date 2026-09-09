@@ -257,6 +257,7 @@ SQLite via Node.js 22 built-in `node:sqlite` (`DatabaseSync`). WAL journal mode,
 | `difficulty`     | TEXT     | NOT NULL                                                 |
 | `step_count`     | INTEGER  | NOT NULL                                                 |
 | `duration_seconds`| INTEGER | NOT NULL                                                 |
+| `proof_steps_json`| TEXT    | DEFAULT NULL (migration)                                 |
 | `created_at`     | DATETIME | DEFAULT CURRENT_TIMESTAMP                                |
 
 ### `frenzy_records`
@@ -367,10 +368,10 @@ All endpoints are defined in `server/index.ts`. Rate-limited routes are marked w
 
 ### Daily Challenge (`/api/wordle/*`)
 
-| Method | Path                  | Auth     | Description                                                 |
-|--------|-----------------------|----------|-------------------------------------------------------------|
-| GET    | `/api/wordle/today`   | Public   | Get daily problem for date + difficulty                     |
-| POST   | `/api/wordle/submit`  | Optional | Record daily completion, update streak (if authenticated)   |
+| Method | Path                  | Auth     | Description                                                                                             |
+|--------|-----------------------|----------|---------------------------------------------------------------------------------------------------------|
+| GET    | `/api/wordle/today`   | Optional | Get daily problem for date + difficulty (forbids future dates; returns solved status & steps if authed) |
+| POST   | `/api/wordle/submit`  | Optional | Record daily completion with proof steps, deduplicate entries, update streak (if authenticated)          |
 
 ### Frenzy Mode (`/api/frenzy/*`)
 

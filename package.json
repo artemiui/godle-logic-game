@@ -1,7 +1,7 @@
 {
   "name": "goodle",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n \"api,app\" -c \"blue,green\" \"tsx watch server/index.ts\" \"vite\"",
