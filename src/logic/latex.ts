@@ -46,102 +46,170 @@ export const NOTATION_CONFIGS: Record<NotationStyle, NotationSymbols> = {
   },
 };
 
+function isBinaryFormula(f: Formula): boolean {
+  return f.type === 'and' || f.type === 'or' || f.type === 'implies' || f.type === 'iff';
+}
+
+/**
+ * Calculates the depth of nested enclosed subformulas within f.
+ * If f contains no enclosed subformulas, depth is 0 -> rendered with '()'
+ * If f contains enclosed subformulas of depth 0, depth is 1 -> rendered with '[]'
+ * If f contains enclosed subformulas of depth 1, depth is 2 -> rendered with '{}'
+ */
+export function getEnclosureDepth(f: Formula): number {
+  if (f.type === 'atom') return 0;
+  if (f.type === 'not') {
+    if (isBinaryFormula(f.operand)) {
+      return getEnclosureDepth(f.operand) + 1;
+    }
+    return getEnclosureDepth(f.operand);
+  }
+  let maxChild = 0;
+  if (isBinaryFormula(f.left)) {
+    maxChild = Math.max(maxChild, getEnclosureDepth(f.left) + 1);
+  } else if (f.left.type === 'not') {
+    maxChild = Math.max(maxChild, getEnclosureDepth(f.left));
+  }
+  if (isBinaryFormula(f.right)) {
+    maxChild = Math.max(maxChild, getEnclosureDepth(f.right) + 1);
+  } else if (f.right.type === 'not') {
+    maxChild = Math.max(maxChild, getEnclosureDepth(f.right));
+  }
+  return maxChild;
+}
+
+const LATEX_DELIMITERS: [string, string][] = [
+  ['(', ')'],
+  ['[', ']'],
+  ['\\{', '\\}'],
+];
+
+const STRING_DELIMITERS: [string, string][] = [
+  ['(', ')'],
+  ['[', ']'],
+  ['{', '}'],
+];
+
+function getLaTeXDelimiters(depth: number): [string, string] {
+  return LATEX_DELIMITERS[depth % LATEX_DELIMITERS.length];
+}
+
+function getStringDelimiters(depth: number): [string, string] {
+  return STRING_DELIMITERS[depth % STRING_DELIMITERS.length];
+}
+
 export function formulaToLaTeX(f: Formula, style: NotationStyle = 'standard'): string {
   const sym = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.standard;
 
-  function render(node: Formula, parentPrecedence: number): string {
+  function render(node: Formula): string {
     if (node.type === 'atom') {
       return node.name;
     }
 
     if (node.type === 'not') {
-      const inner = render(node.operand, 5);
-      return `${sym.latexNot}${inner}`;
+      if (isBinaryFormula(node.operand)) {
+        const d = getEnclosureDepth(node.operand);
+        const [open, close] = getLaTeXDelimiters(d);
+        return `${sym.latexNot}${open}${render(node.operand)}${close}`;
+      }
+      return `${sym.latexNot}${render(node.operand)}`;
     }
 
-    let prec = 0;
     let op = '';
-
     switch (node.type) {
       case 'and':
-        prec = 4;
         op = sym.latexAnd;
         break;
       case 'or':
-        prec = 3;
         op = sym.latexOr;
         break;
       case 'implies':
-        prec = 2;
         op = sym.latexImplies;
         break;
       case 'iff':
-        prec = 1;
         op = sym.latexIff;
         break;
     }
 
-    const leftStr = render(node.left, prec);
-    const rightStr = render(node.right, node.type === 'implies' ? prec - 0.1 : prec);
-
-    const expr = `${leftStr}${op}${rightStr}`;
-
-    if (prec < parentPrecedence) {
-      return `(${expr})`;
+    let leftStr = '';
+    if (isBinaryFormula(node.left)) {
+      const d = getEnclosureDepth(node.left);
+      const [open, close] = getLaTeXDelimiters(d);
+      leftStr = `${open}${render(node.left)}${close}`;
+    } else {
+      leftStr = render(node.left);
     }
-    return expr;
+
+    let rightStr = '';
+    if (isBinaryFormula(node.right)) {
+      const d = getEnclosureDepth(node.right);
+      const [open, close] = getLaTeXDelimiters(d);
+      rightStr = `${open}${render(node.right)}${close}`;
+    } else {
+      rightStr = render(node.right);
+    }
+
+    return `${leftStr}${op}${rightStr}`;
   }
 
-  return render(f, 0);
+  return render(f);
 }
 
 export function formulaToString(f: Formula, style: NotationStyle = 'standard'): string {
   const sym = NOTATION_CONFIGS[style] || NOTATION_CONFIGS.standard;
 
-  function render(node: Formula, parentPrecedence: number): string {
+  function render(node: Formula): string {
     if (node.type === 'atom') {
       return node.name;
     }
 
     if (node.type === 'not') {
-      const inner = render(node.operand, 5);
-      return `${sym.not}${inner}`;
+      if (isBinaryFormula(node.operand)) {
+        const d = getEnclosureDepth(node.operand);
+        const [open, close] = getStringDelimiters(d);
+        return `${sym.not}${open}${render(node.operand)}${close}`;
+      }
+      return `${sym.not}${render(node.operand)}`;
     }
 
-    let prec = 0;
     let op = '';
-
     switch (node.type) {
       case 'and':
-        prec = 4;
         op = sym.and;
         break;
       case 'or':
-        prec = 3;
         op = sym.or;
         break;
       case 'implies':
-        prec = 2;
         op = sym.implies;
         break;
       case 'iff':
-        prec = 1;
         op = sym.iff;
         break;
     }
 
-    const leftStr = render(node.left, prec);
-    const rightStr = render(node.right, node.type === 'implies' ? prec - 0.1 : prec);
-
-    const expr = `${leftStr}${op}${rightStr}`;
-
-    if (prec < parentPrecedence) {
-      return `(${expr})`;
+    let leftStr = '';
+    if (isBinaryFormula(node.left)) {
+      const d = getEnclosureDepth(node.left);
+      const [open, close] = getStringDelimiters(d);
+      leftStr = `${open}${render(node.left)}${close}`;
+    } else {
+      leftStr = render(node.left);
     }
-    return expr;
+
+    let rightStr = '';
+    if (isBinaryFormula(node.right)) {
+      const d = getEnclosureDepth(node.right);
+      const [open, close] = getStringDelimiters(d);
+      rightStr = `${open}${render(node.right)}${close}`;
+    } else {
+      rightStr = render(node.right);
+    }
+
+    return `${leftStr}${op}${rightStr}`;
   }
 
-  return render(f, 0);
+  return render(f);
 }
 
 export interface ReplacementResult {
