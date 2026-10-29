@@ -24,6 +24,7 @@
 
   let formulaText: string = '';
   let selectedRuleId: RuleId = 'MP';
+  let ruleText: string = '';
   let citationInput: string = '';
   let validationError: string = '';
   let showKeyboard: boolean = false;
@@ -33,8 +34,21 @@
   $: selectedRule = RULE_MAP.get(selectedRuleId);
   $: parsed = safeParseFormula(formulaText);
 
-  const inferenceRules = COPI_RULES.filter(r => r.category === 'inference');
-  const replacementRules = COPI_RULES.filter(r => r.category === 'replacement');
+  function normalizeRule(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  $: typedRule = ruleText.trim()
+    ? COPI_RULES.find(rule => [rule.id, rule.abbreviation, rule.name]
+        .some(value => normalizeRule(value) === normalizeRule(ruleText)))
+    : undefined;
+  $: if (typedRule) selectedRuleId = typedRule.id;
+
+  function selectRule(ruleId: RuleId) {
+    selectedRuleId = ruleId;
+    ruleText = RULE_MAP.get(ruleId)?.name || '';
+    validationError = '';
+  }
 
   function handleFormulaInput(e: Event) {
     const target = e.target as HTMLInputElement;
@@ -117,7 +131,12 @@
   }
 
   function handleSubmit() {
+    if (disabled) return;
     validationError = '';
+    if (!typedRule) {
+      validationError = 'Enter a rule abbreviation or full name, or choose from the dropdown.';
+      return;
+    }
     if (!formulaText.trim()) {
       validationError = 'Please enter a derived formula.';
       return;
@@ -230,7 +249,7 @@
     <!-- Rule Select -->
     <div class="sm:col-span-6 space-y-1">
       <div class="flex items-center justify-between">
-        <label for="step-rule-select" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+        <label for="step-rule-input" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
           Justification Rule
         </label>
         <button
@@ -242,23 +261,30 @@
           <span>Rules Guide ↗</span>
         </button>
       </div>
-      <select
-        id="step-rule-select"
-        bind:value={selectedRuleId}
+      <input
+        type="text"
+        id="step-rule-input"
+        aria-label="Type justification rule"
+        bind:value={ruleText}
+        on:keydown={handleKeyDown}
+        list="step-rule-suggestions"
+        placeholder="Type a rule"
+        autocomplete="off"
+        maxlength="80"
+        aria-invalid={ruleText.trim() && !typedRule ? 'true' : undefined}
         {disabled}
-        class="w-full h-9 px-2.5 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white cursor-pointer"
-      >
-        <optgroup label="── 9 Rules of Inference ──">
-          {#each inferenceRules as r}
-            <option value={r.id}>{r.abbreviation} — {r.name}</option>
-          {/each}
-        </optgroup>
-        <optgroup label="── 10 Rules of Replacement ──">
-          {#each replacementRules as r}
-            <option value={r.id}>{r.abbreviation} — {r.name}</option>
-          {/each}
-        </optgroup>
-      </select>
+        class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+      />
+      <datalist id="step-rule-suggestions">
+        {#each COPI_RULES as rule}
+          <option value={rule.name}>{rule.abbreviation}</option>
+        {/each}
+      </datalist>
+      {#if ruleText.trim()}
+        <p class="text-[10px] font-sans text-neutral-600 dark:text-neutral-300" aria-live="polite">
+          {typedRule ? `${typedRule.abbreviation} — ${typedRule.name}` : 'Enter a complete abbreviation or rule name.'}
+        </p>
+      {/if}
     </div>
 
     <!-- Citations Input -->
@@ -325,7 +351,7 @@
   isOpen={showRulesReference}
   activeRuleId={selectedRuleId}
   on:selectRule={(e) => {
-    selectedRuleId = e.detail;
+    selectRule(e.detail);
     showRulesReference = false;
   }}
   on:close={() => (showRulesReference = false)}

@@ -8,10 +8,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.1.2',
+    date: '2026-10-29',
+    title: 'Typed Rule Selection & Rules Guide Refinements',
+    tag: 'Latest',
+    highlights: [
+      'Combined typing and dropdown suggestions in a single justification field across solving modes.',
+      'Added automatic rule selection from abbreviations or full names, ignoring case and punctuation.',
+      'Kept Rules Guide selection connected to the justification field and added feedback for unrecognized rules.',
+      'Simplified the Rules Guide by removing line-count badges, example boxes, and the reference badge, with shorter category labels and search text.'
+    ]
+  },
+  {
     version: 'v1.1.1',
     date: '2026-09-09',
     title: 'Daily Solve Persistence & Reset Rollover',
-    tag: 'Latest',
+    tag: 'Release',
     highlights: [
       'Added persistent solved state tracking across page refreshes for both guest and authenticated users.',
       'Added a real-time countdown timer tracking the 00:00 UTC daily problem rotation rollover.',

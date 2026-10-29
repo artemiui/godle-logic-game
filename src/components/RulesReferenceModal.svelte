@@ -55,7 +55,6 @@
         <div class="space-y-0.5">
           <div class="flex items-center gap-2">
             <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 font-semibold">Copi's 19 Rules of Deduction</span>
-            <span class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-mono">Reference Guide</span>
           </div>
           <h2 id="rules-reference-title" class="font-serif text-lg sm:text-xl font-medium text-neutral-950 dark:text-white">
             Rules of Inference & Replacement
@@ -81,7 +80,7 @@
           <input
             type="text"
             bind:value={searchQuery}
-            placeholder="Search rules by name, symbol, abbreviation (e.g. MP, De Morgan, ~p)..."
+            placeholder="Search by name, symbol, abbreviation"
             class="w-full h-9 pl-9 pr-3 text-xs bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-950 dark:focus:border-white transition-all font-sans"
           />
           <svg class="w-4 h-4 absolute left-3 top-2.5 text-neutral-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,7 +141,7 @@
                 }"
               >
                 <div>
-                  <!-- Header: Abbreviation, Category & Premise requirement -->
+                  <!-- Header: Abbreviation and name -->
                   <div class="flex items-center justify-between gap-2 mb-2">
                     <div class="flex items-center gap-2">
                       <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-neutral-900 text-white dark:bg-white dark:text-neutral-950">
@@ -152,14 +151,6 @@
                         {rule.name}
                       </h3>
                     </div>
-
-                    <span class="text-[10px] font-sans font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border {
-                      rule.category === 'inference'
-                        ? 'border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                        : 'border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                    }">
-                      {rule.requiredPremiseCount} {rule.requiredPremiseCount === 1 ? 'line' : 'lines'}
-                    </span>
                   </div>
 
                   <!-- Schema Display -->
@@ -173,22 +164,12 @@
                   <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans mb-3">
                     {rule.description}
                   </p>
-
-                  <!-- Example box -->
-                  <div class="p-2 rounded bg-neutral-50 dark:bg-neutral-900/40 border border-neutral-100 dark:border-neutral-900 text-[11px] font-sans text-neutral-500 dark:text-neutral-400 space-y-0.5">
-                    <div>
-                      <span class="font-medium text-neutral-700 dark:text-neutral-300">Example:</span>
-                      <span class="font-serif italic text-neutral-900 dark:text-neutral-200">
-                        {rule.example.inputs.join(', ')} ⊢ {rule.example.result}
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
                 <!-- Footer Action -->
                 <div class="mt-3.5 pt-2.5 border-t border-neutral-100 dark:border-neutral-900 flex items-center justify-between">
                   <span class="text-[10px] font-sans text-neutral-400 uppercase tracking-wider">
-                    {rule.category === 'inference' ? 'Inference Rule' : 'Replacement Equivalence'}
+                    {rule.category === 'inference' ? 'Inference' : 'Replacement'}
                   </span>
 
                   <button

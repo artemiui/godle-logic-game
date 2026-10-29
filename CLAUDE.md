@@ -552,7 +552,7 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 | Component              | Purpose                                       | Events                            |
 |------------------------|-----------------------------------------------|-----------------------------------|
 | `ProofTable`           | Formal proof display with clickable lines     | `citeLine`, `undoStep` (supports `hibernated`) |
-| `StepInput`            | Formula input (keyword auto-conversion) + rule picker + citation chips + Rules Guide trigger | `submitStep` (supports `hibernated`) |
+| `StepInput`            | Formula input (keyword auto-conversion) + combined typed rule input and native suggestions dropdown (case/punctuation-insensitive abbreviation or full name) + citation chips + Rules Guide trigger | `submitStep` (supports `hibernated`) |
 | `RulesReferenceModal`  | Copi's 19 rules in-game reference drawer with live search, formal schemas, and 1-click rule selection | `selectRule`, `close`             |
 | `SymbolKeyboard`       | Virtual keypad (notation-adaptive)            | `insert`, `backspace`, `clear`    |
 | `LaTeX`                | KaTeX renderer with dynamic notation & hibernation support | —                                 |
