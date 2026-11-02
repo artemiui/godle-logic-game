@@ -688,3 +688,11 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
   for protected endpoints
 - **Reactive Patterns**: `$:` reactive declarations, `$store` auto-subscriptions,
   `createEventDispatcher()` for component events
+
+### Formula reuse and victory audio
+
+Settings includes a Sounds on/off switch backed by `soundEnabledStore` in `src/stores/theme.ts`. It defaults to on and persists in `localStorage('goodle_sound_enabled')`. Turning sounds off stops any currently playing victory clip and prevents future playback across all modes. The Volume slider uses `soundVolumeStore`, defaults to 35%, persists in `localStorage('goodle_sound_volume')`, and updates playback volume immediately.
+
+Rendered formulas copy as parseable plain text in the active notation. The parser normalizes Unicode mathematical letters, invisible formatting characters, and alternate tilde, dot, and arrow glyphs. Clicking a proof formula opens inline **Use** and **Cite** actions; `ProofTable` emits `insertFormula`, and Daily, Frenzy, and Sandbox pass it to `StepInput.insertFormula()` to populate and focus the editor. Cite uses the existing citation toggle; line-number clicks continue to cite lines. A faint dotted underline indicates that formulas are interactive.
+
+`src/logic/sound.ts` plays the shared `/audio/victory.mp3` clip (source recorded in `public/audio/README.md`) for newly completed Daily, Frenzy, and Sandbox puzzles. Restoring a completed daily puzzle does not replay it. Audio failure never blocks solving.

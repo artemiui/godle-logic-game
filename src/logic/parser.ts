@@ -9,7 +9,13 @@ export interface Token {
 export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
   let i = 0;
-  const s = input.trim();
+  const s = input.normalize('NFKC')
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+    .replace(/[∼˜]/g, '~')
+    .replace(/⋅/g, '·')
+    .replace(/⇒/g, '→')
+    .replace(/⇔/g, '↔')
+    .trim();
 
   while (i < s.length) {
     const ch = s[i];

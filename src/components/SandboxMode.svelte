@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import confetti from 'canvas-confetti';
+  import { playVictorySound } from '../logic/sound';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
   import { COPI_PRESET_PROBLEMS, COMMUNITY_DEFAULT_PROBLEMS } from '../logic/presets';
   import { generateProblem, encodeProblemToShareCode } from '../logic/generator';
@@ -451,6 +452,7 @@
     steps = [...steps, newStep];
 
     if (formulasEqual(formula, problem.conclusion)) {
+      playVictorySound();
       isWon = true;
       try {
         confetti({ particleCount: 35, spread: 45 });
@@ -947,6 +949,7 @@
     {hibernated}
     on:undoStep={handleUndo}
     on:citeLine={handleCiteLine}
+    on:insertFormula={(event) => stepInputComponent?.insertFormula(event.detail)}
   />
 
   <!-- Derivation Input -->

@@ -31,6 +31,17 @@
   let showRulesReference: boolean = false;
   let inputElement: HTMLInputElement | null = null;
 
+  export function insertFormula(text: string) {
+    if (disabled) return;
+    formulaText = text;
+    validationError = '';
+    tick().then(() => {
+      inputElement?.focus();
+      inputElement?.setSelectionRange(text.length, text.length);
+      inputElement?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  }
+
   $: selectedRule = RULE_MAP.get(selectedRuleId);
   $: parsed = safeParseFormula(formulaText);
 

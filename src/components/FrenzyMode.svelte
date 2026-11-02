@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import confetti from 'canvas-confetti';
+  import { playVictorySound } from '../logic/sound';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
   import { generateProblem, formatProblemShareString, encodeProblemToShareCode, decodeProblemFromShareCode } from '../logic/generator';
   import { validateProofStep } from '../logic/checker';
@@ -183,6 +184,7 @@
   }
 
   function handleFrenzyVictory() {
+    playVictorySound();
     isWon = true;
     if (timerInterval) clearInterval(timerInterval);
     score = Math.max(100, hearts * 500 + Math.max(0, 1000 - timer * 8));
@@ -378,6 +380,7 @@
       canUndo={false}
       {hibernated}
       on:citeLine={handleCiteLine}
+    on:insertFormula={(event) => stepInputComponent?.insertFormula(event.detail)}
     />
 
     <!-- Deduction Input (active if neither game over nor won) -->

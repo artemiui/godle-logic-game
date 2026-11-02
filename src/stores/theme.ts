@@ -29,3 +29,34 @@ export function toggleTheme() {
 }
 
 export const isSettingsOpen = writable<boolean>(false);
+
+function getInitialSoundEnabled(): boolean {
+  try {
+    return typeof window === 'undefined' || localStorage.getItem('goodle_sound_enabled') !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+export const soundEnabledStore = writable<boolean>(getInitialSoundEnabled());
+
+function getInitialSoundVolume(): number {
+  try {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('goodle_sound_volume') : null;
+    const value = saved === null ? 35 : Number(saved);
+    return Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 35;
+  } catch {
+    return 35;
+  }
+}
+
+export const soundVolumeStore = writable<number>(getInitialSoundVolume());
+
+if (typeof window !== 'undefined') {
+  soundVolumeStore.subscribe(volume => {
+    try { localStorage.setItem('goodle_sound_volume', String(volume)); } catch {}
+  });
+  soundEnabledStore.subscribe(enabled => {
+    try { localStorage.setItem('goodle_sound_enabled', String(enabled)); } catch {}
+  });
+}

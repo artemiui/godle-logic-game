@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { themeStore, isSettingsOpen } from '../stores/theme';
+  import { themeStore, isSettingsOpen, soundEnabledStore, soundVolumeStore } from '../stores/theme';
   import { notationStore } from '../stores/auth';
   import { NOTATION_CONFIGS } from '../logic/latex';
   import type { NotationStyle, Formula } from '../types/logic';
@@ -140,6 +140,38 @@
             <span>Dark</span>
           </button>
         </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-3">
+        <span id="sound-setting-label" class="text-xs font-sans uppercase tracking-wider font-semibold text-neutral-700 dark:text-neutral-300">Sounds</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={$soundEnabledStore}
+          aria-labelledby="sound-setting-label"
+          on:click={() => soundEnabledStore.update(enabled => !enabled)}
+          class="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-xs font-sans cursor-pointer hover:border-neutral-900 dark:hover:border-white"
+        >
+          {$soundEnabledStore ? 'On' : 'Off'}
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-sans text-neutral-600 dark:text-neutral-300">
+          <label for="sound-volume">Volume</label>
+          <span class="tabular-nums">{$soundVolumeStore}%</span>
+        </div>
+        <input
+          id="sound-volume"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          bind:value={$soundVolumeStore}
+          disabled={!$soundEnabledStore}
+          aria-valuetext={`${$soundVolumeStore}%`}
+          class="w-full accent-neutral-900 dark:accent-neutral-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        />
       </div>
 
       <!-- Notation Selector -->

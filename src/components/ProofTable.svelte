@@ -4,6 +4,8 @@
   import { RULE_MAP } from '../logic/rules';
   import { formulasEqual } from '../logic/ast';
   import LaTeX from './LaTeX.svelte';
+  import { formulaToString } from '../logic/latex';
+  import { notationStore } from '../stores/auth';
 
   export let steps: ProofStep[] = [];
   export let conclusion: Formula;
@@ -14,7 +16,11 @@
   const dispatch = createEventDispatcher<{
     undoStep: void;
     citeLine: number;
+    insertFormula: string;
   }>();
+
+  let actionLine: number | null = null;
+  $: if (hibernated || isComplete) actionLine = null;
 
   $: hasReachedConclusion = steps.some(s => formulasEqual(s.formula, conclusion));
 
@@ -77,7 +83,38 @@
 
           <!-- Formula -->
           <div class="col-span-7 sm:col-span-8 px-3 text-lg sm:text-xl text-neutral-950 dark:text-neutral-100 flex items-center flex-wrap gap-2">
-            <LaTeX formula={step.formula} {hibernated} />
+            <button
+              type="button"
+              class="text-left cursor-pointer border-b border-dotted border-neutral-300/70 dark:border-neutral-700/70 hover:border-neutral-500 dark:hover:border-neutral-400 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4"
+              aria-label="Actions for formula on line {step.stepNumber}"
+              aria-expanded={actionLine === step.stepNumber}
+              on:click={() => actionLine = actionLine === step.stepNumber ? null : step.stepNumber}
+              on:keydown={(event) => { if (event.key === 'Escape') actionLine = null; }}
+            >
+              <LaTeX formula={step.formula} {hibernated} />
+            </button>
+            {#if actionLine === step.stepNumber && !isComplete}
+              <div class="inline-flex items-center border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm text-[11px] font-sans">
+              <button
+                type="button"
+                class="px-2.5 py-1 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+                aria-label="Use formula from line {step.stepNumber} in input"
+                on:click={() => {
+                  dispatch('insertFormula', formulaToString(step.formula, $notationStore));
+                  actionLine = null;
+                }}
+              >Use</button>
+              <button
+                type="button"
+                class="px-2.5 py-1 border-l border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+                aria-label="Cite line {step.stepNumber}"
+                on:click={() => {
+                  dispatch('citeLine', step.stepNumber);
+                  actionLine = null;
+                }}
+              >Cite</button>
+              </div>
+            {/if}
             {#if isTarget}
               <span class="text-[9px] font-sans uppercase tracking-wider border border-neutral-950 dark:border-white px-1.5 py-0.5 ml-2 font-bold">
                 Proven

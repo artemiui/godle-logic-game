@@ -1,7 +1,7 @@
 <script lang="ts">
   import katex from 'katex';
   import type { Formula, NotationStyle } from '../types/logic';
-  import { formulaToLaTeX } from '../logic/latex';
+  import { formulaToLaTeX, formulaToString } from '../logic/latex';
   import { notationStore } from '../stores/auth';
 
   export let formula: Formula | null = null;
@@ -30,8 +30,14 @@
   }
 
   $: html = cachedHtml;
+
+  function handleCopy(event: ClipboardEvent) {
+    if (!formula || !event.clipboardData) return;
+    event.preventDefault();
+    event.clipboardData.setData('text/plain', formulaToString(formula, effectiveStyle));
+  }
 </script>
 
-<span class="inline-flex items-center {className}">
+<span class="inline-flex items-center {className}" on:copy={handleCopy}>
   {@html html}
 </span>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import confetti from 'canvas-confetti';
+  import { playVictorySound } from '../logic/sound';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
   import { getDailyProblem } from '../logic/presets';
   import { validateProofStep } from '../logic/checker';
@@ -349,6 +350,7 @@
   }
 
   async function handleWin() {
+    playVictorySound();
     if (isStageSolved) return;
     isWon = true;
     isStageSolved = true;
@@ -605,6 +607,7 @@
     {hibernated}
     on:undoStep={handleUndo}
     on:citeLine={handleCiteLine}
+    on:insertFormula={(event) => stepInputComponent?.insertFormula(event.detail)}
   />
 
   <!-- Deduction Step Input Bar (Shown only if not completed) -->

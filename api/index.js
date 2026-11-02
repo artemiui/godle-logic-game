@@ -1239,7 +1239,7 @@ function formulaToString(f, style = "standard") {
 function tokenize(input) {
   const tokens = [];
   let i = 0;
-  const s = input.trim();
+  const s = input.normalize("NFKC").replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").replace(/[∼˜]/g, "~").replace(/⋅/g, "\xB7").replace(/⇒/g, "\u2192").replace(/⇔/g, "\u2194").trim();
   while (i < s.length) {
     const ch = s[i];
     if (/\s/.test(ch)) {
