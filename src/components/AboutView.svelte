@@ -1,6 +1,7 @@
 <script lang="ts">
   import { activeTabStore } from '../stores/auth';
   import { CHANGELOG } from '../data/changelog';
+  import { openLegalModal } from '../stores/legal';
 
   let showAllChangelog: boolean = false;
 </script>
@@ -127,6 +128,42 @@
             <span>GitHub Repository</span>
             <span class="group-hover:translate-x-0.5 transition-transform text-neutral-400">→</span>
           </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Legal & Transparency -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-baseline border-b border-neutral-200/60 dark:border-neutral-800/60 pb-10">
+      <div class="md:col-span-4">
+        <h2 class="font-serif text-xl font-medium text-neutral-950 dark:text-white">
+          Legal & Transparency
+        </h2>
+        <span class="text-xs font-sans text-neutral-500">Privacy & Terms</span>
+      </div>
+      <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
+        <p>
+          We adhere to strict data minimization, zero commercialization, and open-source transparency. Logicians retain complete control over their proofs, streaks, and personal data.
+        </p>
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            type="button"
+            on:click={() => openLegalModal('privacy')}
+            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-xs font-sans font-medium text-neutral-900 dark:text-white transition-colors cursor-pointer"
+          >
+            <span>Privacy Policy</span>
+            <span class="text-neutral-400">→</span>
+          </button>
+          <button
+            type="button"
+            on:click={() => openLegalModal('terms')}
+            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-xs font-sans font-medium text-neutral-900 dark:text-white transition-colors cursor-pointer"
+          >
+            <span>Terms of Service</span>
+            <span class="text-neutral-400">→</span>
+          </button>
+          <span class="text-[11px] text-neutral-400 font-sans italic self-center">
+            (Security policy coming soon)
+          </span>
         </div>
       </div>
     </section>

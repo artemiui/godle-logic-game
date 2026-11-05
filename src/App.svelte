@@ -15,6 +15,8 @@
   import LandingPage from './components/LandingPage.svelte';
   import AboutView from './components/AboutView.svelte';
   import Analytics from './components/Analytics.svelte';
+  import LegalModal from './components/LegalModal.svelte';
+  import { openLegalModal } from './stores/legal';
 
   let showLanding: boolean = true;
 
@@ -91,6 +93,15 @@
     } else if (mode === 'wordle') {
       activeTabStore.set('wordle');
       showLanding = false;
+    } else if (mode === 'privacy') {
+      openLegalModal('privacy');
+    } else if (mode === 'terms') {
+      openLegalModal('terms');
+    }
+
+    const legalParam = params.get('legal');
+    if (legalParam === 'privacy' || legalParam === 'terms') {
+      openLegalModal(legalParam);
     }
   });
 </script>
@@ -135,12 +146,38 @@
       <div class="text-[11px] text-neutral-600 dark:text-neutral-300">
         Irving M. Copi
       </div>
+      <div class="text-[11px] text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-3 pt-2">
+        <button
+          type="button"
+          on:click={() => openLegalModal('privacy')}
+          class="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+        >
+          Privacy Policy
+        </button>
+        <span class="opacity-30">·</span>
+        <button
+          type="button"
+          on:click={() => openLegalModal('terms')}
+          class="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+        >
+          Terms of Service
+        </button>
+        <span class="opacity-30">·</span>
+        <button
+          type="button"
+          on:click={() => { activeTabStore.set('about'); }}
+          class="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+        >
+          About
+        </button>
+      </div>
     </div>
   </footer>
 
   <!-- Modals & Utilities -->
   <Analytics />
   <SettingsModal />
+  <LegalModal />
 
   <AuthModal
     isOpen={showAuthModal}

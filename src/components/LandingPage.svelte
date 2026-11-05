@@ -3,6 +3,7 @@
   import { themeStore, toggleTheme } from '../stores/theme';
   import type { ActiveTab } from '../stores/auth';
   import { CHANGELOG } from '../data/changelog';
+  import { openLegalModal } from '../stores/legal';
 
   const dispatch = createEventDispatcher<{
     enter: void;
@@ -344,7 +345,7 @@
       <div class="font-serif italic text-neutral-700 dark:text-neutral-300 text-sm">
         "Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning."
       </div>
-      <div class="text-[11px] text-neutral-500 flex items-center justify-center gap-3">
+      <div class="text-[11px] text-neutral-500 flex flex-wrap items-center justify-center gap-3">
         <span>Irving M. Copi</span>
         <span class="opacity-40">·</span>
         <button
@@ -353,6 +354,22 @@
           class="hover:text-neutral-900 dark:hover:text-white underline cursor-pointer transition-colors"
         >
           About gödle
+        </button>
+        <span class="opacity-40">·</span>
+        <button
+          type="button"
+          on:click={() => openLegalModal('privacy')}
+          class="hover:text-neutral-900 dark:hover:text-white underline cursor-pointer transition-colors"
+        >
+          Privacy Policy
+        </button>
+        <span class="opacity-40">·</span>
+        <button
+          type="button"
+          on:click={() => openLegalModal('terms')}
+          class="hover:text-neutral-900 dark:hover:text-white underline cursor-pointer transition-colors"
+        >
+          Terms of Service
         </button>
       </div>
     </div>

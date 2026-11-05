@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { authStore } from '../stores/auth';
+  import { openLegalModal } from '../stores/legal';
 
   export let isOpen: boolean = false;
   export let initialMode: 'prompt' | 'login' | 'register' = 'prompt';
@@ -458,6 +459,13 @@
           <div class="text-center pt-2 text-[11px] font-serif italic text-neutral-400 dark:text-neutral-500">
             "A proposition is that in virtue of which a statement is true or false."
           </div>
+
+          <div class="text-center text-[10px] text-neutral-400 dark:text-neutral-500 font-sans pt-1">
+            By authenticating, you agree to gödle's
+            <button type="button" on:click={() => openLegalModal('terms')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Terms of Service</button>
+            and
+            <button type="button" on:click={() => openLegalModal('privacy')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Privacy Policy</button>.
+          </div>
         </div>
 
       <!-- VIEW 2: LOGIN OR REGISTER -->
@@ -537,23 +545,9 @@
 
             <!-- Password Field -->
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label for="auth-password-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400">
-                  Password
-                </label>
-                {#if mode === 'login'}
-                  <button
-                    type="button"
-                    on:click={() => {
-                      switchMode('reset');
-                      resetUsername = username;
-                    }}
-                    class="text-[10px] text-neutral-500 hover:text-black dark:hover:text-white uppercase tracking-wider font-semibold cursor-pointer"
-                  >
-                    Forgot password?
-                  </button>
-                {/if}
-              </div>
+              <label for="auth-password-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+                Password
+              </label>
               <input
                 id="auth-password-field"
                 type="password"
@@ -633,6 +627,19 @@
             >
               {loading ? 'Authenticating...' : (mode === 'login' ? 'Sign In' : 'Create Logician Account')}
             </button>
+
+            {#if mode === 'login'}
+              <p class="text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                Password reset is yet to be implemented.
+              </p>
+            {:else if mode === 'register'}
+              <p class="text-center text-[10px] text-neutral-500 dark:text-neutral-400">
+                By creating an account, you agree to our
+                <button type="button" on:click={() => openLegalModal('terms')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Terms</button>
+                &
+                <button type="button" on:click={() => openLegalModal('privacy')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Privacy Policy</button>.
+              </p>
+            {/if}
           </form>
 
           <!-- Social Sign In under Login/Register -->

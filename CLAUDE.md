@@ -155,13 +155,15 @@ goodle/
 │   │   ├── PublicProfileModal.svelte  # Read-only public profile with reporting system
 │   │   ├── StatsModal.svelte      # Daily stats distribution & frenzy leaderboard
 │   │   ├── SettingsModal.svelte   # Theme toggle & notation selector with live preview
+│   │   ├── LegalModal.svelte      # Privacy Policy & Terms of Service modal with tab switching
 │   │   ├── ShareModal.svelte      # Canvas proof card renderer, social sharing, clipboard
 │   │   ├── CaptchaGate.svelte     # reCAPTCHA gate with dev bypass fallback
 │   │   ├── LandingPage.svelte     # Minimalist Truth Trees landing page, 4 feature cards, synced changelog
 │   │   └── AboutView.svelte       # About tab: Copi heritage, PHILO 12, creator, repo, synced changelog
 │   ├── stores/
 │   │   ├── auth.ts            # authStore (user, token, captcha), notationStore, activeTabStore
-│   │   └── theme.ts           # themeStore (light/dark), toggleTheme, isSettingsOpen
+│   │   ├── theme.ts           # themeStore (light/dark), toggleTheme, isSettingsOpen
+│   │   └── legal.ts           # legalModalStore, openLegalModal, closeLegalModal
 │   ├── App.svelte             # Root layout, view router, modal orchestration
 │   ├── app.css                # Tailwind directives, font stack, scrollbar styling
 │   └── main.ts                # Svelte 5 mount(App, { target: #app })
@@ -566,6 +568,7 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 | `PublicProfileModal`  | Read-only public profile with report system          |
 | `StatsModal`          | Daily stats + frenzy leaderboard                     |
 | `SettingsModal`       | Theme toggle + notation selector with live preview   |
+| `LegalModal`          | Privacy Policy + Terms of Service viewer with tabs   |
 | `ShareModal`          | Canvas proof card renderer + social sharing          |
 | `RulesReferenceModal` | In-game rules reference modal with search & 1-click select |
 | `CaptchaGate`         | reCAPTCHA overlay with dev bypass                    |
@@ -604,6 +607,11 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 - Subscription syncs `document.documentElement.classList` and localStorage
 - `toggleTheme()`: inverts current theme
 - `isSettingsOpen`: global boolean store for SettingsModal visibility
+
+### `legalModalStore` (`src/stores/legal.ts`)
+- **State**: `{ isOpen: boolean, activeTab: 'privacy' | 'terms' }`
+- **Helpers**: `openLegalModal(tab?)`, `closeLegalModal()`
+- Controls the visibility and active tab of `LegalModal.svelte`
 
 ---
 
