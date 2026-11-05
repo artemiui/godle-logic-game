@@ -48,15 +48,6 @@
       <!-- Modal Header -->
       <div class="p-4 sm:p-6 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-white dark:bg-neutral-950">
         <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400 font-semibold">
-              gödle · Legal & Transparency
-            </span>
-            <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
-            <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
-              Updated November 2026
-            </span>
-          </div>
           <h2 id="legal-modal-title" class="font-serif text-xl sm:text-2xl font-normal text-neutral-950 dark:text-white">
             {activeTab === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
           </h2>
@@ -97,12 +88,6 @@
           >
             Terms of Service
           </button>
-        </div>
-
-        <!-- Security Coming Soon Pill -->
-        <div class="hidden sm:flex items-center gap-1.5 py-1 px-2.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-950/60 text-[10px] text-neutral-500 dark:text-neutral-400">
-          <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-          <span>Security Policy: Coming Soon</span>
         </div>
       </div>
 
@@ -395,22 +380,14 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-2 text-neutral-500 text-[11px]">
-          <span>Formal Deductive Integrity</span>
-          <span class="opacity-40">·</span>
-          <span>Open-Source Philosophy</span>
-        </div>
-
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            on:click={handleClose}
-            class="px-4 py-1.5 border border-neutral-900 dark:border-white bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:opacity-90 transition-opacity text-xs font-bold uppercase tracking-wider cursor-pointer"
-          >
-            Acknowledge & Close
-          </button>
-        </div>
+      <div class="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 flex items-center justify-end text-xs">
+        <button
+          type="button"
+          on:click={handleClose}
+          class="px-4 py-1.5 border border-neutral-900 dark:border-white bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:opacity-90 transition-opacity text-xs font-bold uppercase tracking-wider cursor-pointer"
+        >
+          Acknowledge & Close
+        </button>
       </div>
     </div>
   </div>

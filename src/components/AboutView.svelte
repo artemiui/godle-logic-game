@@ -161,9 +161,6 @@
             <span>Terms of Service</span>
             <span class="text-neutral-400">→</span>
           </button>
-          <span class="text-[11px] text-neutral-400 font-sans italic self-center">
-            (Security policy coming soon)
-          </span>
         </div>
       </div>
     </section>
