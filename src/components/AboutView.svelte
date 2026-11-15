@@ -37,7 +37,7 @@
       </div>
       <div class="md:col-span-8 space-y-4 text-sm text-neutral-700 dark:text-neutral-300">
         <p>
-          <strong class="font-semibold text-neutral-950 dark:text-white">gödle</strong> is a full-stack propositional symbolic logic web game inspired by the precision and pedagogical clarity of classic logic texts. While traditional puzzle games challenge vocabulary or pattern matching, gödle challenges formal deductive validity: given a set of premises, can you systematically derive a target conclusion using only truth-preserving inference rules?
+          <strong class="font-semibold text-neutral-950 dark:text-white">gödle</strong> is a propositional symbolic logic web game inspired by the precision and pedagogical clarity of classic logic texts. While traditional puzzle games challenge vocabulary or pattern matching, gödle challenges formal deductive validity: given a set of premises, can you systematically derive a target conclusion using only truth-preserving inference rules?
         </p>
         <p>
           Unlike automated black-box solvers, gödle requires the logician to construct every step of the deduction, citing exact premise lines and selecting appropriate justifications. Every proof step is verified instantaneously against the rigorous syntactic tree grammar of propositional calculus.
