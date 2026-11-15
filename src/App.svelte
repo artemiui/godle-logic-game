@@ -58,7 +58,7 @@
       fetch('/api/auth/oauth/github', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: githubCode }),
+        body: JSON.stringify({ code: githubCode, state: params.get('state') }),
       })
         .then(r => r.json())
         .then(data => {
@@ -66,11 +66,18 @@
             authStore.setUser(data.user, data.token);
             authStore.checkAuth();
             showLanding = false;
+          } else if (data.success) {
+            // GitHub linked to the signed-in account
+            authStore.checkAuth();
+            showLanding = false;
+          } else if (data.error) {
+            console.warn('GitHub sign-in:', data.error);
           }
         })
         .catch(console.error)
         .finally(() => {
           params.delete('code');
+          params.delete('state');
           const newQuery = params.toString();
           const newUrl = window.location.pathname + (newQuery ? `?${newQuery}` : '');
           window.history.replaceState({}, '', newUrl);

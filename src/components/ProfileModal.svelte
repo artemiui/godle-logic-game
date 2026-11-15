@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { startGitHubOAuth, fetchOAuthConfig } from '../logic/oauth';
   import { createEventDispatcher } from 'svelte';
   import { authStore } from '../stores/auth';
 
@@ -318,7 +319,17 @@
           oauthError = data.error || 'Failed to disconnect GitHub account.';
         }
       } else {
-        // Connect / Link GitHub
+        // Connect / Link GitHub through the real sign-in flow (state-checked on return)
+        const cfg = await fetchOAuthConfig();
+        if (cfg.githubClientId) {
+          await startGitHubOAuth(cfg.githubClientId);
+          return;
+        }
+        if (!cfg.devMode) {
+          oauthError = 'GitHub sign-in is not configured for this deployment.';
+          return;
+        }
+        // Local development only (ALLOW_DEV_OAUTH=1)
         const res = await fetch('/api/auth/oauth/github', {
           method: 'POST',
           headers: {
