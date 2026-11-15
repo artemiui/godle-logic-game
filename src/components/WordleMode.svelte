@@ -457,11 +457,10 @@
   <header class="space-y-6">
     <div class="flex items-start justify-between gap-4">
       <div class="min-w-0 space-y-2">
-        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-sans text-meta text-ink-3">
-          <span class="font-medium text-ink-2">Daily · {prettyDate}</span>
-          <span class="tabular-nums">New set in {countdownStr}</span>
-        </div>
-        <h1 class="page-title">{problem.title}</h1>
+        <!-- Problem titles stay in the data (saves, shares, history) but are hidden while solving -->
+        <span class="font-sans text-meta font-medium text-ink-2">Daily</span>
+        <h1 class="page-title">{prettyDate}</h1>
+        <p class="font-sans text-caption text-ink-3 tabular-nums">New set in {countdownStr}</p>
         {#if problem.author || problem.creator_username}
           <p class="font-sans text-caption text-ink-2">
             Community theorem by <span class="text-ink font-medium">@{problem.author || problem.creator_username}</span>

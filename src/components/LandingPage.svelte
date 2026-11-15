@@ -4,8 +4,6 @@
   import type { ActiveTab } from '../stores/auth';
   import { CHANGELOG } from '../data/changelog';
   import { openLegalModal } from '../stores/legal';
-  import { safeParseFormula } from '../logic/parser';
-  import LaTeX from './LaTeX.svelte';
 
   const dispatch = createEventDispatcher<{
     enter: void;
@@ -14,16 +12,6 @@
 
   let showAllChangelog: boolean = false;
 
-  // A real exercise, typeset as the hero visual
-  const f = (src: string) => safeParseFormula(src).formula!;
-  const sample = [
-    { n: 1, formula: f('A > B'), note: 'Premise' },
-    { n: 2, formula: f('B > C'), note: 'Premise' },
-    { n: 3, formula: f('A'), note: 'Premise' },
-    { n: 4, formula: f('A > C'), note: '1, 2  HS' },
-    { n: 5, formula: f('C'), note: '4, 3  MP', done: true },
-  ];
-  const sampleConclusion = f('C');
 
   const modes: { id: ActiveTab; name: string; line: string }[] = [
     { id: 'wordle', name: 'Daily', line: 'Three problems from Copi’s Symbolic Logic every day, Novice to Master, with a streak' },
@@ -54,18 +42,17 @@
   </header>
 
   <main class="flex-1">
-    <!-- Hero: wordmark and promise on the left, a typeset proof on the right -->
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 min-h-[calc(100vh-56px)] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-12 lg:gap-16 py-16 lg:py-12">
+    <!-- Hero: wordmark, promise, one action -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 min-h-[calc(100vh-56px)] flex items-center py-16">
       <div class="landing-rise space-y-8">
         <div>
           <h1 class="font-sans font-black text-7xl sm:text-8xl lg:text-9xl tracking-tight leading-[0.9] text-neutral-950 dark:text-white select-none">gödle</h1>
           <p class="mt-6 text-sm text-ink-3">by A. Arcega</p>
         </div>
-        <div class="space-y-4 max-w-md">
+        <div class="max-w-xl">
           <p class="font-serif text-2xl sm:text-[28px] leading-snug text-ink">
             A daily proof in propositional logic, line by line, with Copi’s 19 rules
           </p>
-          <p class="text-sm text-ink-2">Every line is checked as you write it. Any route to the conclusion counts, as long as each step follows.</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" on:click={() => dispatch('navigate', 'wordle')} class="btn btn-primary btn-lg">
@@ -75,32 +62,6 @@
           <button type="button" on:click={() => dispatch('navigate', 'tutorial')} class="btn btn-ghost btn-lg">Learn the rules</button>
         </div>
       </div>
-
-      <figure class="landing-rise landing-rise-2 panel overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-none">
-        <div class="px-6 sm:px-8 pt-6 sm:pt-8 pb-6 border-b border-line">
-          <span class="label block mb-3">Prove</span>
-          <div class="font-serif text-4xl leading-none text-ink flex items-baseline gap-4">
-            <span class="text-ink-3 text-3xl" aria-hidden="true">∴</span>
-            <LaTeX formula={sampleConclusion} />
-          </div>
-        </div>
-        <ol class="font-serif">
-          {#each sample as row, i}
-            <li class="grid grid-cols-[56px_1fr_120px] sm:grid-cols-[64px_1fr_140px] items-center min-h-[56px] {i > 0 ? 'border-t border-line' : ''} {row.n === 3 ? 'border-b border-b-line-strong' : ''}">
-              <span class="text-right pr-4 font-sans text-caption text-ink-3 tabular-nums">{row.n}.</span>
-              <span class="text-xl sm:text-[22px] text-ink"><LaTeX formula={row.formula} /></span>
-              <span class="h-full flex items-center justify-end gap-2 pr-6 border-l border-line margin-note {row.note === 'Premise' ? 'text-ink-3' : ''}">
-                {row.note}
-                {#if row.done}<span class="font-serif text-lg leading-none text-ink">∎</span>{/if}
-              </span>
-            </li>
-          {/each}
-        </ol>
-        <figcaption class="flex items-center justify-between h-12 px-6 sm:px-8 border-t border-line bg-raised/40 font-sans text-caption">
-          <span class="text-ink font-medium">Q.E.D.</span>
-          <span class="text-ink-3">Hypothetical Syllogism, then Modus Ponens</span>
-        </figcaption>
-      </figure>
     </section>
 
     <!-- Modes -->
@@ -190,8 +151,7 @@
     to { opacity: 1; transform: none; }
   }
   .landing-rise { animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .landing-rise-2 { animation-delay: 60ms; }
-  @media (prefers-reduced-motion: reduce) {
+    @media (prefers-reduced-motion: reduce) {
     .landing-rise { animation: none; }
   }
 </style>
