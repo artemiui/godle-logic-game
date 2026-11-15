@@ -3548,17 +3548,48 @@ app.post("/api/user/report", async (req, res) => {
     res.status(500).json({ error: "Failed to submit profile report." });
   }
 });
+function isDevOAuthAllowed() {
+  const isProd = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
+  return !isProd && process.env.ALLOW_DEV_OAUTH === "1";
+}
+var OAUTH_STATE_COOKIE = "gh_oauth_state";
+var OAUTH_STATE_TTL_MS = 10 * 60 * 1e3;
+function oauthStateCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/auth/oauth"
+  };
+}
+function statesMatch(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || !a || a.length !== b.length) return false;
+  return crypto2.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 app.get("/api/auth/oauth/config", async (_req, res) => {
   res.json({
     githubClientId: process.env.GITHUB_CLIENT_ID || null,
-    devMode: Boolean(process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_OAUTH)
+    devMode: isDevOAuthAllowed()
   });
 });
+app.post("/api/auth/oauth/github/start", async (_req, res) => {
+  if (!process.env.GITHUB_CLIENT_ID) {
+    return res.status(400).json({ error: "GitHub sign-in is not configured." });
+  }
+  const state = crypto2.randomBytes(32).toString("hex");
+  res.cookie(OAUTH_STATE_COOKIE, state, { ...oauthStateCookieOptions(), maxAge: OAUTH_STATE_TTL_MS });
+  res.json({ state });
+});
 app.post("/api/auth/oauth/github", async (req, res) => {
-  const { code, githubUsername: clientUsername } = req.body;
-  let verifiedUsername = clientUsername;
+  const { code, state, githubUsername: clientUsername } = req.body;
+  let verifiedUsername;
   let verifiedGithubId = null;
   if (code) {
+    const expectedState = req.cookies?.[OAUTH_STATE_COOKIE];
+    res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions());
+    if (!statesMatch(state, expectedState)) {
+      return res.status(400).json({ error: "GitHub sign-in could not be verified. Please start again from the sign-in button." });
+    }
     try {
       const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
         method: "POST",
@@ -3583,20 +3614,28 @@ app.post("/api/auth/oauth/github", async (req, res) => {
         }
       });
       const userData = await userRes.json();
+      if (!userRes.ok || userData?.id === void 0 || userData?.id === null) {
+        return res.status(401).json({ error: "Could not read your GitHub profile." });
+      }
       verifiedUsername = userData.login;
       verifiedGithubId = String(userData.id);
     } catch {
       return res.status(502).json({ error: "Failed to communicate with GitHub OAuth service." });
     }
   } else {
-    if (process.env.NODE_ENV === "production" && !process.env.ALLOW_DEV_OAUTH) {
-      return res.status(400).json({ error: "GitHub authorization code is required in production." });
+    if (!isDevOAuthAllowed()) {
+      return res.status(400).json({ error: "GitHub authorization code is required." });
     }
-    const safeSeed = verifiedUsername ? verifiedUsername.toLowerCase().replace(/[^a-z0-9]/g, "_") : crypto2.randomBytes(4).toString("hex");
-    verifiedGithubId = req.body.githubId || `gh_${safeSeed}`;
+    const safeSeed = typeof clientUsername === "string" && clientUsername.trim() ? clientUsername.trim().toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 32) : crypto2.randomBytes(4).toString("hex");
+    verifiedUsername = safeSeed;
+    verifiedGithubId = `dev:${safeSeed}`;
   }
   try {
     if (req.user) {
+      const owner = await db.prepare("SELECT id FROM users WHERE github_id = ?").get(verifiedGithubId);
+      if (owner && owner.id !== req.user.id) {
+        return res.status(409).json({ error: "That GitHub account is already linked to another g\xF6dle account." });
+      }
       await db.prepare("UPDATE users SET github_id = ? WHERE id = ?").run(verifiedGithubId, req.user.id);
       return res.json({ success: true, message: "GitHub account linked successfully." });
     }
