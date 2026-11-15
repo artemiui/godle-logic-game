@@ -38,6 +38,13 @@
 - **Distraction-Free Solving Space**: The canvas presents strictly the target statement to
   prove (`∴ Conclusion`) and the sequenced order of logical premises, followed by clean line
   derivations.
+- **The proof is the moment**: Chrome stays quiet (pure monochrome, no accent hue, no emoji,
+  no glows or gradients). The one rich element on a solving screen is the proof sheet: the
+  conclusion set large, lines typeset like a textbook exercise, justifications in a ruled
+  right margin ("1, 2  MP"), and a closing ∎ / Q.E.D. That margin note is the signature detail;
+  use it only on proof lines.
+- **Copy**: sentence case everywhere, no uppercase tracked labels, no exclamation marks, no
+  trailing periods on labels/buttons, plain words ("Add line", not "Derive Step").
 - **Typography**: Editorial serifs (*Newsreader*, *Crimson Pro*, *Lora*) for logic statements
   and math notation, paired with Swiss grotesques (*Plus Jakarta Sans*, *Inter*) for all UI text,
   labels, indices, and numerals. The design deliberately excludes monospaced typefaces in favor
@@ -102,14 +109,14 @@
 - **Server**: Express.js 4 with TypeScript (run via `tsx`)
 - **Database**: Native `node:sqlite` (`DatabaseSync` in Node.js 22+) in WAL mode
 - **Auth**: Async scrypt password hashing + JWT (30-day tokens) via httpOnly cookies
-- **OAuth**: Server-side GitHub OAuth authorization code exchange
-- **Bot Protection**: Google reCAPTCHA v2 with server-side siteverify
+- **OAuth**: Server-side GitHub OAuth code exchange with a cookie-bound one-time `state`
+- **Bot Protection**: Self-hosted SVG captcha, HMAC-signed with `JWT_SECRET`, single-use nonces
 - **Security**: Custom security headers (CSP, HSTS, X-Frame-Options), CORS whitelist,
   sliding-window rate limiting, timing-safe password comparison
 
 ### Deployment
 - **Target**: Vercel (serverless functions + static SPA)
-- **Entry**: `api/index.ts` re-exports the Express app as a Vercel handler
+- **Entry**: `api/index.js`, a committed esbuild bundle of `server/index.ts` (rebuild with `npm run build`)
 - **Dev**: `concurrently` runs Express (port 3001) and Vite (port 5173) with API proxy
 
 ---
@@ -119,12 +126,13 @@
 ```
 goodle/
 ├── api/
-│   └── index.ts               # Vercel serverless entry — re-exports Express app
+│   └── index.js               # Vercel serverless entry — esbuild bundle of server/index.ts (COMMITTED, rebuild on server changes)
 ├── data/
 │   └── goodle.db              # SQLite database (WAL mode, gitignored)
 ├── server/
-│   ├── db.ts                  # Database init, schema, migrations (node:sqlite)
-│   └── index.ts               # Express app: middleware, auth, all API routes (~1141 lines)
+│   ├── captcha.ts             # HMAC-signed SVG captcha (generate / verify, single-use nonces)
+│   ├── db.ts                  # Database init, schema, migrations (node:sqlite or Turso/libSQL)
+│   └── index.ts               # Express app: middleware, auth, all API routes (~1430 lines)
 ├── src/
 │   ├── data/
 │   │   └── changelog.ts       # Version changelog entries (shared single source of truth)
@@ -138,18 +146,22 @@ goodle/
 │   │   ├── checker.ts         # validateProofStep — step validation pipeline
 │   │   ├── solver.ts          # BFS proof search (solveProblem), hint generator (getProofHint)
 │   │   ├── generator.ts       # Seeded PRNG (Mulberry32), 15 problem templates, share encoding
-│   │   └── presets.ts         # 96 Copi textbook problems, getDailyProblem hash selector
+│   │   ├── presets.ts         # 96 Copi textbook problems, getDailyProblem hash selector
+│   │   ├── lessons.ts         # Rules lessons: truth-table entailment, distractor generation, practice substitution, progress
+│   │   ├── oauth.ts           # Client GitHub OAuth start (fetches one-time state, redirects to GitHub)
+│   │   ├── celebrate.ts       # Monochrome, theme-aware confetti
+│   │   └── sound.ts           # Victory clip playback honoring sound settings
 │   ├── components/
 │   │   ├── Header.svelte      # Navbar, tabs, notation switcher, user avatar & streak
 │   │   ├── LaTeX.svelte       # KaTeX reactive renderer with notation-aware fallback & hibernation
-│   │   ├── ProofTable.svelte  # Formal 2-column proof table with clickable citations & hibernation
-│   │   ├── StepInput.svelte   # Formula input, rule picker, citation chips, live preview, rules guide
+│   │   ├── ProofTable.svelte  # Typeset proof sheet: large ∴ conclusion, numbered lines, margin justifications, ∎ / Q.E.D.
+│   │   ├── StepInput.svelte   # Next-line editor: formula, rule, citations, live preview, Ctrl/Cmd+Enter to add
 │   │   ├── RulesReferenceModal.svelte # In-game 19 Copi rules reference drawer with search & 1-click select
 │   │   ├── SymbolKeyboard.svelte  # Virtual logic symbol keypad (notation-adaptive)
 │   │   ├── WordleMode.svelte  # Daily challenge (3 stages: easy/medium/hard) with state retention
 │   │   ├── FrenzyMode.svelte  # Survival mode (3 hearts, timer, seeded problems) with pause/resume
 │   │   ├── SandboxMode.svelte # Library browser, generator, custom problem creator with state retention
-│   │   ├── TutorialView.svelte    # Interactive 19-rule encyclopedia with practice sandbox
+│   │   ├── TutorialView.svelte    # Rules tab: course map + four-step lesson per rule (Brilliant-style)
 │   │   ├── AuthModal.svelte       # Login, register, reset password, OAuth, attach password
 │   │   ├── ProfileModal.svelte    # Profile editor, activity heatmap, account settings, danger zone
 │   │   ├── PublicProfileModal.svelte  # Read-only public profile with reporting system
@@ -158,14 +170,15 @@ goodle/
 │   │   ├── LegalModal.svelte      # Privacy Policy & Terms of Service modal with tab switching
 │   │   ├── ShareModal.svelte      # Canvas proof card renderer, social sharing, clipboard
 │   │   ├── CaptchaGate.svelte     # reCAPTCHA gate with dev bypass fallback
-│   │   ├── LandingPage.svelte     # Minimalist Truth Trees landing page, 4 feature cards, synced changelog
+│   │   ├── LandingPage.svelte     # Centered hero over LogicField, modes row, changelog, footer
+│   │   ├── LogicField.svelte      # Canvas background of logic glyphs (reading band, glyph swaps, cursor lens)
 │   │   └── AboutView.svelte       # About tab: Copi heritage, PHILO 12, creator, repo, synced changelog
 │   ├── stores/
 │   │   ├── auth.ts            # authStore (user, token, captcha), notationStore, activeTabStore
 │   │   ├── theme.ts           # themeStore (light/dark), toggleTheme, isSettingsOpen
 │   │   └── legal.ts           # legalModalStore, openLegalModal, closeLegalModal
 │   ├── App.svelte             # Root layout, view router, modal orchestration
-│   ├── app.css                # Tailwind directives, font stack, scrollbar styling
+│   ├── app.css                # Monochrome tokens (CSS vars), component classes (.btn, .field, .seg, .panel, .kbd …)
 │   └── main.ts                # Svelte 5 mount(App, { target: #app })
 ├── .gitignore                 # Ignores node_modules/, dist/, data/*.db*, .env*
 ├── CLAUDE.md                  # This file
@@ -174,9 +187,9 @@ goodle/
 ├── package.json               # Dependencies, scripts (dev, build, start)
 ├── postcss.config.js          # Tailwind + Autoprefixer
 ├── svelte.config.js           # vitePreprocess()
-├── tailwind.config.js         # Dark mode class, editorial fonts, canvas colors
+├── tailwind.config.js         # Dark mode class, editorial fonts, ink/paper token colors, meta/caption sizes
 ├── tsconfig.json              # ES2022, ESNext modules, bundler resolution
-├── vercel.json                # Rewrites: /api/* → serverless, /* → SPA
+├── vercel.json                # Rewrites: /api/* → api/index.js, /* → SPA
 └── vite.config.ts             # Svelte plugin, port 5173, /api proxy to :3001
 ```
 
@@ -194,12 +207,19 @@ npm run dev:server
 # Frontend only (Vite dev server)
 npm run dev:app
 
-# Production frontend build into dist/
+# Production build: Vite client into dist/ AND esbuild server bundle into api/index.js.
+# api/index.js is what Vercel runs — commit it after ANY change under server/ or src/logic/.
 npm run build
 
-# Production server (serves API + dist/ SPA on :3001)
-# NOTE: requires tsx or prior TypeScript compilation
+# Rebuild only the API bundle
+npm run build:api
+
+# Production server (serves API + dist/ SPA on :3001, via tsx)
 npm start
+
+# Database backup / restore (Turso or local)
+npm run db:backup
+npm run db:restore
 
 # Quick API smoke test
 node -e "fetch('http://127.0.0.1:3001/api/wordle/today').then(r=>r.json()).then(console.log)"
@@ -212,17 +232,18 @@ node -e "fetch('http://127.0.0.1:3001/api/wordle/today').then(r=>r.json()).then(
 | Variable              | Required     | Default                                            | Purpose                                           |
 |-----------------------|--------------|----------------------------------------------------|----------------------------------------------------|
 | `PORT`                | Optional     | `3001`                                             | Express listen port                                |
-| `JWT_SECRET`          | **Production** | `'goodle-super-secret-key-copi-19-rules'`        | JWT signing secret (⚠️ change in production)       |
+| `JWT_SECRET`          | **Production** | `'goodle-super-secret-key-copi-19-rules'`        | Signs JWTs AND captcha tokens. The default is public (repo is public) — MUST be set in production |
 | `NODE_ENV`            | Optional     | —                                                  | `'production'`: enables HSTS, secure cookies, strict OAuth |
 | `VERCEL`              | Auto         | —                                                  | Set by Vercel; redirects SQLite to `/tmp`, skips `app.listen()` |
 | `VERCEL_URL`          | Auto         | —                                                  | Auto-added to CORS whitelist as `https://${VERCEL_URL}` |
 | `APP_URL`             | Optional     | —                                                  | Custom domain added to CORS whitelist              |
 | `DATABASE_DIR`        | Optional     | `<cwd>/data`                                       | Directory for SQLite DB file                       |
 | `DATABASE_PATH`       | Optional     | `<DATABASE_DIR>/goodle.db`                         | Exact path to SQLite file                          |
-| `RECAPTCHA_SECRET_KEY`| Optional     | Google public test key                             | reCAPTCHA server-side verification secret           |
+| `TURSO_DATABASE_URL`  | Production   | —                                                  | libSQL/Turso URL; with the token, replaces SQLite  |
+| `TURSO_AUTH_TOKEN`    | Production   | —                                                  | Turso auth token                                   |
 | `GITHUB_CLIENT_ID`    | **Production** | —                                                | GitHub OAuth app client ID                         |
 | `GITHUB_CLIENT_SECRET`| **Production** | —                                                | GitHub OAuth app client secret                     |
-| `ALLOW_DEV_OAUTH`     | Optional     | —                                                  | Bypasses real OAuth verification (dev/testing only) |
+| `ALLOW_DEV_OAUTH`     | Local only   | —                                                  | `=1` enables simulated GitHub sign-in locally. Ignored when `NODE_ENV=production` or on Vercel |
 
 ---
 
@@ -339,12 +360,15 @@ All endpoints are defined in `server/index.ts`. Rate-limited routes are marked w
 | POST   | `/api/auth/login`           | Public   | Authenticate with username/password, return JWT + cookie        |
 | GET    | `/api/auth/me`              | Optional | Fetch current user profile, streak, rank, heatmap, standings   |
 | POST   | `/api/auth/logout`          | Public   | Clear auth cookie                                              |
-| POST   | `/api/auth/verify-captcha`  | Public   | Verify reCAPTCHA token via Google siteverify API                |
+| GET    | `/api/auth/captcha`         | Public   | Issue an HMAC-signed SVG captcha challenge `{ token, svg }`    |
+| POST   | `/api/auth/verify-captcha`  | Public   | Verify a captcha answer against its signed token (single use)  |
 | POST   | `/api/auth/change-password` | Required | Update password after verifying current password                |
 | POST   | `/api/auth/attach-password` | Required | Attach password to OAuth-only accounts (sets `has_password=1`) |
-| POST   | `/api/auth/reset-password`  | Public   | Reset password (requires matching registered email on file)     |
+| POST   | `/api/auth/reset-password`  | Public   | Reset password (requires matching registered email + captcha; see Known Issues) |
 | POST   | `/api/auth/update-profile`  | Required | Update username, bio, avatar, email, leaderboard opt-out       |
-| POST   | `/api/auth/oauth/github`    | Optional | GitHub OAuth: exchange code, link/create/login account          |
+| GET    | `/api/auth/oauth/config`    | Public   | `{ githubClientId, devMode }`                                   |
+| POST   | `/api/auth/oauth/github/start` | Public | Issue one-time OAuth `state`, set httpOnly `gh_oauth_state` cookie |
+| POST   | `/api/auth/oauth/github`    | Optional | GitHub OAuth callback: verify `state` against cookie, exchange code, link/create/login |
 | POST   | `/api/auth/oauth/disconnect`| Required | Unlink GitHub provider                                          |
 
 ### User Management (`/api/user/*`)
@@ -409,10 +433,21 @@ All endpoints are defined in `server/index.ts`. Rate-limited routes are marked w
 3. **Client Storage**: Token also stored in `localStorage('goodle_token')` for SPA persistence.
    `authStore.checkAuth()` validates on app mount via `GET /api/auth/me`.
 
-### OAuth 2.0 Flow
-- **GitHub**: Client sends authorization `code` → server exchanges for access token via
-  `github.com/login/oauth/access_token` → fetches profile from `api.github.com/user` →
-  links/creates/logs in user.
+### OAuth 2.0 Flow (GitHub)
+1. Client calls `startGitHubOAuth()` (`src/logic/oauth.ts`) → `POST /api/auth/oauth/github/start`
+   returns a random `state` and sets it in an httpOnly, SameSite=lax cookie (`gh_oauth_state`,
+   path `/api/auth/oauth`, 10 min).
+2. Browser is redirected to GitHub with `client_id`, `redirect_uri` (site origin) and `state`.
+3. GitHub returns to `/?code=…&state=…`; `App.svelte` posts both to `/api/auth/oauth/github`.
+4. Server clears the cookie and requires `state` to match it (timing-safe, single use) before
+   exchanging the code, then fetches `api.github.com/user` and links (if signed in) or
+   logs in / creates the account.
+- **Never** bypass the state check or trust client-supplied GitHub ids: without it, a link
+  with an attacker's code could attach their GitHub to a victim's account (account takeover).
+- A `github_id` already linked to another user cannot be linked again (409).
+- Linking from Profile also goes through steps 1–4.
+- **Dev OAuth** (no code): only when `ALLOW_DEV_OAUTH=1` and not production/Vercel. The client
+  `githubId` is ignored; dev ids are `dev:<name>`, which cannot collide with numeric GitHub ids.
 - **Password Attachment**: OAuth-only accounts (`has_password=0`) are prompted to attach a
   master password. Without it, they can only authenticate via their OAuth provider.
 - **Provider Disconnection**: Users can unlink GitHub via `POST /api/auth/oauth/disconnect`.
@@ -543,18 +578,18 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 
 | Component           | Purpose                                     | Key Features                                     |
 |---------------------|---------------------------------------------|--------------------------------------------------|
-| `WordleMode`        | Daily 3-stage challenge (easy→medium→hard) | Progress retention, KaTeX hibernation, hint API, stage progression |
+| `WordleMode`        | Daily 3-stage challenge (Novice→Adept→Master) | Heading shows the date; problem titles stay in the data (saves, shares) but are hidden while solving |
 | `FrenzyMode`        | Survival mode (3 hearts, timer)             | Auto-pause on tab switch, penalty shake, seeded challenges |
 | `SandboxMode`       | Library + generator + custom problems       | Progress retention, solver assessment, theorem library |
-| `TutorialView`      | Interactive 19-rule encyclopedia            | Filterable rule list, practice sandbox per rule   |
+| `TutorialView`      | Rules lessons                               | Course map (intro + 9 inference + 10 replacement), four steps per rule: Pattern → Example (reveal lines) → Spot it (multiple choice) → Use it (write the line, graded by `validateProofStep`) |
 | `AboutView`         | Context, links, creator & philosophical roots | Heritage, UP Diliman PHILO 12, synced changelog   |
 
 ### Core Proof Components
 
 | Component              | Purpose                                       | Events                            |
 |------------------------|-----------------------------------------------|-----------------------------------|
-| `ProofTable`           | Formal proof display with clickable lines     | `citeLine`, `undoStep` (supports `hibernated`) |
-| `StepInput`            | Formula input (keyword auto-conversion) + combined typed rule input and native suggestions dropdown (case/punctuation-insensitive abbreviation or full name) + citation chips + Rules Guide trigger | `submitStep` (supports `hibernated`) |
+| `ProofTable`           | Typeset proof sheet, margin justifications, ∎ on the conclusion line | `citeLine`, `undoStep`, `insertFormula` (supports `hibernated`) |
+| `StepInput`            | Formula input (keyword auto-conversion) + typed rule with suggestions + citation chips + Rules Guide. Enter in a field or Ctrl/Cmd+Enter anywhere adds the line; the global hotkey is ignored when `hibernated`, disabled, or a dialog is open | `submitStep` (supports `hibernated`) |
 | `RulesReferenceModal`  | Copi's 19 rules in-game reference drawer with live search, formal schemas, and 1-click rule selection | `selectRule`, `close`             |
 | `SymbolKeyboard`       | Virtual keypad (notation-adaptive)            | `insert`, `backspace`, `clear`    |
 | `LaTeX`                | KaTeX renderer with dynamic notation & hibernation support | —                                 |
@@ -572,7 +607,22 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 | `ShareModal`          | Canvas proof card renderer + social sharing          |
 | `RulesReferenceModal` | In-game rules reference modal with search & 1-click select |
 | `CaptchaGate`         | reCAPTCHA overlay with dev bypass                    |
-| `LandingPage`         | Minimalist Truth Trees hero, 4 feature cards, synced changelog |
+| `LandingPage`         | Centered wordmark hero over `LogicField`, modes row, changelog |
+
+### Rules Lessons (`src/logic/lessons.ts`)
+- `buildLesson(rule)` parses the rule's example, then builds 3 wrong choices from near-misses
+  of the answer, rearranged premise parts and letter combinations. Every wrong choice is
+  checked with `entails()` (truth table) so it never follows from the premises. One-letter
+  rules (DN, Taut) borrow a second letter. Choice order is a stable per-rule shuffle.
+- Practice substitutes `P → A ∨ B, Q → C, R → ~D, S → E` into the example.
+- When changing lessons or rules, check that all 19 lessons still have
+  3 non-entailed distractors and a practice answer accepted by `validateProofStep`.
+
+### Landing Background (`LogicField.svelte`)
+Canvas, ~30fps, sparse grid of connectives and italic p/q/r in Newsreader; a slow diagonal
+"reading" band, occasional glyph swaps, a cursor lens, and an elliptical clear zone behind the
+wordmark. Follows the theme via `--ink`, pauses when the tab is hidden, static frame under
+`prefers-reduced-motion`.
 
 ### Inter-Component Communication
 - **Event dispatching**: Components use `createEventDispatcher()` with typed payloads.
@@ -602,6 +652,10 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 - Writable store holding active custom sandbox problem definition
 - Used to pass problems between components (e.g., from StatsModal to SandboxMode)
 
+### Other `localStorage` keys
+`goodle_daily_completions` (daily solves by date), `goodle_local_saved_proofs` (guest library),
+`goodle_rules_progress` (learned rule ids), `godle_captcha_verified`.
+
 ### `themeStore` (`src/stores/theme.ts`)
 - Resolves initial theme: `localStorage('goodle_theme')` → OS prefers-color-scheme → `'light'`
 - Subscription syncs `document.documentElement.classList` and localStorage
@@ -617,9 +671,54 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 
 ## 🎨 Styling & Typography
 
-### Color System
-| Token          | Light Mode | Dark Mode |
-|----------------|------------|-----------|
+### Monochrome token system
+Defined once as CSS variables in `src/app.css` (`:root` and `:root.dark`) and exposed as Tailwind
+colors, so components never need `dark:` color variants.
+
+| Token        | Tailwind            | Light      | Dark       | Use                                  |
+|--------------|---------------------|------------|------------|--------------------------------------|
+| `--paper`    | `bg-paper`          | `#FAFAFA`  | `#0A0A0A`  | Page background                      |
+| `--card`     | `bg-card`           | `#FFFFFF`  | `#121213`  | Panels, inputs                       |
+| `--raised`   | `bg-raised`         | `#F3F3F4`  | `#1C1C1E`  | Hover/selected rows, segmented track |
+| `--ink`      | `text-ink`/`bg-ink` | `#0A0A0A`  | `#F0F0F0`  | Primary text, primary button fill    |
+| `--ink-2`    | `text-ink-2`        | `#525252`  | `#A3A3A8`  | Secondary text                       |
+| `--ink-3`    | `text-ink-3`        | `#737373`  | `#85858B`  | Muted text, meta, icons              |
+| hairline     | `border-line` / `border-line-strong` | ink @ 9% / 16% | same | Borders, dividers       |
+
+- **No accent hue.** Emphasis comes from size, weight 500, and ink/paper inversion. Semantic
+  states (errors, success) are monochrome too: an ink border or an icon, never red/green.
+- **Radius**: keycap 4 (`rounded`), controls 8 (`rounded-lg`), cards 12 (`rounded-xl`),
+  panels/dialogs 16 (`rounded-2xl`).
+- **Type sizes**: `text-meta` (12/16) for labels and meta, `text-caption` (13/20) for secondary
+  copy; body 14–15; page titles use `.page-title` (Newsreader ~34px).
+
+### Component classes (`@layer components` in `app.css`)
+`.label`, `.page-title`, `.panel`, `.tile`, `.btn` + `.btn-primary | .btn-secondary | .btn-ghost`
+(+ `.btn-sm`, `.btn-lg`), `.btn-icon`, `.link`, `.field`, `.seg` / `.seg-item` (segmented control,
+active via `aria-pressed="true"`), `.kbd` (keycap), `.tag`, `.margin-note` (proof justification).
+Use these before writing ad-hoc utility stacks.
+
+### Font Stack
+- **Serif** (formulas, page titles, quotes): Newsreader → Crimson Pro → Georgia
+- **Sans** (UI labels, buttons, numerals): Plus Jakarta Sans → Inter → system-ui
+- **Wordmark**: "gödle" in Plus Jakarta Sans `font-black tracking-tight` — keep exactly as is.
+- **OpenType features**: `cv02`, `cv03`, `cv04`, `cv11`; use `tabular-nums` for figures.
+- No uppercase tracked labels, no italic for emphasis (italic only for book titles and the
+  p/q/r glyphs in `LogicField`).
+
+### Icons & Motion
+- Inline lucide-style SVGs, 16px, stroke 1.5, `currentColor` (text role color). No emoji.
+- One easing curve `cubic-bezier(0.22, 1, 0.36, 1)` (Tailwind default `ease`/`ease-out`).
+  Transition named properties (`transition-colors`, `transition-[transform,opacity]`), never
+  `transition-all`. Press: `active:scale-[0.98]`. No looping decorative motion except `LogicField`.
+- Confetti is monochrome (`src/logic/celebrate.ts`). The Frenzy penalty uses `.animate-shake`.
+
+### Dark Mode
+- Class-based (`darkMode: 'class'` in Tailwind config); tokens switch under `:root.dark`
+- Anti-FOUC: synchronous `<script>` in `index.html` reads localStorage before first paint
+- Three-layer sync: head script → theme store subscription → onMount verification
+
+----------------|------------|-----------|
 | Canvas         | `#FAFAFA`  | `#0A0A0A` |
 | Scrollbar track| `#F4EFE6`  | —         |
 | Scrollbar thumb| `#D8D1C5`  | —         |
@@ -641,43 +740,58 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
 ### Vercel Configuration (`vercel.json`)
 ```json
 {
+  "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.ts" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/((?!api/.*).*)", "destination": "/index.html" }
   ]
 }
 ```
-- All `/api/*` routes → serverless function (`api/index.ts` re-exports Express app)
+- All `/api/*` routes → serverless function `api/index.js` (committed esbuild bundle of the Express app)
 - All other routes → SPA fallback (`index.html`)
 
 ### Production Checklist
 1. Set `JWT_SECRET` to a cryptographically random string
-2. Set `RECAPTCHA_SECRET_KEY` to your production reCAPTCHA secret
-3. Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
-4. Set `APP_URL` to your production domain
-5. Set `NODE_ENV=production` for HSTS, secure cookies, strict OAuth
-6. Replace SQLite with a persistent database for Vercel (SQLite on `/tmp` is ephemeral)
+2. Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`; never set `ALLOW_DEV_OAUTH` in production
+3. Set `APP_URL` to your production domain
+4. Set `NODE_ENV=production` for HSTS and secure cookies
+5. Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` (SQLite on `/tmp` is ephemeral)
+6. Run `npm run build` and commit `api/index.js` before pushing server changes
 
 ---
 
 ## ⚠️ Known Issues & Architectural Debt
 
-1. **Ephemeral SQLite on Vercel**: `server/db.ts` uses `/tmp/goodle.db` on Vercel. Data is
-   lost when lambda instances spin down. Production requires Turso/libSQL, PostgreSQL, or
-   similar persistent storage.
+1. **Ephemeral SQLite on Vercel without Turso**: without `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`,
+   `server/db.ts` falls back to `/tmp/goodle.db` on Vercel and data is lost between instances.
 2. **In-Memory Rate Limiting**: The sliding-window limiter stores state in a local `Map`.
    In serverless or multi-instance deployments, limits apply per container, not globally.
    Consider Redis-backed rate limiting for production.
 3. **Unused Dependencies**: `express-rate-limit` and `helmet` are in `package.json` but
    `server/index.ts` uses custom implementations. Either use the packages or remove them.
-4. **Start Script**: `package.json` `"start"` points to `node server/index.js` but there's
-   no TypeScript compilation step for the server. Use `tsx server/index.ts` or add a build step.
-5. **Default Secrets**: `JWT_SECRET` and `RECAPTCHA_SECRET_KEY` have hardcoded fallback
-   defaults. These must be overridden via environment variables in production.
+4. **Committed API bundle**: Vercel runs `api/index.js`, an esbuild bundle of `server/index.ts`.
+   It is NOT rebuilt on deploy from source you edit — run `npm run build` (or `build:api`) and
+   commit `api/index.js` with every server-side change, or production keeps the old code.
+5. **Default Secret**: `JWT_SECRET` has a hardcoded fallback that is public in the repo. If it is
+   unset in production, anyone can forge sessions and captcha tokens. Always set it.
 6. **No Email Service**: Password reset verifies email match but doesn't actually send a
    reset email. The flow currently resets inline after email verification.
-7. **Client-Side OAuth Simulation**: The OAuth modal simulates provider dialogs in
-   development rather than using real OAuth redirects.
+7. **Remaining security items** (from the November 2026 assessment; GitHub OAuth CSRF and the
+   dev-OAuth bypass are fixed):
+   - Password reset only checks username + email (no proof of inbox ownership).
+   - JWTs are not revoked on password change/reset/deletion; token also lives in `localStorage`.
+   - Rate limiter keys on client `X-Forwarded-For` (spoofable off Vercel), in-memory per instance.
+   - `/api/wordle/submit` and `/api/frenzy/submit` trust client data (forgeable streaks/scores;
+     guests can post under any `playerName`).
+   - Anonymous community theorem submissions feed `/api/wordle/today` and store unvalidated ASTs.
+   - Logic endpoints accept arbitrary nested ASTs (DoS); `LaTeX.svelte` falls back to raw `{@html}`.
+   - Security headers are set by Express only, so the static `index.html` on Vercel has no CSP/HSTS;
+     CSP allows `'unsafe-inline'` scripts; CORS allows every `*.vercel.app` origin with credentials.
+   - `/api/health` is public; profile fields (`avatarImage`, `avatarIcon`, `avatarColor`) unvalidated.
+8. **Captcha leftovers**: the server uses its own HMAC SVG captcha, but `CaptchaGate.svelte` still
+   contains reCAPTCHA (`grecaptcha`) client code.
+9. **Rules progress is per device**: lesson completion lives in `localStorage('goodle_rules_progress')`,
+   not in the account.
 
 ---
 
@@ -696,6 +810,10 @@ while KaTeX math rendering is hibernated in the background for zero rendering ov
   for protected endpoints
 - **Reactive Patterns**: `$:` reactive declarations, `$store` auto-subscriptions,
   `createEventDispatcher()` for component events
+- **Server changes ship via the bundle**: after editing `server/` (or logic it imports), run
+  `npm run build` and commit `api/index.js` in the same change
+- **Changelog**: add user-facing changes to `src/data/changelog.ts` (newest first, tag `Latest`;
+  demote the previous entry to `Release`). It renders on the landing page and About tab
 
 ### Formula reuse and victory audio
 
