@@ -13,7 +13,7 @@
   const notationOptions: { id: NotationStyle; title: string; subtitle: string; sample: string }[] = [
     {
       id: 'standard',
-      title: 'Modern Math (Standard)',
+      title: 'Modern',
       subtitle: 'Negation ¬, conjunction ∧, arrow →, equivalence ↔',
       sample: '(P ∧ Q) → (R ∨ ¬S)',
     },
@@ -61,55 +61,55 @@
 
 {#if $isSettingsOpen}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px]"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
     on:click={handleBackdrop}
     role="presentation"
   >
     <div
-      class="w-full max-w-lg bg-white dark:bg-neutral-950 border border-neutral-900 dark:border-neutral-200 text-neutral-900 dark:text-neutral-100 shadow-2xl p-6 sm:p-8 space-y-6"
+      class="w-full max-w-lg bg-card border border-line text-ink  p-6 sm:p-8 space-y-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-title"
     >
       <!-- Header -->
-      <div class="flex items-start justify-between border-b border-neutral-200 dark:border-neutral-800 pb-4">
+      <div class="flex items-start justify-between border-b border-line pb-4">
         <div>
-          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-            00 / System Preferences
+          <span class="text-meta font-sans text-ink-2 block mb-1">
+            Preferences
           </span>
-          <h2 id="settings-title" class="text-xl font-bold tracking-tight uppercase font-sans">
-            Utilities & Notation
+          <h2 id="settings-title" class="text-xl font-medium tracking-tight font-sans">
+            Settings
           </h2>
         </div>
         <button
           type="button"
           on:click={() => { isSettingsOpen.set(false); dispatch('close'); }}
-          class="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-xs font-sans tracking-wider transition-colors cursor-pointer px-2 py-1"
+          class="btn-icon -mr-2 shrink-0"
           aria-label="Close preferences"
         >
-          [ ✕ Close ]
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
       <!-- Theme Mode -->
       <div class="space-y-3">
         <div class="flex items-baseline justify-between">
-          <span class="text-xs font-sans uppercase tracking-wider font-semibold text-neutral-700 dark:text-neutral-300">
+          <span class="text-xs font-sans font-semibold text-ink-2">
             Appearance
           </span>
-          <span class="text-[11px] font-sans text-neutral-600 dark:text-neutral-300">
-            {$themeStore === 'dark' ? 'Dark Mode' : 'Light Mode'}
+          <span class="text-meta font-sans text-ink-2">
+            {$themeStore === 'dark' ? 'Dark' : 'Light'}
           </span>
         </div>
         <div class="grid grid-cols-2 gap-2 font-sans text-xs">
           <button
             type="button"
             on:click={() => themeStore.set('light')}
-            class="py-2.5 px-3 border transition-all text-center flex items-center justify-center gap-2 cursor-pointer {
-              $themeStore === 'light'
-                ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-                : 'border-neutral-300 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-500'
-            }"
+            class="py-2.5 px-3 border transition-colors text-center flex items-center justify-center gap-2 cursor-pointer {
+ $themeStore === 'light'
+ ? 'bg-ink text-paper border-ink font-medium'
+ : 'border-line-strong text-ink-2 hover:border-ink-3'
+ } rounded-lg"
           >
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="5" />
@@ -128,11 +128,11 @@
           <button
             type="button"
             on:click={() => themeStore.set('dark')}
-            class="py-2.5 px-3 border transition-all text-center flex items-center justify-center gap-2 cursor-pointer {
-              $themeStore === 'dark'
-                ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-                : 'border-neutral-300 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-500'
-            }"
+            class="py-2.5 px-3 border transition-colors text-center flex items-center justify-center gap-2 cursor-pointer {
+ $themeStore === 'dark'
+ ? 'bg-ink text-paper border-ink font-medium'
+ : 'border-line-strong text-ink-2 hover:border-ink-3'
+ } rounded-lg"
           >
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -143,21 +143,21 @@
       </div>
 
       <div class="flex items-center justify-between gap-3">
-        <span id="sound-setting-label" class="text-xs font-sans uppercase tracking-wider font-semibold text-neutral-700 dark:text-neutral-300">Sounds</span>
+        <span id="sound-setting-label" class="text-xs font-sans font-semibold text-ink-2">Sounds</span>
         <button
           type="button"
           role="switch"
           aria-checked={$soundEnabledStore}
           aria-labelledby="sound-setting-label"
           on:click={() => soundEnabledStore.update(enabled => !enabled)}
-          class="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-xs font-sans cursor-pointer hover:border-neutral-900 dark:hover:border-white"
+          class="px-4 py-2 border border-line-strong text-xs font-sans cursor-pointer hover:border-ink rounded-lg"
         >
           {$soundEnabledStore ? 'On' : 'Off'}
         </button>
       </div>
 
       <div class="space-y-2">
-        <div class="flex items-center justify-between text-xs font-sans text-neutral-600 dark:text-neutral-300">
+        <div class="flex items-center justify-between text-xs font-sans text-ink-2">
           <label for="sound-volume">Volume</label>
           <span class="tabular-nums">{$soundVolumeStore}%</span>
         </div>
@@ -170,17 +170,17 @@
           bind:value={$soundVolumeStore}
           disabled={!$soundEnabledStore}
           aria-valuetext={`${$soundVolumeStore}%`}
-          class="w-full accent-neutral-900 dark:accent-neutral-100 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          class="w-full accent-ink cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         />
       </div>
 
       <!-- Notation Selector -->
       <div class="space-y-3">
         <div class="flex items-baseline justify-between">
-          <span class="text-xs font-sans uppercase tracking-wider font-semibold text-neutral-700 dark:text-neutral-300">
-            Symbolic Logic Notation
+          <span class="text-xs font-sans font-semibold text-ink-2">
+            Notation
           </span>
-          <span class="text-[11px] font-sans text-neutral-600 dark:text-neutral-300">
+          <span class="text-meta font-sans text-ink-2">
             {NOTATION_CONFIGS[$notationStore]?.name || 'Standard'}
           </span>
         </div>
@@ -190,29 +190,29 @@
             <button
               type="button"
               on:click={() => notationStore.set(opt.id)}
-              class="w-full text-left p-3 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer {
-                $notationStore === opt.id
-                  ? 'border-neutral-900 dark:border-white bg-neutral-50 dark:bg-neutral-900 font-medium'
-                  : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600'
-              }"
+              class="w-full text-left p-3 border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer {
+ $notationStore === opt.id
+ ? 'border-ink bg-raised font-medium'
+ : 'border-line hover:border-line-strong '
+ } rounded-lg"
             >
               <div>
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full {
-                    $notationStore === opt.id
-                      ? 'bg-neutral-900 dark:bg-white'
-                      : 'border border-neutral-400 dark:border-neutral-600'
-                  }"></span>
-                  <span class="text-xs font-sans font-bold tracking-tight text-neutral-950 dark:text-neutral-50">
+ $notationStore === opt.id
+ ? 'bg-ink '
+ : 'border border-line-strong '
+ }"></span>
+                  <span class="text-xs font-sans font-medium tracking-tight text-ink">
                     {opt.title}
                   </span>
                 </div>
-                <div class="text-[11px] font-sans text-neutral-600 dark:text-neutral-300 pl-4 mt-0.5">
+                <div class="text-meta font-sans text-ink-2 pl-4 mt-0.5">
                   {opt.subtitle}
                 </div>
               </div>
 
-              <div class="pl-4 sm:pl-0 font-serif text-sm text-neutral-800 dark:text-neutral-200">
+              <div class="pl-4 sm:pl-0 font-serif text-sm text-ink">
                 <LaTeX formula={previewFormula} style={opt.id} />
               </div>
             </button>
@@ -221,12 +221,12 @@
       </div>
 
       <!-- Footer Note -->
-      <div class="pt-3 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[11px] font-sans text-neutral-600 dark:text-neutral-300">
-        <span>Preferences persist automatically</span>
+      <div class="pt-3 border-t border-line flex items-center justify-between text-meta font-sans text-ink-2">
+        <span>Saved on this device</span>
         <button
           type="button"
           on:click={() => { isSettingsOpen.set(false); dispatch('close'); }}
-          class="underline hover:text-black dark:hover:text-white cursor-pointer font-bold"
+          class="underline hover:text-ink cursor-pointer font-medium"
         >
           Done
         </button>

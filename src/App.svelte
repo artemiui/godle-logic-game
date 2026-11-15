@@ -106,7 +106,7 @@
   });
 </script>
 
-<div class="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0A] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans selection:bg-neutral-900 selection:text-white dark:selection:bg-white dark:selection:text-neutral-950 transition-colors">
+<div class="min-h-screen bg-paper text-ink flex flex-col font-sans selection:bg-ink selection:text-paper">
   <!-- Minimal Header Bar -->
   <Header
     on:openLanding={() => (showLanding = true)}
@@ -137,40 +137,19 @@
     </div>
   </main>
 
-  <!-- Minimal Editorial Footer -->
-  <footer class="border-t border-neutral-200 dark:border-neutral-800 py-10 px-4 text-center font-sans text-xs text-neutral-600 dark:text-neutral-300">
-    <div class="max-w-4xl mx-auto space-y-2">
-      <div class="font-serif italic text-neutral-800 dark:text-neutral-200 text-sm">
-        "Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning."
-      </div>
-      <div class="text-[11px] text-neutral-600 dark:text-neutral-300">
-        Irving M. Copi
-      </div>
-      <div class="text-[11px] text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-3 pt-2">
-        <button
-          type="button"
-          on:click={() => openLegalModal('privacy')}
-          class="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
-        >
-          Privacy Policy
-        </button>
-        <span class="opacity-30">·</span>
-        <button
-          type="button"
-          on:click={() => openLegalModal('terms')}
-          class="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
-        >
-          Terms of Service
-        </button>
-        <span class="opacity-30">·</span>
-        <button
-          type="button"
-          on:click={() => { activeTabStore.set('about'); }}
-          class="hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
-        >
-          About
-        </button>
-      </div>
+  <footer class="border-t border-line">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <figure class="max-w-xl space-y-2">
+        <blockquote class="font-serif text-lg leading-snug text-ink-2">
+          “Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning.”
+        </blockquote>
+        <figcaption class="font-sans text-meta text-ink-3">Irving M. Copi, Introduction to Logic</figcaption>
+      </figure>
+      <nav class="flex items-center gap-6 font-sans text-caption text-ink-3" aria-label="Footer">
+        <button type="button" on:click={() => openLegalModal('privacy')} class="hover:text-ink transition-colors cursor-pointer">Privacy</button>
+        <button type="button" on:click={() => openLegalModal('terms')} class="hover:text-ink transition-colors cursor-pointer">Terms</button>
+        <button type="button" on:click={() => { activeTabStore.set('about'); }} class="hover:text-ink transition-colors cursor-pointer">About</button>
+      </nav>
     </div>
   </footer>
 

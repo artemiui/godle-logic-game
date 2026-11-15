@@ -39,32 +39,32 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px]"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
     on:click={handleBackdrop}
     role="presentation"
   >
     <div
-      class="w-full max-w-lg bg-white dark:bg-neutral-950 border border-neutral-900 dark:border-neutral-200 text-neutral-900 dark:text-neutral-100 p-6 sm:p-8 space-y-6 shadow-2xl"
+      class="w-full max-w-lg bg-card border border-line text-ink p-6 sm:p-8 space-y-6  rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       role="dialog"
       aria-modal="true"
     >
       <!-- Header -->
-      <div class="flex items-start justify-between border-b border-neutral-200 dark:border-neutral-800 pb-4">
+      <div class="flex items-start justify-between border-b border-line pb-4">
         <div>
-          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-            Metrics & Records
+          <span class="text-meta font-sans text-ink-2 block mb-1">
+            Stats
           </span>
           <div class="flex items-center gap-2 font-sans text-xs pt-1">
             <button
               type="button"
               on:click={() => (activeView = 'stats')}
               class="px-2.5 py-1 border transition-colors cursor-pointer {
-                activeView === 'stats'
-                  ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-                  : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-              }"
+ activeView === 'stats'
+ ? 'bg-ink text-paper border-ink font-medium'
+ : 'border-line text-ink-2 hover:border-line-strong'
+ } rounded-lg"
             >
-              Daily Stats
+              Daily
             </button>
             <button
               type="button"
@@ -73,22 +73,22 @@
                 fetchLeaderboard();
               }}
               class="px-2.5 py-1 border transition-colors cursor-pointer {
-                activeView === 'leaderboard'
-                  ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-                  : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-              }"
+ activeView === 'leaderboard'
+ ? 'bg-ink text-paper border-ink font-medium'
+ : 'border-line text-ink-2 hover:border-line-strong'
+ } rounded-lg"
             >
               Leaderboard
             </button>
           </div>
         </div>
 
-        <button
+        <button aria-label="Close"
           type="button"
           on:click={() => dispatch('close')}
-          class="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-xs font-sans tracking-wider cursor-pointer"
+          class="btn-icon -mr-2 shrink-0"
         >
-          [ ✕ Close ]
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -96,27 +96,27 @@
       {#if activeView === 'stats'}
         <div class="space-y-4 font-sans text-xs">
           <div class="grid grid-cols-4 gap-2 text-center">
-            <div class="border border-neutral-200 dark:border-neutral-800 p-2.5">
-              <div class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Played</div>
-              <div class="text-lg font-bold text-neutral-950 dark:text-neutral-50 mt-0.5">
+            <div class="border border-line p-2.5 rounded-xl">
+              <div class="text-meta text-ink-2">Played</div>
+              <div class="text-lg font-medium text-ink mt-0.5">
                 {$authStore.user ? Math.max(1, $authStore.user.streakCount) : 1}
               </div>
             </div>
-            <div class="border border-neutral-200 dark:border-neutral-800 p-2.5">
-              <div class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Win %</div>
-              <div class="text-lg font-bold text-neutral-950 dark:text-neutral-50 mt-0.5">
+            <div class="border border-line p-2.5 rounded-xl">
+              <div class="text-meta text-ink-2">Win %</div>
+              <div class="text-lg font-medium text-ink mt-0.5">
                 100%
               </div>
             </div>
-            <div class="border border-neutral-200 dark:border-neutral-800 p-2.5">
-              <div class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Streak</div>
-              <div class="text-lg font-bold text-neutral-950 dark:text-neutral-50 mt-0.5">
+            <div class="border border-line p-2.5 rounded-xl">
+              <div class="text-meta text-ink-2">Streak</div>
+              <div class="text-lg font-medium text-ink mt-0.5">
                 {$authStore.user?.streakCount || 0}
               </div>
             </div>
-            <div class="border border-neutral-200 dark:border-neutral-800 p-2.5">
-              <div class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Best</div>
-              <div class="text-lg font-bold text-neutral-950 dark:text-neutral-50 mt-0.5">
+            <div class="border border-line p-2.5 rounded-xl">
+              <div class="text-meta text-ink-2">Best</div>
+              <div class="text-lg font-medium text-ink mt-0.5">
                 {$authStore.user?.bestStreak || 0}
               </div>
             </div>
@@ -124,34 +124,34 @@
 
           <!-- Step Guess Distribution Bar Chart Mockup -->
           <div class="space-y-2 pt-2">
-            <div class="text-[10px] uppercase tracking-wider text-neutral-600 dark:text-neutral-300">Proof Steps Distribution</div>
+            <div class="text-meta text-ink-2">Lines per proof</div>
             <div class="space-y-1.5 font-sans text-xs">
               <div class="flex items-center gap-2">
                 <span class="w-3 text-right">1</span>
-                <div class="flex-1 bg-neutral-100 dark:bg-neutral-900 h-5 relative flex items-center px-2">
-                  <span class="text-[10px] text-neutral-600 dark:text-neutral-300">0</span>
+                <div class="flex-1 bg-raised h-5 relative flex items-center px-2">
+                  <span class="text-meta text-ink-2">0</span>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="w-3 text-right">2</span>
-                <div class="flex-1 bg-neutral-100 dark:bg-neutral-900 h-5 relative flex items-center">
-                  <div class="bg-neutral-900 dark:bg-white text-white dark:text-black h-full flex items-center px-2 text-[10px] font-bold" style="width: 45%;">
+                <div class="flex-1 bg-raised h-5 relative flex items-center">
+                  <div class="bg-ink text-paper h-full flex items-center px-2 text-meta font-medium" style="width: 45%;">
                     1
                   </div>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="w-3 text-right">3</span>
-                <div class="flex-1 bg-neutral-100 dark:bg-neutral-900 h-5 relative flex items-center">
-                  <div class="bg-neutral-900 dark:bg-white text-white dark:text-black h-full flex items-center px-2 text-[10px] font-bold" style="width: 80%;">
+                <div class="flex-1 bg-raised h-5 relative flex items-center">
+                  <div class="bg-ink text-paper h-full flex items-center px-2 text-meta font-medium" style="width: 80%;">
                     2
                   </div>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="w-3 text-right">4+</span>
-                <div class="flex-1 bg-neutral-100 dark:bg-neutral-900 h-5 relative flex items-center">
-                  <div class="bg-neutral-900 dark:bg-white text-white dark:text-black h-full flex items-center px-2 text-[10px] font-bold" style="width: 30%;">
+                <div class="flex-1 bg-raised h-5 relative flex items-center">
+                  <div class="bg-ink text-paper h-full flex items-center px-2 text-meta font-medium" style="width: 30%;">
                     1
                   </div>
                 </div>
@@ -163,26 +163,26 @@
         <!-- View 2: Leaderboard -->
         <div class="space-y-3 font-sans text-xs">
           {#if loadingLeaderboard}
-            <div class="text-center py-6 text-neutral-600 dark:text-neutral-300">Loading leaderboard records...</div>
+            <div class="text-center py-6 text-ink-2">Loading the leaderboard</div>
           {:else if leaderboard.length === 0}
-            <div class="text-center py-6 text-neutral-600 dark:text-neutral-300">No records registered yet. Prove a frenzy challenge to rank!</div>
+            <div class="text-center py-6 text-ink-2">No runs yet. Finish a Frenzy run to appear here</div>
           {:else}
-            <div class="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <div class="divide-y divide-line">
               {#each leaderboard as entry, idx}
                 <div class="py-2 flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <span class="font-bold w-4 text-neutral-600 dark:text-neutral-300">{idx + 1}.</span>
+                    <span class="font-medium w-4 text-ink-2">{idx + 1}.</span>
                     <button
                       type="button"
                       on:click={() => dispatch('viewProfile', entry.username)}
-                      class="font-semibold text-neutral-900 dark:text-neutral-100 hover:underline cursor-pointer flex items-center gap-1.5 text-left"
+                      class="font-semibold text-ink hover:underline cursor-pointer flex items-center gap-1.5 text-left"
                       title="View @{entry.username}'s dossier"
                     >
                       <span>{entry.username}</span>
-                      <span class="text-[9px] text-neutral-400 opacity-60">↗</span>
+                      <span class="text-meta text-ink-3 opacity-60">↗</span>
                     </button>
                   </div>
-                  <div class="text-neutral-600 dark:text-neutral-300">
+                  <div class="text-ink-2">
                     {entry.score} pts • {entry.time_seconds}s
                   </div>
                 </div>

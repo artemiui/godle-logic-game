@@ -2,30 +2,148 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  gödle — monochrome system
+  paper/card/raised: surfaces · ink/ink-2/ink-3: primary, secondary, muted text
+  line: hairline (ink at 9%) · radius: keycap 4 · control 8 · card 12 · panel 16
+*/
 @layer base {
+  :root {
+    --paper: 250 250 250;   /* #FAFAFA */
+    --card: 255 255 255;
+    --raised: 243 243 244;
+    --ink: 10 10 10;        /* #0A0A0A */
+    --ink-2: 82 82 82;
+    --ink-3: 115 115 115;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    color-scheme: light;
+  }
+  :root.dark {
+    --paper: 10 10 10;      /* #0A0A0A */
+    --card: 18 18 19;
+    --raised: 28 28 30;
+    --ink: 240 240 240;
+    --ink-2: 163 163 168;
+    --ink-3: 133 133 139;
+    color-scheme: dark;
+  }
+
   html, body {
     font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Custom styling for KaTeX */
+  :focus-visible {
+    outline: 2px solid rgb(var(--ink));
+    outline-offset: 2px;
+  }
+
   .katex {
     font-size: 1.15em;
   }
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@layer components {
+  /* Section label: sentence case, small, muted */
+  .label {
+    @apply font-sans text-meta font-medium text-ink-3;
+  }
+
+  /* Page heading in the editorial serif */
+  .page-title {
+    @apply font-serif text-3xl sm:text-[34px] leading-[1.15] font-normal text-ink;
+    letter-spacing: -0.01em;
+  }
+
+  /* Surfaces */
+  .panel {
+    @apply bg-card border border-line rounded-2xl;
+  }
+  .tile {
+    @apply bg-card border border-line rounded-xl;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg font-sans text-sm font-medium
+      cursor-pointer select-none whitespace-nowrap
+      transition-[background-color,border-color,color,opacity,transform] duration-150 ease-out
+      active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+  .btn-sm { @apply h-8 px-3 text-caption; }
+  .btn-lg { @apply h-11 px-5; }
+  .btn-primary {
+    @apply bg-ink text-paper hover:bg-ink/85;
+  }
+  .btn-secondary {
+    @apply bg-card text-ink border border-line-strong hover:bg-raised;
+  }
+  .btn-ghost {
+    @apply text-ink-2 hover:text-ink hover:bg-raised;
+  }
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg text-ink-2 cursor-pointer
+      hover:text-ink hover:bg-raised transition-colors duration-150 ease-out;
+  }
+
+  /* Text link */
+  .link {
+    @apply text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink hover:decoration-ink cursor-pointer transition-colors;
+  }
+
+  /* Form fields */
+  .field {
+    @apply w-full h-9 px-3 rounded-lg bg-card border border-line-strong text-ink text-sm font-sans
+      placeholder:text-ink-3 transition-colors duration-150 ease-out
+      focus:outline-none focus:border-ink disabled:opacity-50;
+  }
+
+  /* Segmented control */
+  .seg {
+    @apply inline-flex items-center gap-1 p-1 rounded-xl bg-raised;
+  }
+  .seg-item {
+    @apply h-8 px-3 rounded-lg font-sans text-caption font-medium text-ink-2 cursor-pointer
+      transition-colors duration-150 ease-out hover:text-ink;
+  }
+  .seg-item[aria-pressed="true"], .seg-item.is-active {
+    @apply bg-card text-ink shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)];
+  }
+
+  /* Keycap */
+  .kbd {
+    @apply inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded
+      font-sans text-[11px] font-medium leading-none tabular-nums;
+    border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+    color: color-mix(in srgb, currentColor 75%, transparent);
+  }
+
+  /* Quiet tag */
+  .tag {
+    @apply inline-flex items-center h-5 px-1.5 rounded border border-line-strong font-sans text-[11px] font-medium text-ink-2 leading-none;
+  }
+
+  /* Signature: the margin justification of a proof line */
+  .margin-note {
+    @apply font-sans text-caption text-ink-2 tabular-nums whitespace-nowrap;
+  }
 }
-::-webkit-scrollbar-track {
-  background: #F4EFE6;
+
+/* Scrollbars, neutral */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--ink) / 0.16); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--ink) / 0.28); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
 }
-::-webkit-scrollbar-thumb {
-  background: #D8D1C5;
-  border-radius: 9999px;
+
+/* Penalty feedback in Frenzy: one short horizontal shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #B8B0A2;
-}
+.animate-shake { animation: shake 240ms var(--ease) 1; }

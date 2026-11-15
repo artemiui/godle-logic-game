@@ -35,7 +35,7 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 "
     on:click={handleBackdrop}
     role="presentation"
   >
@@ -43,12 +43,12 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="legal-modal-title"
-      class="w-full max-w-4xl max-h-[90vh] bg-[#FAFAFA] dark:bg-[#0A0A0A] border border-neutral-300 dark:border-neutral-800 shadow-2xl flex flex-col overflow-hidden text-neutral-900 dark:text-neutral-100 font-sans"
+      class="w-full max-w-4xl max-h-[90vh] bg-paper border border-line-strong shadow-2xl flex flex-col overflow-hidden text-ink font-sans"
     >
       <!-- Modal Header -->
-      <div class="p-4 sm:p-6 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-white dark:bg-neutral-950">
+      <div class="p-4 sm:p-6 border-b border-line flex items-center justify-between bg-card">
         <div>
-          <h2 id="legal-modal-title" class="font-serif text-xl sm:text-2xl font-normal text-neutral-950 dark:text-white">
+          <h2 id="legal-modal-title" class="font-serif text-xl sm:text-2xl font-normal text-ink">
             {activeTab === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
           </h2>
         </div>
@@ -56,35 +56,35 @@
         <button
           type="button"
           on:click={handleClose}
-          class="text-neutral-500 hover:text-black dark:hover:text-white text-xs font-sans tracking-wider cursor-pointer p-1 transition-colors"
+          class="btn-icon -mr-2 shrink-0"
           aria-label="Close dialog"
         >
-          [ ✕ Close ]
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
       <!-- Tab Navigation Bar -->
-      <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-neutral-100/70 dark:bg-neutral-900/60 px-4 sm:px-6">
+      <div class="flex items-center justify-between border-b border-line bg-raised/70 px-4 sm:px-6">
         <div class="flex items-center gap-2">
           <button
             type="button"
             on:click={() => switchTab('privacy')}
-            class="py-3 px-3 sm:px-4 text-xs uppercase tracking-wider font-semibold cursor-pointer border-b-2 transition-all {
-              activeTab === 'privacy'
-                ? 'border-neutral-950 dark:border-white text-neutral-950 dark:text-white'
-                : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
-            }"
+            class="py-3 px-3 sm:px-4 text-xs font-semibold cursor-pointer border-b-2 transition-colors {
+ activeTab === 'privacy'
+ ? 'border-ink text-ink '
+ : 'border-transparent text-ink-3 hover:text-ink '
+ }"
           >
             Privacy Policy
           </button>
           <button
             type="button"
             on:click={() => switchTab('terms')}
-            class="py-3 px-3 sm:px-4 text-xs uppercase tracking-wider font-semibold cursor-pointer border-b-2 transition-all {
-              activeTab === 'terms'
-                ? 'border-neutral-950 dark:border-white text-neutral-950 dark:text-white'
-                : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
-            }"
+            class="py-3 px-3 sm:px-4 text-xs font-semibold cursor-pointer border-b-2 transition-colors {
+ activeTab === 'terms'
+ ? 'border-ink text-ink '
+ : 'border-transparent text-ink-3 hover:text-ink '
+ }"
           >
             Terms of Service
           </button>
@@ -92,19 +92,19 @@
       </div>
 
       <!-- Scrollable Policy Content -->
-      <div class="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 text-xs sm:text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+      <div class="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 text-xs sm:text-sm leading-relaxed text-ink-2">
         
         {#if activeTab === 'privacy'}
           <!-- ================= PRIVACY POLICY ================= -->
           <div class="space-y-6">
             <!-- Intro Note -->
-            <div class="p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 text-neutral-600 dark:text-neutral-400 text-xs">
-              <strong class="font-semibold text-neutral-900 dark:text-white">Radical Data Minimization:</strong> gödle is designed around logician privacy and mathematical austerity. We collect only the bare minimum data required to authenticate your profile, record your deductive streaks, and maintain competitive leaderboards. We do not sell your personal data, run invasive trackers, or monetize your activity.
+            <div class="p-4 rounded border border-line bg-raised text-ink-2 text-xs">
+              <strong class="font-semibold text-ink">Radical Data Minimization:</strong> gödle is designed around logician privacy and mathematical austerity. We collect only the bare minimum data required to authenticate your profile, record your deductive streaks, and maintain competitive leaderboards. We do not sell your personal data, run invasive trackers, or monetize your activity.
             </div>
 
             <!-- Section 1: Overview -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 1. Overview & Data Controller
               </h3>
               <p>
@@ -117,31 +117,31 @@
 
             <!-- Section 2: What We Collect -->
             <section class="space-y-3">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 2. Information We Collect (and Why)
               </h3>
               
-              <div class="space-y-3 pl-2 sm:pl-3 border-l-2 border-neutral-200 dark:border-neutral-800">
+              <div class="space-y-3 pl-2 sm:pl-3 border-l-2 border-line">
                 <div>
-                  <h4 class="font-semibold text-neutral-950 dark:text-white">A. Account Credentials & Profile Data</h4>
-                  <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                  <h4 class="font-semibold text-ink">A. Account Credentials & Profile Data</h4>
+                  <p class="text-xs sm:text-sm text-ink-2">
                     When you register an account, we store your chosen <strong>username</strong> (public handle). If you choose a password, it is hashed client/server using cryptographically secure <strong>scrypt</strong> with a unique 16-byte random salt; we never store or transmit plaintext passwords. If you provide an optional recovery email, it is held strictly for account recovery and is never shared, marketed, or sold. Profile bios (max 160 characters) and display avatars (color, icon, or client-side canvas-compressed custom images) are stored with your public profile.
                   </p>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-neutral-950 dark:text-white">B. GitHub OAuth Authentication</h4>
-                  <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                  <h4 class="font-semibold text-ink">B. GitHub OAuth Authentication</h4>
+                  <p class="text-xs sm:text-sm text-ink-2">
                     If you choose to authenticate via GitHub, we exchange your one-time OAuth token server-side solely to obtain your public GitHub user ID and username. We do not request, read, or store access to your private repositories, code, personal contacts, or other OAuth scopes.
                   </p>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-neutral-950 dark:text-white">C. Deduction Gameplay Records & Statistics</h4>
-                  <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                  <h4 class="font-semibold text-ink">C. Deduction Gameplay Records & Statistics</h4>
+                  <p class="text-xs sm:text-sm text-ink-2">
                     To maintain deduction streaks, historical statistics, and public leaderboards, we store:
                   </p>
-                  <ul class="list-disc list-inside space-y-1 text-xs text-neutral-600 dark:text-neutral-400 pl-2 pt-1">
+                  <ul class="list-disc list-inside space-y-1 text-xs text-ink-2 pl-2 pt-1">
                     <li><strong>Daily Wordle Mode:</strong> Date, difficulty level, solved status, proof step count, and solve duration in seconds.</li>
                     <li><strong>Frenzy Mode:</strong> Total score tally, hearts remaining, number of problems solved, and elapsed time.</li>
                     <li><strong>Streak Counts:</strong> Current consecutive daily streak, highest streak ever achieved, and last played date.</li>
@@ -151,8 +151,8 @@
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-neutral-950 dark:text-white">D. Ephemeral Security & Anti-Abuse Logs</h4>
-                  <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                  <h4 class="font-semibold text-ink">D. Ephemeral Security & Anti-Abuse Logs</h4>
+                  <p class="text-xs sm:text-sm text-ink-2">
                     To safeguard the service against denial-of-service (DDoS) attacks, automated bot abuse, and credential stuffing, our custom in-memory rate limiters temporarily process client IP addresses. These operational logs are ephemeral, kept in transient server memory, and are never joined to your user identity or used for cross-site behavioral tracking.
                   </p>
                 </div>
@@ -161,13 +161,13 @@
 
             <!-- Section 3: What We DO NOT Collect -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 3. Information We DO NOT Collect
               </h3>
               <p>
                 In alignment with reference privacy benchmarks (such as Monkeytype), we practice strict operational boundaries:
               </p>
-              <ul class="list-disc list-inside space-y-1 text-xs text-neutral-600 dark:text-neutral-400 pl-2">
+              <ul class="list-disc list-inside space-y-1 text-xs text-ink-2 pl-2">
                 <li>We do <strong>not</strong> record your local unsaved scratchpad proofs or informal drafts constructed in Sandbox mode.</li>
                 <li>We do <strong>not</strong> track individual keystroke latencies or background user behavior outside active deduction checks.</li>
                 <li>We do <strong>not</strong> collect financial, credit card, or payment data (gödle is 100% free and non-commercial).</li>
@@ -177,22 +177,22 @@
 
             <!-- Section 4: Cookies & Local Storage -->
             <section class="space-y-3">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 4. Cookies & Client-Side Local Storage
               </h3>
               <p>
                 We do not employ third-party advertising or tracking cookies. We utilize browser storage solely for functional operation:
               </p>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <div class="p-3 border border-neutral-200 dark:border-neutral-800 rounded bg-neutral-50 dark:bg-neutral-900/50">
-                  <div class="font-semibold text-neutral-900 dark:text-white mb-1">Session Cookie (`goodle_token`)</div>
-                  <p class="text-neutral-500">
+                <div class="p-3 border border-line rounded bg-raised">
+                  <div class="font-semibold text-ink mb-1">Session Cookie (`goodle_token`)</div>
+                  <p class="text-ink-3">
                     An HTTP-only, secure JWT cookie maintaining your authenticated logician session without exposing credentials to client scripts.
                   </p>
                 </div>
-                <div class="p-3 border border-neutral-200 dark:border-neutral-800 rounded bg-neutral-50 dark:bg-neutral-900/50">
-                  <div class="font-semibold text-neutral-900 dark:text-white mb-1">Theme & Notation (`localStorage`)</div>
-                  <p class="text-neutral-500">
+                <div class="p-3 border border-line rounded bg-raised">
+                  <div class="font-semibold text-ink mb-1">Theme & Notation (`localStorage`)</div>
+                  <p class="text-ink-3">
                     Stores your visual theme (`goodle_theme`), logic notation style (`standard` vs `whitehead`), sound effect volume, and local challenge state.
                   </p>
                 </div>
@@ -201,13 +201,13 @@
 
             <!-- Section 5: Third-Party Infrastructure -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 5. Third-Party Infrastructure & Service Providers
               </h3>
               <p>
                 To provide high-availability hosting and security, gödle interfaces with the following infrastructure providers:
               </p>
-              <ul class="list-disc list-inside space-y-1 text-xs text-neutral-600 dark:text-neutral-400 pl-2">
+              <ul class="list-disc list-inside space-y-1 text-xs text-ink-2 pl-2">
                 <li><strong>Hosting & Edge Delivery:</strong> Vercel Inc. (serverless execution, content delivery, and edge security).</li>
                 <li><strong>Authentication:</strong> GitHub API (for OAuth sign-in).</li>
                 <li><strong>Abuse Mitigation:</strong> Google reCAPTCHA / internal visual SVG captcha challenge to prevent automated bot scripts from overwhelming verification nodes.</li>
@@ -216,37 +216,37 @@
 
             <!-- Section 6: Public Visibility & Opt-Out -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 6. Public Visibility & Leaderboard Opt-Out
               </h3>
               <p>
                 By default, your username, avatar badge, current streak, and frenzy solve scores are visible on global leaderboards and public logician cards.
               </p>
-              <p class="text-xs text-neutral-600 dark:text-neutral-400">
-                <strong>Your Privacy Choice:</strong> If you prefer anonymity, you may enable <span class="underline font-medium text-neutral-900 dark:text-white">"Opt out of Public Leaderboard"</span> at any time in your Profile Settings. This will omit your account from all public leaderboards while continuing to record your personal streak and proofs.
+              <p class="text-xs text-ink-2">
+                <strong>Your Privacy Choice:</strong> If you prefer anonymity, you may enable <span class="underline font-medium text-ink">"Opt out of Public Leaderboard"</span> at any time in your Profile Settings. This will omit your account from all public leaderboards while continuing to record your personal streak and proofs.
               </p>
             </section>
 
             <!-- Section 7: Data Retention & Deletion -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 7. Data Retention & Right to be Forgotten (Account Deletion)
               </h3>
               <p>
                 You possess absolute ownership of your data. You may delete your account at any time through the Profile Settings interface.
               </p>
-              <p class="text-xs text-neutral-600 dark:text-neutral-400">
+              <p class="text-xs text-ink-2">
                 Triggering account deletion initiates an immediate, irreversible cascading purge (`DELETE CASCADE`) in our database, eradicating your user record, authentication hashes, streak records, solve history, activity maps, and saved proofs.
               </p>
             </section>
 
             <!-- Section 8: Contact -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 8. Inquiries & Maintainer Contact
               </h3>
               <p>
-                Questions or inquiries regarding this Privacy Policy or your data rights can be directed to the creator via GitHub issues or through <a href="https://artemiui.vercel.app" target="_blank" rel="noopener noreferrer" class="underline hover:text-black dark:hover:text-white">artemiui.vercel.app</a>.
+                Questions or inquiries regarding this Privacy Policy or your data rights can be directed to the creator via GitHub issues or through <a href="https://artemiui.vercel.app" target="_blank" rel="noopener noreferrer" class="underline hover:text-ink">artemiui.vercel.app</a>.
               </p>
             </section>
           </div>
@@ -255,13 +255,13 @@
           <!-- ================= TERMS OF SERVICE ================= -->
           <div class="space-y-6">
             <!-- Intro Note -->
-            <div class="p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 text-neutral-600 dark:text-neutral-400 text-xs">
-              <strong class="font-semibold text-neutral-900 dark:text-white">Standard of Conduct:</strong> gödle is an open platform celebrating deductive rigor, truth-functional validity, and community learning. By playing or creating an account, you agree to respect the service, other logicians, and the integrity of our deduction leaderboards.
+            <div class="p-4 rounded border border-line bg-raised text-ink-2 text-xs">
+              <strong class="font-semibold text-ink">Standard of Conduct:</strong> gödle is an open platform celebrating deductive rigor, truth-functional validity, and community learning. By playing or creating an account, you agree to respect the service, other logicians, and the integrity of our deduction leaderboards.
             </div>
 
             <!-- Section 1: Agreement -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 1. Agreement to Terms
               </h3>
               <p>
@@ -271,7 +271,7 @@
 
             <!-- Section 2: Educational Mission & Axiomatic Scope -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 2. Educational Purpose & Deductive Scope
               </h3>
               <p>
@@ -281,10 +281,10 @@
 
             <!-- Section 3: Accounts & Security -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 3. User Accounts & Credential Security
               </h3>
-              <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 pl-2">
+              <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-ink-2 pl-2">
                 <li>Account registration is optional; guests can freely play the daily deduction, explore the rules tutorial, and practice in the sandbox without an account.</li>
                 <li>If you create an account, you are solely responsible for maintaining the confidentiality of your authentication credentials and for all activities that occur under your account.</li>
                 <li>You agree to notify us immediately of any unauthorized use or security compromise regarding your logician handle.</li>
@@ -294,35 +294,35 @@
 
             <!-- Section 4: Fair Play & Leaderboard Integrity (Monkeytype benchmark) -->
             <section class="space-y-3">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 4. Fair Play, Leaderboard Integrity & Anti-Abuse
               </h3>
               <p>
                 In alignment with community-first competitive platforms (such as Monkeytype), we uphold strict standards of fairness and system integrity:
               </p>
               
-              <div class="space-y-2.5 pl-2 sm:pl-3 border-l-2 border-neutral-200 dark:border-neutral-800 text-xs sm:text-sm">
+              <div class="space-y-2.5 pl-2 sm:pl-3 border-l-2 border-line text-xs sm:text-sm">
                 <div>
-                  <strong class="text-neutral-950 dark:text-white">A. Anti-Cheat & Automated Solvers:</strong>
-                  <p class="text-neutral-600 dark:text-neutral-400">
+                  <strong class="text-ink">A. Anti-Cheat & Automated Solvers:</strong>
+                  <p class="text-ink-2">
                     Leaderboards and streaks exist to measure human deductive acumen. The deployment of automated headless bots, API submission scrapers, pre-computed solver scripts, or external automation tools on daily or Frenzy leaderboard submissions is strictly prohibited.
                   </p>
                 </div>
                 <div>
-                  <strong class="text-neutral-950 dark:text-white">B. Exploit Reporting:</strong>
-                  <p class="text-neutral-600 dark:text-neutral-400">
+                  <strong class="text-ink">B. Exploit Reporting:</strong>
+                  <p class="text-ink-2">
                     Discovering an edge-case bug in the rule validator or solver engine should be reported responsibly. Intentionally exploiting parser vulnerabilities to fabricate invalid proofs or inject artificial high scores is grounds for immediate leaderboard disqualification.
                   </p>
                 </div>
                 <div>
-                  <strong class="text-neutral-950 dark:text-white">C. System Infrastructure Respect:</strong>
-                  <p class="text-neutral-600 dark:text-neutral-400">
+                  <strong class="text-ink">C. System Infrastructure Respect:</strong>
+                  <p class="text-ink-2">
                     You agree not to disrupt, flood, perform denial-of-service (DoS) attacks on, reverse-engineer server mechanisms of, or bypass rate limits on our verification endpoints.
                   </p>
                 </div>
                 <div>
-                  <strong class="text-neutral-950 dark:text-white">D. Community Conduct:</strong>
-                  <p class="text-neutral-600 dark:text-neutral-400">
+                  <strong class="text-ink">D. Community Conduct:</strong>
+                  <p class="text-ink-2">
                     Usernames, bios, and profile avatars must not contain hate speech, harassment, threats, explicit sexual content, defamatory statements, or unlawful material.
                   </p>
                 </div>
@@ -331,20 +331,20 @@
 
             <!-- Section 5: Intellectual Property -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 5. Intellectual Property
               </h3>
               <p>
                 The visual design, branding, typography, user interface code, and implementation of the proof checker are open-source and copyright © <strong>A. Arcega</strong>. The nineteen rules of inference and replacement originate from Irving M. Copi's public pedagogical literature.
               </p>
-              <p class="text-xs text-neutral-600 dark:text-neutral-400">
+              <p class="text-xs text-ink-2">
                 Any custom problem sets, annotations, or proofs you author in Sandbox Mode remain your own intellectual output.
               </p>
             </section>
 
             <!-- Section 6: Termination & Moderation -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 6. Account Suspension & Moderation
               </h3>
               <p>
@@ -354,20 +354,20 @@
 
             <!-- Section 7: Disclaimer & Limitation of Liability -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 7. Disclaimer of Warranties & Limitation of Liability
               </h3>
-              <p class="text-xs text-neutral-600 dark:text-neutral-400">
+              <p class="text-xs text-ink-2">
                 THE SERVICE IS PROVIDED ON AN <strong>"AS IS"</strong> AND <strong>"AS AVAILABLE"</strong> BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT GÖDLE WILL BE UNINTERRUPTED, BUG-FREE, OR ERROR-FREE.
               </p>
-              <p class="text-xs text-neutral-600 dark:text-neutral-400">
+              <p class="text-xs text-ink-2">
                 TO THE FULLEST EXTENT PERMISSIBLE BY APPLICABLE LAW, IN NO EVENT SHALL THE CREATOR, CONTRIBUTORS, OR HOSTING PROVIDERS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE SERVICE, INCLUDING LOSS OF STREAKS, STATISTICAL SCORES, OR SAVED PROOFS.
               </p>
             </section>
 
             <!-- Section 8: Changes to Terms -->
             <section class="space-y-2">
-              <h3 class="font-serif text-base sm:text-lg font-medium text-neutral-950 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-1">
+              <h3 class="font-serif text-base sm:text-lg font-medium text-ink border-b border-line pb-1">
                 8. Modifications to Terms
               </h3>
               <p>
@@ -380,11 +380,11 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 flex items-center justify-end text-xs">
+      <div class="p-4 sm:p-5 border-t border-line bg-raised flex items-center justify-end text-xs">
         <button
           type="button"
           on:click={handleClose}
-          class="px-4 py-1.5 border border-neutral-900 dark:border-white bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:opacity-90 transition-opacity text-xs font-bold uppercase tracking-wider cursor-pointer"
+          class="px-4 py-1.5 border border-ink bg-ink text-paper hover:opacity-90 transition-opacity text-xs font-medium cursor-pointer rounded-lg"
         >
           Acknowledge & Close
         </button>

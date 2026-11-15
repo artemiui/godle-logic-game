@@ -34,58 +34,41 @@
 </script>
 
 <div class="space-y-6">
-  <!-- Minimal Statement to Prove Banner -->
-  <div class="border-b border-neutral-900 dark:border-neutral-100 pb-6">
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div>
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-          Statement to Prove
-        </span>
-        <div class="font-serif text-3xl sm:text-4xl text-neutral-950 dark:text-neutral-50 flex items-baseline gap-3 tracking-tight">
-          <span class="font-sans text-xl sm:text-2xl text-neutral-500 dark:text-neutral-400 font-light">∴</span>
-          <LaTeX formula={conclusion} {hibernated} />
-        </div>
+  <!-- Conclusion: the one large thing on the page -->
+  <div class="flex items-end justify-between gap-4">
+    <div class="min-w-0">
+      <span class="label block mb-2">Prove</span>
+      <div class="font-serif text-4xl sm:text-5xl leading-none text-ink flex items-baseline gap-4">
+        <span class="text-ink-3 text-3xl sm:text-4xl select-none" aria-hidden="true">∴</span>
+        <LaTeX formula={conclusion} {hibernated} />
       </div>
-
-      {#if hasReachedConclusion || isComplete}
-        <div class="font-sans text-xs uppercase tracking-widest border border-neutral-950 dark:border-white px-3.5 py-1.5 self-start text-neutral-950 dark:text-white font-semibold">
-          ■ Q.E.D. — Proved
-        </div>
-      {/if}
     </div>
   </div>
 
-  <!-- Formal Deduction Proof Sequence -->
-  <div class="w-full">
-    <!-- Table Header -->
-    <div class="grid grid-cols-12 text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300 pb-2 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="col-span-2 sm:col-span-1 text-center">Line</div>
-      <div class="col-span-7 sm:col-span-8 px-3">Formula</div>
-      <div class="col-span-3 text-right pr-2">Justification</div>
-    </div>
-
-    <!-- Proof Lines -->
-    <div class="divide-y divide-neutral-100 dark:divide-neutral-900/80 font-serif">
-      {#each steps as step}
+  <!-- Proof sheet -->
+  <div class="panel overflow-hidden">
+    <ol class="font-serif">
+      {#each steps as step, i}
         {@const isTarget = formulasEqual(step.formula, conclusion)}
-        <div class="grid grid-cols-12 py-3 sm:py-3.5 items-baseline transition-colors hover:bg-neutral-50/80 dark:hover:bg-neutral-900/40 group {
-          isTarget ? 'bg-neutral-100/60 dark:bg-neutral-900 font-medium' : ''
-        }">
-          <!-- Line Number (Clickable to quickly cite) -->
+        {@const lastPremise = step.rule === 'premise' && steps[i + 1] && steps[i + 1].rule !== 'premise'}
+        <li class="grid grid-cols-[48px_1fr_auto] sm:grid-cols-[64px_1fr_160px] items-center min-h-[56px] transition-colors duration-150 hover:bg-raised/60 {
+          i > 0 ? 'border-t border-line' : ''
+        } {lastPremise ? 'border-b border-b-line-strong' : ''}">
+          <!-- Line number cites the line -->
           <button
             type="button"
             on:click={() => dispatch('citeLine', step.stepNumber)}
-            title="Click to cite line {step.stepNumber}"
-            class="col-span-2 sm:col-span-1 text-center font-sans text-xs text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white cursor-pointer"
+            title="Cite line {step.stepNumber}"
+            class="h-full flex items-center justify-end pr-4 font-sans text-caption tabular-nums text-ink-3 hover:text-ink cursor-pointer transition-colors"
           >
-            {String(step.stepNumber).padStart(2, '0')}.
+            {step.stepNumber}.
           </button>
 
           <!-- Formula -->
-          <div class="col-span-7 sm:col-span-8 px-3 text-lg sm:text-xl text-neutral-950 dark:text-neutral-100 flex items-center flex-wrap gap-2">
+          <div class="py-3 pr-3 text-xl sm:text-[22px] text-ink flex items-center flex-wrap gap-3 min-w-0">
             <button
               type="button"
-              class="text-left cursor-pointer border-b border-dotted border-neutral-300/70 dark:border-neutral-700/70 hover:border-neutral-500 dark:hover:border-neutral-400 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4"
+              class="text-left cursor-pointer border-b border-dotted border-line-strong hover:border-ink-3 transition-colors"
               aria-label="Actions for formula on line {step.stepNumber}"
               aria-expanded={actionLine === step.stepNumber}
               on:click={() => actionLine = actionLine === step.stepNumber ? null : step.stepNumber}
@@ -94,59 +77,56 @@
               <LaTeX formula={step.formula} {hibernated} />
             </button>
             {#if actionLine === step.stepNumber && !isComplete}
-              <div class="inline-flex items-center border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm text-[11px] font-sans">
-              <button
-                type="button"
-                class="px-2.5 py-1 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
-                aria-label="Use formula from line {step.stepNumber} in input"
-                on:click={() => {
-                  dispatch('insertFormula', formulaToString(step.formula, $notationStore));
-                  actionLine = null;
-                }}
-              >Use</button>
-              <button
-                type="button"
-                class="px-2.5 py-1 border-l border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
-                aria-label="Cite line {step.stepNumber}"
-                on:click={() => {
-                  dispatch('citeLine', step.stepNumber);
-                  actionLine = null;
-                }}
-              >Cite</button>
+              <div class="inline-flex items-center p-0.5 gap-0.5 rounded-lg border border-line bg-card shadow-[0_8px_24px_rgba(0,0,0,0.06)] font-sans">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm h-7 px-2.5 rounded-md"
+                  aria-label="Use formula from line {step.stepNumber} in input"
+                  on:click={() => {
+                    dispatch('insertFormula', formulaToString(step.formula, $notationStore));
+                    actionLine = null;
+                  }}
+                >Use</button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm h-7 px-2.5 rounded-md"
+                  aria-label="Cite line {step.stepNumber}"
+                  on:click={() => {
+                    dispatch('citeLine', step.stepNumber);
+                    actionLine = null;
+                  }}
+                >Cite</button>
               </div>
             {/if}
-            {#if isTarget}
-              <span class="text-[9px] font-sans uppercase tracking-wider border border-neutral-950 dark:border-white px-1.5 py-0.5 ml-2 font-bold">
-                Proven
-              </span>
-            {/if}
           </div>
 
-          <!-- Justification -->
-          <div class="col-span-3 text-right pr-2 font-sans text-xs text-neutral-600 dark:text-neutral-400">
+          <!-- Margin justification -->
+          <div class="h-full flex items-center justify-end gap-2 pl-4 pr-4 sm:pr-6 border-l border-line">
             {#if step.rule === 'premise'}
-              <span class="uppercase tracking-wider text-[11px] text-neutral-600 dark:text-neutral-300">Premise</span>
+              <span class="margin-note text-ink-3">Premise</span>
             {:else}
-              <span class="text-neutral-800 dark:text-neutral-200">{formatJustification(step)}</span>
+              <span class="margin-note">{formatJustification(step)}</span>
+            {/if}
+            {#if isTarget}
+              <span class="font-serif text-lg leading-none text-ink" title="Conclusion reached">∎</span>
             {/if}
           </div>
-        </div>
+        </li>
       {/each}
-    </div>
+    </ol>
 
-    <!-- Bottom Proof Metadata & Actions -->
-    <div class="pt-4 flex items-center justify-between font-sans text-xs text-neutral-600 dark:text-neutral-300 border-t border-neutral-200 dark:border-neutral-800">
-      <span>
-        {steps.length} {steps.length === 1 ? 'line' : 'lines'} recorded
-      </span>
+    <!-- Sheet footer -->
+    <div class="flex items-center justify-between h-12 px-4 sm:px-6 border-t border-line bg-raised/40 font-sans text-caption text-ink-3">
+      {#if hasReachedConclusion || isComplete}
+        <span class="text-ink font-medium">Q.E.D.</span>
+      {:else}
+        <span class="tabular-nums">{steps.length} {steps.length === 1 ? 'line' : 'lines'}</span>
+      {/if}
 
       {#if canUndo && steps.filter(s => s.rule !== 'premise').length > 0 && !hasReachedConclusion}
-        <button
-          type="button"
-          on:click={() => dispatch('undoStep')}
-          class="text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white underline cursor-pointer transition-colors"
-        >
-          [ ↩ Undo Last Step ]
+        <button type="button" on:click={() => dispatch('undoStep')} class="btn btn-ghost btn-sm -mr-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+          Undo last line
         </button>
       {/if}
     </div>

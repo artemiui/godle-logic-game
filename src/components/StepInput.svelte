@@ -145,27 +145,27 @@
     if (disabled) return;
     validationError = '';
     if (!typedRule) {
-      validationError = 'Enter a rule abbreviation or full name, or choose from the dropdown.';
+      validationError = 'Enter a rule abbreviation or name, like MP or Modus Ponens';
       return;
     }
     if (!formulaText.trim()) {
-      validationError = 'Please enter a derived formula.';
+      validationError = 'Enter the formula for this line';
       return;
     }
 
     if (!parsed.formula) {
-      validationError = parsed.error || 'Syntax error in logical statement.';
+      validationError = parsed.error || 'This formula could not be read';
       return;
     }
 
     const citations = parseCitations();
     if (!selectedRule) {
-      validationError = 'Please select an inference or replacement rule.';
+      validationError = 'Choose a rule';
       return;
     }
 
     if (citations.length !== selectedRule.requiredPremiseCount) {
-      validationError = `${selectedRule.name} requires exactly ${selectedRule.requiredPremiseCount} cited line(s).`;
+      validationError = `${selectedRule.name} cites ${selectedRule.requiredPremiseCount} ${selectedRule.requiredPremiseCount === 1 ? 'line' : 'lines'}`;
       return;
     }
 
@@ -188,65 +188,57 @@
   }
 </script>
 
-<div class="border border-neutral-200 dark:border-neutral-800 p-5 bg-white dark:bg-neutral-950 space-y-4">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300">
-        Step {String(existingSteps.length + 1).padStart(2, '0')} / Deduction Input
-      </span>
-      <span class="hidden sm:inline-block text-[10px] font-sans text-neutral-400 dark:text-neutral-500">
-        • auto-converts AND, OR, NOT, -&gt;
-      </span>
+<div class="panel p-4 sm:p-6 space-y-4">
+  <div class="flex items-center justify-between gap-4">
+    <div class="flex items-baseline gap-3 min-w-0">
+      <span class="font-sans text-sm font-medium text-ink tabular-nums">Line {existingSteps.length + 1}</span>
+      <span class="hidden sm:inline font-sans text-meta text-ink-3 truncate">Type AND, OR, NOT, -&gt; and they become symbols</span>
     </div>
     <button
       type="button"
       on:click={() => (showKeyboard = !showKeyboard)}
-      title={showKeyboard ? 'Hide Keypad' : 'Show Keypad'}
-      class="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white cursor-pointer transition-colors {showKeyboard ? 'text-black dark:text-white' : ''}"
+      title={showKeyboard ? 'Hide symbol keypad' : 'Show symbol keypad'}
+      aria-pressed={showKeyboard}
+      class="btn-icon -mr-2 {showKeyboard ? 'bg-raised text-ink' : ''}"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
     </button>
   </div>
 
-  <!-- Formula Input & Live KaTeX preview -->
+  <!-- Formula -->
   <div class="space-y-2">
-    <div class="relative">
-      <input
-        bind:this={inputElement}
-        type="text"
-        bind:value={formulaText}
-        on:input={handleFormulaInput}
-        on:keydown={handleKeyDown}
-        maxlength="250"
-        placeholder="Enter formula, e.g. B  or  P ⊃ (P • Q)  or  ~P ∨ Q"
-        {disabled}
-        class="w-full h-11 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-serif text-lg focus:outline-none focus:border-neutral-900 dark:focus:border-white transition-colors"
-      />
-    </div>
+    <input
+      bind:this={inputElement}
+      type="text"
+      bind:value={formulaText}
+      on:input={handleFormulaInput}
+      on:keydown={handleKeyDown}
+      maxlength="250"
+      aria-label="Formula"
+      placeholder="P ⊃ (P • Q)"
+      {disabled}
+      class="field h-12 px-4 font-serif text-xl"
+    />
 
-    <!-- Live KaTeX Preview -->
     {#if formulaText.trim()}
-      <div class="py-1.5 px-3 bg-neutral-100/70 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs font-sans">
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Preview:</span>
+      <div class="flex items-center justify-between gap-3 min-h-[36px] px-4 rounded-lg bg-raised font-sans text-caption">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="text-ink-3">Reads as</span>
           {#if parsed.formula}
-            <div class="font-serif text-base text-neutral-950 dark:text-neutral-100">
+            <div class="font-serif text-base text-ink truncate">
               <LaTeX formula={parsed.formula} {hibernated} />
             </div>
           {:else}
-            <span class="text-rose-600 dark:text-rose-400 italic text-[11px]">{parsed.error}</span>
+            <span class="text-ink-2">{parsed.error}</span>
           {/if}
         </div>
-        {#if selectedRule}
-          <div class="text-[11px] text-neutral-600 dark:text-neutral-300">
-            via {selectedRule.abbreviation}
-          </div>
+        {#if typedRule}
+          <span class="text-ink-3 whitespace-nowrap">by {typedRule.abbreviation}</span>
         {/if}
       </div>
     {/if}
   </div>
 
-  <!-- Keypad Toggleable Area -->
   {#if showKeyboard}
     <SymbolKeyboard
       on:insert={handleInsertSymbol}
@@ -255,36 +247,31 @@
     />
   {/if}
 
-  <!-- Rule & Citation Controls Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-    <!-- Rule Select -->
-    <div class="sm:col-span-6 space-y-1">
+  <!-- Rule and citations -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="space-y-2">
       <div class="flex items-center justify-between">
-        <label for="step-rule-input" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
-          Justification Rule
-        </label>
+        <label for="step-rule-input" class="label">Rule</label>
         <button
           type="button"
           on:click={() => (showRulesReference = true)}
-          class="text-[10px] font-sans text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white underline underline-offset-2 flex items-center gap-1 cursor-pointer transition-colors"
-          title="Open Rules Reference Guide"
-        >
-          <span>Rules Guide ↗</span>
-        </button>
+          class="link font-sans text-meta"
+          title="Open the rules guide"
+        >Rules guide</button>
       </div>
       <input
         type="text"
         id="step-rule-input"
-        aria-label="Type justification rule"
+        aria-label="Rule"
         bind:value={ruleText}
         on:keydown={handleKeyDown}
         list="step-rule-suggestions"
-        placeholder="Type a rule"
+        placeholder="MP or Modus Ponens"
         autocomplete="off"
         maxlength="80"
         aria-invalid={ruleText.trim() && !typedRule ? 'true' : undefined}
         {disabled}
-        class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+        class="field"
       />
       <datalist id="step-rule-suggestions">
         {#each COPI_RULES as rule}
@@ -292,69 +279,66 @@
         {/each}
       </datalist>
       {#if ruleText.trim()}
-        <p class="text-[10px] font-sans text-neutral-600 dark:text-neutral-300" aria-live="polite">
-          {typedRule ? `${typedRule.abbreviation} — ${typedRule.name}` : 'Enter a complete abbreviation or rule name.'}
+        <p class="font-sans text-meta text-ink-3" aria-live="polite">
+          {typedRule ? `${typedRule.abbreviation} · ${typedRule.name}` : 'No rule by that name yet'}
         </p>
       {/if}
     </div>
 
-    <!-- Citations Input -->
-    <div class="sm:col-span-6 space-y-1">
+    <div class="space-y-2">
       <div class="flex items-center justify-between">
-        <label for="step-citation-input" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
-          Cited Lines ({selectedRule?.requiredPremiseCount || 1} required)
+        <label for="step-citation-input" class="label">
+          Cites {selectedRule?.requiredPremiseCount || 1} {(selectedRule?.requiredPremiseCount || 1) === 1 ? 'line' : 'lines'}
         </label>
-        <span class="text-[10px] font-sans text-neutral-600 dark:text-neutral-300">click lines below</span>
+        <span class="font-sans text-meta text-ink-3">or click a line number</span>
       </div>
       <input
         id="step-citation-input"
         type="text"
         bind:value={citationInput}
-        placeholder="e.g. 1, 3"
+        placeholder="1, 3"
         {disabled}
-        class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+        class="field tabular-nums"
       />
     </div>
   </div>
 
-  <!-- Available Line Chips -->
   {#if existingSteps.length > 0}
-    <div class="flex flex-wrap items-center gap-1.5 pt-1">
-      <span class="text-[10px] font-sans text-neutral-600 dark:text-neutral-300 uppercase mr-1">Cite:</span>
+    <div class="flex flex-wrap items-center gap-2">
       {#each existingSteps as step}
         {@const isSelected = parseCitations().includes(step.stepNumber)}
         <button
           type="button"
           on:click={() => toggleCitation(step.stepNumber)}
-          class="h-6 px-2 text-[11px] font-sans border transition-all cursor-pointer {
+          aria-pressed={isSelected}
+          title="Cite line {step.stepNumber}"
+          class="h-8 min-w-[32px] px-2 rounded-lg font-sans text-caption tabular-nums border cursor-pointer transition-colors duration-150 {
             isSelected
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-neutral-900 dark:hover:border-white'
+              ? 'bg-ink text-paper border-ink'
+              : 'border-line-strong text-ink-2 hover:text-ink hover:border-ink-3'
           }"
         >
-          {String(step.stepNumber).padStart(2, '0')}
+          {step.stepNumber}
         </button>
       {/each}
     </div>
   {/if}
 
-  <!-- Validation Error -->
   {#if validationError}
-    <div class="py-2 px-3 border border-neutral-400 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-900 text-xs font-sans text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-      <span>•</span>
+    <div class="flex items-center gap-3 min-h-[40px] px-4 rounded-lg border border-line-strong bg-raised font-sans text-caption text-ink" role="alert">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0 text-ink-2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
       <span>{validationError}</span>
     </div>
   {/if}
 
-  <!-- Submit Action -->
   <button
     type="button"
     on:click={handleSubmit}
     {disabled}
-    class="w-full h-10 bg-neutral-900 hover:bg-black dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-sans text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+    class="btn btn-primary btn-lg w-full"
   >
-    <span>Derive Step</span>
-    <span class="opacity-60 text-[10px]">[ Enter ↵ ]</span>
+    Add line
+    <span class="kbd">Enter</span>
   </button>
 </div>
 

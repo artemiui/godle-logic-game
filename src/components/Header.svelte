@@ -18,104 +18,99 @@
     }
   }
 
-  const tabs: { id: ActiveTab; label: string; number: string }[] = [
-    { id: 'wordle', label: 'Daily', number: '01' },
-    { id: 'frenzy', label: 'Frenzy', number: '02' },
-    { id: 'sandbox', label: 'Sandbox', number: '03' },
-    { id: 'tutorial', label: 'Rules', number: '04' },
-    { id: 'about', label: 'About', number: '05' },
+  const tabs: { id: ActiveTab; label: string }[] = [
+    { id: 'wordle', label: 'Daily' },
+    { id: 'frenzy', label: 'Frenzy' },
+    { id: 'sandbox', label: 'Sandbox' },
+    { id: 'tutorial', label: 'Rules' },
+    { id: 'about', label: 'About' },
   ];
 </script>
 
-<header class="border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-sm sticky top-0 z-40 transition-colors">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-    <!-- Brand Masthead (Left) -->
+<header class="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-sm">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-4">
+    <!-- Wordmark (unchanged brand) -->
     <div class="flex items-baseline gap-3">
       <button
         type="button"
         on:click={() => dispatch('openLanding')}
-        title="View Truth Trees Landing Page"
+        title="gödle home"
         class="text-left cursor-pointer group"
       >
         <span class="font-sans font-black text-xl tracking-tight text-neutral-950 dark:text-white group-hover:opacity-75 transition-opacity">
           gödle
         </span>
       </button>
-      <span class="hidden sm:inline text-[11px] font-sans text-neutral-500 dark:text-neutral-400">
+      <span class="hidden sm:inline text-meta font-sans text-ink-3">
         by A. Arcega
       </span>
     </div>
 
-    <!-- Navigation Tabs (Center) -->
-    <nav class="hidden md:flex items-center gap-1 font-sans text-xs">
+    <!-- Tabs -->
+    <nav class="hidden md:flex items-center gap-1 h-14 font-sans text-sm" aria-label="Modes">
       {#each tabs as tab}
         <button
           type="button"
           on:click={() => activeTabStore.set(tab.id)}
-          class="px-3 py-1.5 transition-all cursor-pointer flex items-center gap-1.5 {
-            $activeTabStore === tab.id
-              ? 'text-neutral-950 dark:text-white font-bold border-b border-neutral-950 dark:border-white -mb-[1px]'
-              : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white'
+          aria-current={$activeTabStore === tab.id ? 'page' : undefined}
+          class="relative h-full px-3 cursor-pointer transition-colors duration-150 {
+            $activeTabStore === tab.id ? 'text-ink font-medium' : 'text-ink-2 hover:text-ink'
           }"
         >
-          <span class="text-[10px] opacity-70">{tab.number}</span>
-          <span>{tab.label}</span>
+          {tab.label}
+          {#if $activeTabStore === tab.id}
+            <span class="absolute left-3 right-3 -bottom-px h-px bg-ink" aria-hidden="true"></span>
+          {/if}
         </button>
       {/each}
     </nav>
 
-    <!-- Right Controls: Streak, Account & Settings -->
-    <div class="flex items-center gap-2">
-      <!-- Streak & Stats Button -->
+    <!-- Streak, account, settings -->
+    <div class="flex items-center justify-end gap-1">
       <button
         type="button"
         on:click={() => dispatch('openStats')}
-        title="View Streaks & Stats"
-        class="h-8 px-2 text-xs font-sans text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white border border-neutral-300 dark:border-neutral-700 hover:border-neutral-500 flex items-center gap-1 transition-colors cursor-pointer"
+        title="Streak and stats"
+        class="btn btn-ghost btn-sm gap-1.5 px-2.5"
       >
-        <span class="text-xs">🔥</span>
-        <span class="font-bold">{$authStore.user?.streakCount || 0}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        <span class="tabular-nums text-ink">{$authStore.user?.streakCount || 0}</span>
+        <span class="sr-only">day streak</span>
       </button>
 
-      <!-- Person Icon (Logician Profile & Account) -->
       <button
         type="button"
         on:click={handlePersonClick}
-        title={$authStore.user ? `Logician Profile (@${$authStore.user.username})` : 'Logician Account & Sign In'}
-        class="w-8 h-8 flex items-center justify-center border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white transition-colors cursor-pointer relative text-neutral-800 dark:text-neutral-200"
-        aria-label="User Account"
+        title={$authStore.user ? `Profile (@${$authStore.user.username})` : 'Sign in'}
+        class="btn-icon relative overflow-hidden"
+        aria-label={$authStore.user ? 'Profile' : 'Sign in'}
       >
         {#if $authStore.user}
           {#if $authStore.user.avatarImage}
-            <img src={$authStore.user.avatarImage} alt={$authStore.user.username} class="w-full h-full object-cover" />
+            <img src={$authStore.user.avatarImage} alt={$authStore.user.username} class="w-6 h-6 rounded-md object-cover" />
           {:else if $authStore.user.avatarIcon && $authStore.user.avatarIcon !== 'user'}
-            <span class="font-serif text-sm font-bold leading-none select-none">
-              {$authStore.user.avatarIcon}
-            </span>
+            <span class="font-serif text-base leading-none select-none text-ink">{$authStore.user.avatarIcon}</span>
           {:else}
-            <span class="font-sans text-xs font-bold leading-none select-none">
+            <span class="font-sans text-caption font-medium leading-none select-none text-ink">
               {($authStore.user.username || 'G')[0].toUpperCase()}
             </span>
           {/if}
-          <!-- Online status dot -->
-          <span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
         {:else}
-          <svg class="w-4 h-4 text-neutral-600 dark:text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
         {/if}
       </button>
 
-      <!-- Subtle Settings Icon -->
       <button
         type="button"
         on:click={() => isSettingsOpen.set(true)}
-        title="Settings (Theme & Notation)"
-        class="w-8 h-8 flex items-center justify-center text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white transition-colors cursor-pointer"
+        title="Settings"
+        class="btn-icon"
         aria-label="Settings"
       >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
@@ -123,20 +118,19 @@
     </div>
   </div>
 
-  <!-- Mobile Tab Bar -->
-  <div class="md:hidden flex items-center justify-around border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-2 py-1 font-sans text-xs">
+  <!-- Mobile tabs -->
+  <nav class="md:hidden flex items-center gap-1 overflow-x-auto px-4 h-11 border-t border-line font-sans text-caption" aria-label="Modes">
     {#each tabs as tab}
       <button
         type="button"
         on:click={() => activeTabStore.set(tab.id)}
-        class="py-1 px-2 cursor-pointer transition-colors {
-          $activeTabStore === tab.id
-            ? 'text-neutral-950 dark:text-white font-bold border-b-2 border-neutral-950 dark:border-white'
-            : 'text-neutral-600 dark:text-neutral-300'
+        aria-current={$activeTabStore === tab.id ? 'page' : undefined}
+        class="h-8 px-3 rounded-lg cursor-pointer transition-colors duration-150 {
+          $activeTabStore === tab.id ? 'bg-raised text-ink font-medium' : 'text-ink-2'
         }"
       >
         {tab.label}
       </button>
     {/each}
-  </div>
+  </nav>
 </header>

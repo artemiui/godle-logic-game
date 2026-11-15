@@ -16,7 +16,7 @@
   async function handleVerifyToken(token: string) {
     isVerifying = true;
     errorMessage = '';
-    statusMessage = 'Validating clearance token...';
+    statusMessage = 'Verifying';
 
     try {
       const res = await fetch('/api/auth/verify-captcha', {
@@ -28,7 +28,7 @@
       const data = await res.json();
 
       if (res.ok && data.success) {
-        statusMessage = 'Clearance granted. Entering deduction space...';
+        statusMessage = 'Verified';
         setTimeout(() => {
           authStore.setCaptchaVerified(true);
         }, 400);
@@ -122,24 +122,24 @@
   });
 </script>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-md transition-colors">
-  <div class="w-full max-w-md bg-white dark:bg-neutral-950 border border-neutral-900 dark:border-neutral-200 text-neutral-950 dark:text-neutral-50 p-6 sm:p-8 space-y-6 shadow-2xl">
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-colors">
+  <div class="w-full max-w-md bg-card border border-line text-ink p-6 sm:p-8 space-y-6  rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
     <!-- Header -->
-    <div class="border-b border-neutral-200 dark:border-neutral-800 pb-4 text-center space-y-1">
-      <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400">
-        Gate 00 · Access Verification
+    <div class="border-b border-line pb-4 text-center space-y-1">
+      <span class="text-meta font-sans text-ink-3">
+        One check before you play
       </span>
-      <h1 class="text-2xl font-bold font-sans tracking-tight">
+      <h1 class="text-2xl font-medium font-sans tracking-tight">
         gödle
       </h1>
-      <p class="text-xs font-sans text-neutral-600 dark:text-neutral-400">
-        Formal Propositional Deduction System
+      <p class="text-xs font-sans text-ink-2">
+        Confirm you are human
       </p>
     </div>
 
     <!-- Instructions -->
     <div class="text-center space-y-2">
-      <p class="text-xs font-sans text-neutral-700 dark:text-neutral-300 leading-relaxed">
+      <p class="text-xs font-sans text-ink-2 leading-relaxed">
         Verify your identity via Google reCAPTCHA to proceed to the daily deduction puzzles and inference engine.
       </p>
     </div>
@@ -149,23 +149,23 @@
       <div bind:this={widgetContainer} class="min-h-[78px] flex items-center justify-center"></div>
 
       {#if isScriptLoading}
-        <div class="flex items-center gap-2 text-xs font-sans text-neutral-500 animate-pulse py-4">
-          <svg class="w-4 h-4 animate-spin text-neutral-400" viewBox="0 0 24 24" fill="none">
+        <div class="flex items-center gap-2 text-xs font-sans text-ink-3 py-4">
+          <svg class="w-4 h-4 animate-spin text-ink-3" viewBox="0 0 24 24" fill="none">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span>Loading reCAPTCHA verification...</span>
+          <span>Loading the check</span>
         </div>
       {/if}
 
       {#if statusMessage}
-        <div class="mt-3 text-xs font-sans text-emerald-600 dark:text-emerald-400 font-medium">
-          ✓ {statusMessage}
+        <div class="mt-3 text-xs font-sans text-ink font-medium">
+           {statusMessage}
         </div>
       {/if}
 
       {#if errorMessage}
-        <div class="mt-3 p-2.5 border border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-sans text-center">
+        <div class="mt-3 p-2.5 border border-ink bg-raised text-ink text-xs font-sans text-center rounded-xl">
           • {errorMessage}
         </div>
       {/if}
@@ -173,33 +173,33 @@
 
     <!-- Fallback / Local Clearance option (if ad-blocker blocks google.com or offline dev) -->
     {#if scriptLoadFailed || isScriptLoading}
-      <div class="pt-2 border-t border-neutral-200 dark:border-neutral-800 text-center space-y-2">
-        <p class="text-[11px] text-neutral-500 dark:text-neutral-400">
-          Google script unavailable (offline / ad-blocker detected).
+      <div class="pt-2 border-t border-line text-center space-y-2">
+        <p class="text-meta text-ink-3">
+          The check could not load. You may be offline or blocking scripts
         </p>
         <button
           type="button"
           on:click={handleDirectBypass}
           disabled={isVerifying}
-          class="px-4 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 text-xs font-sans uppercase tracking-wider cursor-pointer hover:opacity-90 transition-opacity"
+          class="px-4 py-2 bg-ink text-paper text-xs font-sans cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
         >
-          {isVerifying ? 'Verifying...' : 'Pass via Local Clearance'}
+          {isVerifying ? 'Verifying' : 'Continue'}
         </button>
       </div>
     {:else}
-      <div class="pt-2 border-t border-neutral-100 dark:border-neutral-900 text-center">
+      <div class="pt-2 border-t border-line text-center">
         <button
           type="button"
           on:click={handleDirectBypass}
-          class="text-[11px] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 underline cursor-pointer transition-colors"
+          class="text-meta text-ink-3 hover:text-ink-2 underline cursor-pointer transition-colors"
         >
-          Developer bypass / offline clearance
+          Developer bypass
         </button>
       </div>
     {/if}
 
     <!-- Footer Quote -->
-    <div class="text-center pt-2 text-[10px] font-serif italic text-neutral-400 dark:text-neutral-500">
+    <div class="text-center pt-2 text-meta font-serif text-ink-3">
       "Logic is the study of the methods and principles used to distinguish correct from incorrect reasoning."
     </div>
   </div>

@@ -24,10 +24,10 @@
   const varKeys = ['P', 'Q', 'R', 'S', 'T', 'A', 'B', 'C'];
 </script>
 
-<div class="border border-neutral-200 dark:border-neutral-800 p-3 bg-neutral-50/50 dark:bg-neutral-900/40 flex flex-wrap items-center justify-between gap-3">
+<div class="border border-line p-3 bg-raised/50 flex flex-wrap items-center justify-between gap-3 rounded-xl">
   <!-- Connectives -->
   <div class="flex flex-wrap items-center gap-1.5">
-    <span class="text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mr-1">
+    <span class="text-meta font-sans text-ink-2 mr-1">
       Connectives:
     </span>
     {#each opKeys as key}
@@ -35,7 +35,7 @@
         type="button"
         on:click={() => dispatch('insert', key.val)}
         title={key.name}
-        class="h-8 min-w-8 px-2 bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 font-serif text-base border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white transition-colors flex items-center justify-center cursor-pointer"
+        class="h-8 min-w-8 px-2 bg-card text-ink font-serif text-base border border-line-strong hover:border-ink transition-colors flex items-center justify-center cursor-pointer rounded-lg"
       >
         {key.label}
       </button>
@@ -44,14 +44,14 @@
 
   <!-- Variables & Actions -->
   <div class="flex flex-wrap items-center gap-1.5">
-    <span class="text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mr-1">
+    <span class="text-meta font-sans text-ink-2 mr-1">
       Atoms:
     </span>
     {#each varKeys as v}
       <button
         type="button"
         on:click={() => dispatch('insert', v)}
-        class="h-8 w-8 bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 font-serif font-bold text-sm border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white transition-colors flex items-center justify-center cursor-pointer"
+        class="h-8 w-8 bg-card text-ink font-serif font-medium text-sm border border-line-strong hover:border-ink transition-colors flex items-center justify-center cursor-pointer rounded-lg"
       >
         {v}
       </button>
@@ -61,7 +61,7 @@
       type="button"
       on:click={() => dispatch('backspace')}
       title="Backspace"
-      class="h-8 px-2.5 bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-sans text-xs hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+      class="h-8 px-2.5 bg-raised text-ink font-sans text-xs hover:bg-line-strong transition-colors cursor-pointer rounded-lg"
     >
       ⌫ Del
     </button>
@@ -69,7 +69,7 @@
       type="button"
       on:click={() => dispatch('clear')}
       title="Clear Input"
-      class="h-8 px-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-sans text-xs hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+      class="h-8 px-2 bg-raised text-ink font-sans text-xs hover:bg-line-strong transition-colors cursor-pointer rounded-lg"
     >
       Clear
     </button>
