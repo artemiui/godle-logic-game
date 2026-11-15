@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import confetti from 'canvas-confetti';
+  import { celebrate } from "../logic/celebrate";
   import { playVictorySound } from '../logic/sound';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
   import { COPI_PRESET_PROBLEMS, COMMUNITY_DEFAULT_PROBLEMS } from '../logic/presets';
@@ -165,7 +165,7 @@
     await fetchMySavedProofs();
     isSavingCurrent = false;
     isCurrentSaved = true;
-    currentSaveFeedback = 'Saved to Sandbox Library!';
+    currentSaveFeedback = 'Saved to your library';
     setTimeout(() => (currentSaveFeedback = ''), 3000);
   }
 
@@ -195,7 +195,7 @@
     await fetchMySavedProofs();
     isSavingCurrent = false;
     isCurrentSaved = false;
-    currentSaveFeedback = 'Removed from Sandbox Library';
+    currentSaveFeedback = 'Removed from your library';
     setTimeout(() => (currentSaveFeedback = ''), 3000);
   }
 
@@ -295,7 +295,7 @@
     communitySuccessMessage = '';
     errorMessage = '';
     if (!$authStore.user) {
-      errorMessage = 'Please sign in or register to save theorems to your account.';
+      errorMessage = 'Sign in to save theorems to your account';
       return;
     }
 
@@ -304,7 +304,7 @@
       .map(l => l.trim())
       .filter(l => l.length > 0);
     if (lines.length === 0) {
-      errorMessage = 'Enter at least one premise to save.';
+      errorMessage = 'Add at least one premise';
       return;
     }
 
@@ -312,7 +312,7 @@
     for (let i = 0; i < lines.length; i++) {
       const p = safeParseFormula(lines[i]);
       if (!p.formula) {
-        errorMessage = `Syntax error in premise ${i + 1}: ${p.error}`;
+        errorMessage = `Premise ${i + 1} could not be read: ${p.error}`;
         return;
       }
       parsedPremises.push(p.formula);
@@ -320,7 +320,7 @@
 
     const parsedConc = safeParseFormula(customConclusionText);
     if (!parsedConc.formula) {
-      errorMessage = `Syntax error in conclusion: ${parsedConc.error}`;
+      errorMessage = `The conclusion could not be read: ${parsedConc.error}`;
       return;
     }
 
@@ -343,13 +343,13 @@
       });
       const data = await res.json();
       if (res.ok) {
-        saveSuccessMessage = 'Theorem successfully saved to your Logician Account ledger!';
+        saveSuccessMessage = 'Saved to your account';
         await fetchMySavedProofs();
       } else {
         errorMessage = data.error || 'Failed to save theorem.';
       }
     } catch {
-      errorMessage = 'Network error while saving theorem.';
+      errorMessage = 'Could not reach the server. Try again';
     } finally {
       isSavingToAccount = false;
     }
@@ -365,7 +365,7 @@
       .map(l => l.trim())
       .filter(l => l.length > 0);
     if (lines.length === 0) {
-      errorMessage = 'Enter at least one premise to submit.';
+      errorMessage = 'Add at least one premise';
       return;
     }
 
@@ -373,7 +373,7 @@
     for (let i = 0; i < lines.length; i++) {
       const p = safeParseFormula(lines[i]);
       if (!p.formula) {
-        errorMessage = `Syntax error in premise ${i + 1}: ${p.error}`;
+        errorMessage = `Premise ${i + 1} could not be read: ${p.error}`;
         return;
       }
       parsedPremises.push(p.formula);
@@ -381,14 +381,14 @@
 
     const parsedConc = safeParseFormula(customConclusionText);
     if (!parsedConc.formula) {
-      errorMessage = `Syntax error in conclusion: ${parsedConc.error}`;
+      errorMessage = `The conclusion could not be read: ${parsedConc.error}`;
       return;
     }
 
     // Client-side solver verification first for immediate feedback
     const testResult = solveProblem(parsedPremises, parsedConc.formula, 8);
     if (!testResult.solvable) {
-      errorMessage = 'Theorem could not be proven valid under Copi\'s 19 rules. Only logically provable theorems are accepted into the Community Library.';
+      errorMessage = 'No proof was found with Copi’s 19 rules, so this cannot go in the community library';
       return;
     }
 
@@ -412,15 +412,15 @@
 
       const data = await res.json();
       if (res.ok) {
-        communitySuccessMessage = data.message || 'Theorem verified and added to the Community Library!';
+        communitySuccessMessage = data.message || 'Proved and added to the community library';
         await fetchCommunityTheorems();
         libraryFilter = 'community';
         activeSubTab = 'library';
       } else {
-        errorMessage = data.error || 'Failed to submit theorem.';
+        errorMessage = data.error || 'The theorem was not submitted';
       }
     } catch {
-      errorMessage = 'Network error while submitting to community.';
+      errorMessage = 'Could not reach the server. Try again';
     } finally {
       isSubmittingToCommunity = false;
     }
@@ -455,7 +455,7 @@
       playVictorySound();
       isWon = true;
       try {
-        confetti({ particleCount: 35, spread: 45 });
+        celebrate(35, 45);
       } catch {}
     }
   }
@@ -488,7 +488,7 @@
       .filter(l => l.length > 0);
 
     if (lines.length === 0) {
-      errorMessage = 'Please enter at least one premise.';
+      errorMessage = 'Add at least one premise';
       isAssessing = false;
       return;
     }
@@ -497,7 +497,7 @@
     for (let i = 0; i < lines.length; i++) {
       const p = safeParseFormula(lines[i]);
       if (!p.formula) {
-        errorMessage = `Syntax error in premise ${i + 1}: ${p.error}`;
+        errorMessage = `Premise ${i + 1} could not be read: ${p.error}`;
         isAssessing = false;
         return;
       }
@@ -506,7 +506,7 @@
 
     const parsedConc = safeParseFormula(customConclusionText);
     if (!parsedConc.formula) {
-      errorMessage = `Syntax error in conclusion: ${parsedConc.error}`;
+      errorMessage = `The conclusion could not be read: ${parsedConc.error}`;
       isAssessing = false;
       return;
     }
@@ -518,12 +518,12 @@
       assessmentResult = {
         solvable: true,
         minSteps: solution.minSteps,
-        message: `? Provable. Minimal deduction path is ${solution.minSteps} step(s).`,
+        message: `Provable in ${solution.minSteps} ${solution.minSteps === 1 ? 'line' : 'lines'} at the shortest`,
       };
     } else {
       assessmentResult = {
         solvable: false,
-        message: 'Derivation not found within 8 steps. May be invalid or require deeper search.',
+        message: 'No proof within 8 lines. It may be invalid or need a longer proof',
       };
     }
   }
@@ -550,171 +550,80 @@
   }
 </script>
 
-<div class="max-w-3xl mx-auto py-8 sm:py-12 px-4 space-y-8">
-  <!-- Top Navigation & Problem Source -->
-  <div class="border-b border-neutral-200 dark:border-neutral-800 pb-5 space-y-4">
-    <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-      <div>
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-          03 / Prover Sandbox
-        </span>
-        <div class="flex items-center gap-2.5 flex-wrap">
-          <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
-            {problem.title}
-          </h1>
-          <button
-            type="button"
-            on:click={toggleSaveCurrentTheorem}
-            disabled={isSavingCurrent}
-            title={isCurrentSaved ? "Saved to Sandbox Library (click to remove)" : "Save theorem to Sandbox Library"}
-            class="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans transition-colors cursor-pointer {
-              isCurrentSaved
-                ? 'border-emerald-600/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-300'
-                : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
-            }"
-          >
-            {#if isCurrentSaved}
-              <svg class="group-hover:hidden" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              <svg class="hidden group-hover:block" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              <span class="group-hover:hidden">Saved</span>
-              <span class="hidden group-hover:inline">Remove</span>
-            {:else if isSavingCurrent}
-              <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-              <span>Updating...</span>
-            {:else}
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-              <span>Save</span>
-            {/if}
-          </button>
-        </div>
-        {#if currentSaveFeedback}
-          <div class="text-[11px] font-sans text-emerald-600 dark:text-emerald-400 mt-0.5">
-            ✓ {currentSaveFeedback}
-          </div>
-        {/if}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-16 space-y-8">
+  <header class="space-y-6">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0 space-y-2">
+        <span class="font-sans text-meta font-medium text-ink-2">Sandbox</span>
+        <h1 class="page-title">{problem.title}</h1>
       </div>
-
-      <!-- Mode sub-tabs -->
-      <div class="flex items-center gap-1 font-sans text-xs">
-        <button
-          type="button"
-          on:click={() => (activeSubTab = 'library')}
-          class="px-2.5 py-1 border cursor-pointer transition-colors {
-            activeSubTab === 'library'
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-          }"
-        >
-          Library
-        </button>
-        <button
-          type="button"
-          on:click={() => (activeSubTab = 'generator')}
-          class="px-2.5 py-1 border cursor-pointer transition-colors {
-            activeSubTab === 'generator'
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-          }"
-        >
-          Generator
-        </button>
-        <button
-          type="button"
-          on:click={() => (activeSubTab = 'custom')}
-          class="px-2.5 py-1 border cursor-pointer transition-colors {
-            activeSubTab === 'custom'
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-          }"
-        >
-          Custom
-        </button>
-      </div>
+      <button
+        type="button"
+        on:click={toggleSaveCurrentTheorem}
+        disabled={isSavingCurrent}
+        aria-pressed={isCurrentSaved}
+        title={isCurrentSaved ? 'Saved to your library. Click to remove' : 'Save to your library'}
+        class="btn-icon shrink-0 -mr-2 mt-6 disabled:opacity-40 {isCurrentSaved ? 'text-ink' : ''}"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill={isCurrentSaved ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
     </div>
 
-    <!-- Copi Library / Saved Proofs Picker -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="seg" role="group" aria-label="Source">
+        <button type="button" class="seg-item" aria-pressed={activeSubTab === 'library'} on:click={() => (activeSubTab = 'library')}>Library</button>
+        <button type="button" class="seg-item" aria-pressed={activeSubTab === 'generator'} on:click={() => (activeSubTab = 'generator')}>Generate</button>
+        <button type="button" class="seg-item" aria-pressed={activeSubTab === 'custom'} on:click={() => (activeSubTab = 'custom')}>Write your own</button>
+      </div>
+      {#if currentSaveFeedback}
+        <span class="font-sans text-meta text-ink-2" aria-live="polite">{currentSaveFeedback}</span>
+      {/if}
+    </div>
+
     {#if activeSubTab === 'library'}
-      <div class="pt-2 space-y-3">
-        <div class="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-2">
-          <button
-            type="button"
-            on:click={() => (libraryFilter = 'copi')}
-            class="text-xs uppercase tracking-wider font-bold cursor-pointer transition-colors {
-              libraryFilter === 'copi'
-                ? 'text-neutral-950 dark:text-white border-b border-neutral-950 dark:border-white'
-                : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-            }"
-          >
-            Copi ({COPI_PRESET_PROBLEMS.length})
+      <div class="panel overflow-hidden">
+        <div class="flex items-center gap-6 px-4 h-12 border-b border-line font-sans text-caption">
+          <button type="button" on:click={() => (libraryFilter = 'copi')}
+            class="relative h-full cursor-pointer transition-colors {libraryFilter === 'copi' ? 'text-ink font-medium' : 'text-ink-2 hover:text-ink'}">
+            Copi <span class="text-ink-3 tabular-nums ml-1">{COPI_PRESET_PROBLEMS.length}</span>
+            {#if libraryFilter === 'copi'}<span class="absolute inset-x-0 -bottom-px h-px bg-ink"></span>{/if}
           </button>
-          <span class="text-neutral-300 dark:text-neutral-700">|</span>
-          <button
-            type="button"
-            on:click={() => {
-              libraryFilter = 'community';
-              fetchCommunityTheorems();
-            }}
-            class="text-xs uppercase tracking-wider font-bold cursor-pointer transition-colors {
-              libraryFilter === 'community'
-                ? 'text-neutral-950 dark:text-white border-b border-neutral-950 dark:border-white'
-                : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-            }"
-          >
-            Community ({communityTheorems.length})
+          <button type="button" on:click={() => { libraryFilter = 'community'; fetchCommunityTheorems(); }}
+            class="relative h-full cursor-pointer transition-colors {libraryFilter === 'community' ? 'text-ink font-medium' : 'text-ink-2 hover:text-ink'}">
+            Community <span class="text-ink-3 tabular-nums ml-1">{communityTheorems.length}</span>
+            {#if libraryFilter === 'community'}<span class="absolute inset-x-0 -bottom-px h-px bg-ink"></span>{/if}
           </button>
-          <span class="text-neutral-300 dark:text-neutral-700">|</span>
-          <button
-            type="button"
-            on:click={() => {
-              libraryFilter = 'saved';
-              if ($authStore.user) fetchMySavedProofs();
-            }}
-            class="text-xs uppercase tracking-wider font-bold cursor-pointer transition-colors {
-              libraryFilter === 'saved'
-                ? 'text-neutral-950 dark:text-white border-b border-neutral-950 dark:border-white'
-                : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-            }"
-          >
-            Saved Theorems ({mySavedProofs.length})
+          <button type="button" on:click={() => { libraryFilter = 'saved'; if ($authStore.user) fetchMySavedProofs(); }}
+            class="relative h-full cursor-pointer transition-colors {libraryFilter === 'saved' ? 'text-ink font-medium' : 'text-ink-2 hover:text-ink'}">
+            Saved <span class="text-ink-3 tabular-nums ml-1">{mySavedProofs.length}</span>
+            {#if libraryFilter === 'saved'}<span class="absolute inset-x-0 -bottom-px h-px bg-ink"></span>{/if}
           </button>
         </div>
 
-        {#if libraryFilter === 'copi'}
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+        <div class="max-h-[264px] overflow-y-auto divide-y divide-line">
+          {#if libraryFilter === 'copi'}
             {#each COPI_PRESET_PROBLEMS as p}
-              <button
-                type="button"
-                on:click={() => loadProblem(p)}
-                class="p-2.5 text-left border transition-colors cursor-pointer {
-                  problem.id === p.id
-                    ? 'border-neutral-900 dark:border-white bg-neutral-100/70 dark:bg-neutral-900'
-                    : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-400'
-                }"
-              >
-                <div class="flex items-center justify-between font-sans text-xs">
-                  <span class="font-bold text-neutral-900 dark:text-neutral-100">{p.title}</span>
-                  <span class="text-[10px] uppercase text-neutral-600 dark:text-neutral-300">{p.difficulty}</span>
-                </div>
-                <div class="text-[11px] font-serif text-neutral-600 dark:text-neutral-300 truncate mt-0.5">{p.description}</div>
+              <button type="button" on:click={() => loadProblem(p)} aria-current={problem.id === p.id ? 'true' : undefined}
+                class="w-full flex items-center justify-between gap-4 min-h-[48px] px-4 text-left font-sans cursor-pointer transition-colors duration-150 {problem.id === p.id ? 'bg-raised' : 'hover:bg-raised/60'}">
+                <span class="min-w-0">
+                  <span class="block text-sm text-ink truncate {problem.id === p.id ? 'font-medium' : ''}">{p.title}</span>
+                  <span class="block text-meta text-ink-3 truncate">{p.description}</span>
+                </span>
+                <span class="text-meta text-ink-3 shrink-0">{p.difficulty === 'easy' ? 'Novice' : p.difficulty === 'medium' ? 'Adept' : p.difficulty === 'hard' ? 'Master' : p.difficulty}</span>
               </button>
             {/each}
-          </div>
 
-        {:else if libraryFilter === 'community'}
-          {#if isCommunityLoading}
-            <div class="py-6 text-center text-xs text-neutral-400 animate-pulse font-sans">
-              Loading verified community theorems...
-            </div>
-          {:else if communityTheorems.length === 0}
-            <div class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 text-center space-y-1 font-sans">
-              <div class="text-xs font-bold text-neutral-900 dark:text-white">No community theorems found.</div>
-              <div class="text-[11px] text-neutral-500">Design a theorem in the Custom tab and submit it to be proven and included!</div>
-            </div>
-          {:else}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+          {:else if libraryFilter === 'community'}
+            {#if isCommunityLoading}
+              <p class="px-4 py-8 text-center font-sans text-caption text-ink-3">Loading community theorems</p>
+            {:else if communityTheorems.length === 0}
+              <div class="px-4 py-8 text-center font-sans space-y-1">
+                <p class="text-sm text-ink">No community theorems yet</p>
+                <p class="text-caption text-ink-3">Write one under Write your own and submit it. It is added once a proof is found.</p>
+              </div>
+            {:else}
               {#each communityTheorems as cp}
-                <button
-                  type="button"
+                <button type="button"
                   on:click={() => loadProblem({
                     id: cp.id,
                     title: cp.title,
@@ -725,43 +634,29 @@
                     creator_username: cp.creator_username || cp.author,
                     isCommunity: true
                   })}
-                  class="p-2.5 text-left border transition-colors cursor-pointer {
-                    problem.id === cp.id
-                      ? 'border-neutral-900 dark:border-white bg-neutral-100/70 dark:bg-neutral-900'
-                      : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-400'
-                  }"
-                >
-                  <div class="flex items-center justify-between font-sans text-xs">
-                    <span class="font-bold text-neutral-900 dark:text-neutral-100 truncate pr-2">{cp.title}</span>
-                    <span class="text-[10px] uppercase text-neutral-600 dark:text-neutral-300 flex-shrink-0">{cp.difficulty}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 font-sans">
-                    <span>by <strong class="text-neutral-800 dark:text-neutral-200">@{cp.author || cp.creator_username || 'Logician'}</strong></span>
-                    <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Proven</span>
-                  </div>
+                  aria-current={problem.id === cp.id ? 'true' : undefined}
+                  class="w-full flex items-center justify-between gap-4 min-h-[48px] px-4 text-left font-sans cursor-pointer transition-colors duration-150 {problem.id === cp.id ? 'bg-raised' : 'hover:bg-raised/60'}">
+                  <span class="min-w-0">
+                    <span class="block text-sm text-ink truncate {problem.id === cp.id ? 'font-medium' : ''}">{cp.title}</span>
+                    <span class="block text-meta text-ink-3 truncate">@{cp.author || cp.creator_username || 'logician'}</span>
+                  </span>
+                  <span class="text-meta text-ink-3 shrink-0">{cp.difficulty === 'easy' ? 'Novice' : cp.difficulty === 'medium' ? 'Adept' : cp.difficulty === 'hard' ? 'Master' : cp.difficulty}</span>
                 </button>
               {/each}
-            </div>
-          {/if}
+            {/if}
 
-        {:else}
-          {#if isSavedLoading}
-            <div class="py-6 text-center text-xs text-neutral-400 animate-pulse font-sans">
-              Loading your saved theorems...
-            </div>
-          {:else if mySavedProofs.length === 0}
-            <div class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 text-center space-y-1 font-sans">
-              <div class="text-xs font-bold text-neutral-900 dark:text-white">No saved theorems found.</div>
-              <div class="text-[11px] text-neutral-500">
-                Click the "Save" button beside any theorem title to add it here, or create one in Custom!
-              </div>
-            </div>
           {:else}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+            {#if isSavedLoading}
+              <p class="px-4 py-8 text-center font-sans text-caption text-ink-3">Loading your saved theorems</p>
+            {:else if mySavedProofs.length === 0}
+              <div class="px-4 py-8 text-center font-sans space-y-1">
+                <p class="text-sm text-ink">Nothing saved yet</p>
+                <p class="text-caption text-ink-3">Use the bookmark beside any title to keep it here.</p>
+              </div>
+            {:else}
               {#each mySavedProofs as sp}
-                <div class="group relative flex items-stretch border border-neutral-200 dark:border-neutral-800 hover:border-neutral-900 dark:hover:border-white transition-colors bg-white dark:bg-neutral-950">
-                  <button
-                    type="button"
+                <div class="group flex items-center {problem.id === sp.id ? 'bg-raised' : 'hover:bg-raised/60'} transition-colors">
+                  <button type="button"
                     on:click={() => loadProblem({
                       id: sp.id,
                       title: sp.title,
@@ -769,175 +664,93 @@
                       premises: sp.premises,
                       conclusion: sp.conclusion
                     })}
-                    class="flex-1 p-2.5 text-left cursor-pointer min-w-0"
-                  >
-                    <div class="flex items-center justify-between font-sans text-xs">
-                      <span class="font-bold text-neutral-900 dark:text-neutral-100 truncate pr-2">{sp.title}</span>
-                      <span class="text-[9px] uppercase text-neutral-500 flex-shrink-0">{sp.difficulty}</span>
-                    </div>
-                    {#if sp.notes}
-                      <div class="text-[11px] text-neutral-500 truncate mt-0.5">{sp.notes}</div>
-                    {/if}
+                    class="flex-1 min-w-0 min-h-[48px] px-4 py-2 text-left font-sans cursor-pointer">
+                    <span class="block text-sm text-ink truncate">{sp.title}</span>
+                    {#if sp.notes}<span class="block text-meta text-ink-3 truncate">{sp.notes}</span>{/if}
                   </button>
-                  <button
-                    type="button"
-                    on:click|stopPropagation={() => removeSavedProof(sp)}
-                    title="Remove from Saved Theorems"
-                    class="px-2.5 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 opacity-40 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                  </button>
+                  <button type="button" on:click|stopPropagation={() => removeSavedProof(sp)} title="Remove from saved" aria-label="Remove {sp.title} from saved"
+                    class="btn-icon mr-2 opacity-60 group-hover:opacity-100"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
                 </div>
               {/each}
-            </div>
-            {#if !$authStore.user}
-              <div class="text-[10px] text-neutral-400 dark:text-neutral-500 text-center font-sans pt-1">
-                Saved locally on this device. Sign in to synchronize across devices.
-              </div>
             {/if}
           {/if}
+        </div>
+        {#if libraryFilter === 'saved' && !$authStore.user && mySavedProofs.length > 0}
+          <p class="px-4 py-3 border-t border-line font-sans text-meta text-ink-3">Saved on this device. Sign in to keep them across devices.</p>
         {/if}
       </div>
     {/if}
 
-    <!-- Generator Controls -->
     {#if activeSubTab === 'generator'}
-      <div class="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 font-sans text-xs">
-        <div>
-          <label for="sandbox-gen-seed" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Seed</label>
-          <input
-            id="sandbox-gen-seed"
-            type="text"
-            bind:value={genSeed}
-            class="w-full h-8 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700"
-          />
+      <div class="panel p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] items-end gap-4 font-sans">
+        <div class="space-y-2">
+          <label for="sandbox-gen-seed" class="label block">Seed</label>
+          <input id="sandbox-gen-seed" type="text" bind:value={genSeed} class="field" />
         </div>
-        <div>
-          <label for="sandbox-gen-diff" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Difficulty</label>
-          <select
-            id="sandbox-gen-diff"
-            bind:value={genDifficulty}
-            class="w-full h-8 px-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 cursor-pointer"
-          >
+        <div class="space-y-2">
+          <label for="sandbox-gen-diff" class="label block">Stage</label>
+          <select id="sandbox-gen-diff" bind:value={genDifficulty} class="field cursor-pointer">
             <option value="easy">Novice</option>
             <option value="medium">Adept</option>
             <option value="hard">Master</option>
           </select>
         </div>
-        <div class="flex items-end">
-          <button
-            type="button"
-            on:click={handleGenerate}
-            class="w-full h-8 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 uppercase tracking-wider text-xs cursor-pointer hover:bg-black"
-          >
-            Generate
+        <button type="button" on:click={handleGenerate} class="btn btn-primary">Generate</button>
+      </div>
+    {/if}
+
+    {#if activeSubTab === 'custom'}
+      <div class="panel p-4 sm:p-6 space-y-4 font-sans">
+        <div class="space-y-2">
+          <label for="sandbox-custom-title" class="label block">Title</label>
+          <input id="sandbox-custom-title" type="text" bind:value={customTitle} placeholder="Modus Tollens, twice" class="field" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="sandbox-custom-premises" class="label block">Premises, one per line</label>
+            <textarea id="sandbox-custom-premises" bind:value={customPremisesText} on:input={handlePremisesInput}
+              maxlength="2000" rows="4" class="field h-auto py-2 font-serif text-base leading-relaxed"></textarea>
+          </div>
+          <div class="space-y-2">
+            <label for="sandbox-custom-conclusion" class="label block">Conclusion</label>
+            <input id="sandbox-custom-conclusion" type="text" bind:value={customConclusionText} on:input={handleConclusionInput}
+              maxlength="250" class="field font-serif text-base" />
+          </div>
+        </div>
+
+        {#if assessmentResult}
+          <p class="px-4 py-3 rounded-lg bg-raised text-caption text-ink">{assessmentResult.message}</p>
+        {/if}
+        {#if saveSuccessMessage}
+          <p class="text-caption text-ink-2" aria-live="polite">{saveSuccessMessage}</p>
+        {/if}
+        {#if communitySuccessMessage}
+          <p class="text-caption text-ink-2" aria-live="polite">{communitySuccessMessage}</p>
+        {/if}
+
+        <div class="flex flex-wrap items-center gap-2 pt-4 border-t border-line">
+          <button type="button" on:click={playCustomProblem} class="btn btn-primary">Prove it</button>
+          <button type="button" on:click={assessCustomProblem} disabled={isAssessing} class="btn btn-secondary">
+            {isAssessing ? 'Checking' : 'Check if provable'}
+          </button>
+          <span class="flex-1"></span>
+          <button type="button" on:click={handleSaveToAccount} disabled={isSavingToAccount} class="btn btn-ghost">
+            {isSavingToAccount ? 'Saving' : 'Save to account'}
+          </button>
+          <button type="button" on:click={handleSubmitToCommunity} disabled={isSubmittingToCommunity} class="btn btn-ghost">
+            {isSubmittingToCommunity ? 'Looking for a proof' : 'Submit to community'}
           </button>
         </div>
       </div>
     {/if}
-
-    <!-- Custom Creator Controls -->
-    {#if activeSubTab === 'custom'}
-      <div class="pt-2 space-y-3 font-sans text-xs">
-        <div>
-          <label for="sandbox-custom-title" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Theorem Title</label>
-          <input
-            id="sandbox-custom-title"
-            type="text"
-            bind:value={customTitle}
-            placeholder="e.g. Modus Tollens Variation"
-            class="w-full h-8 px-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs"
-          />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label for="sandbox-custom-premises" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Premises (one per line)</label>
-            <textarea
-              id="sandbox-custom-premises"
-              bind:value={customPremisesText}
-              on:input={handlePremisesInput}
-              maxlength="2000"
-              rows="3"
-              class="w-full p-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-serif text-sm"
-            ></textarea>
-          </div>
-          <div class="space-y-2">
-            <div>
-              <label for="sandbox-custom-conclusion" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Conclusion to Prove</label>
-              <input
-                id="sandbox-custom-conclusion"
-                type="text"
-                bind:value={customConclusionText}
-                on:input={handleConclusionInput}
-                maxlength="250"
-                class="w-full h-8 px-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-serif text-sm"
-              />
-            </div>
-            <div class="flex gap-2 pt-1">
-              <button
-                type="button"
-                on:click={assessCustomProblem}
-                disabled={isAssessing}
-                class="flex-1 h-8 border border-neutral-900 dark:border-white text-xs uppercase hover:bg-neutral-100 dark:hover:bg-neutral-900 cursor-pointer disabled:opacity-40"
-              >
-                {isAssessing ? 'Checking...' : 'Assess'}
-              </button>
-              <button
-                type="button"
-                on:click={playCustomProblem}
-                class="flex-1 h-8 bg-neutral-900 dark:bg-white text-white dark:text-black text-xs uppercase cursor-pointer"
-              >
-                Load to Prove
-              </button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                on:click={handleSaveToAccount}
-                disabled={isSavingToAccount}
-                class="h-8 border border-neutral-400 dark:border-neutral-600 hover:border-neutral-900 dark:hover:border-white text-neutral-800 dark:text-neutral-200 text-xs uppercase cursor-pointer transition-colors disabled:opacity-40"
-              >
-                {isSavingToAccount ? 'Saving...' : '💾 Save to Account'}
-              </button>
-              <button
-                type="button"
-                on:click={handleSubmitToCommunity}
-                disabled={isSubmittingToCommunity}
-                class="h-8 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 hover:bg-black dark:hover:bg-neutral-100 text-xs uppercase cursor-pointer transition-colors disabled:opacity-40"
-              >
-                {isSubmittingToCommunity ? 'Verifying...' : '🌐 Submit to Community'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {#if saveSuccessMessage}
-          <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
-            ✓ {saveSuccessMessage}
-          </div>
-        {/if}
-
-        {#if communitySuccessMessage}
-          <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
-            {communitySuccessMessage}
-          </div>
-        {/if}
-
-        {#if assessmentResult}
-          <div class="p-2.5 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 text-xs">
-            {assessmentResult.message}
-          </div>
-        {/if}
-      </div>
-    {/if}
-  </div>
+  </header>
 
   <!-- Error feedback message -->
   {#if errorMessage}
-    <div class="py-2.5 px-3.5 border border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-900 text-xs font-sans text-neutral-950 dark:text-neutral-50 flex items-center justify-between">
-      <span>• {errorMessage}</span>
-      <button type="button" on:click={() => (errorMessage = '')} class="underline ml-3 cursor-pointer">dismiss</button>
+    <div class="flex items-center justify-between gap-4 min-h-[44px] px-4 rounded-xl border border-ink bg-card font-sans text-caption text-ink" role="alert">
+      <span>{errorMessage}</span>
+      <button type="button" on:click={() => (errorMessage = '')} class="link shrink-0">Dismiss</button>
     </div>
   {/if}
 
@@ -962,34 +775,19 @@
     />
   {/if}
 
-  <!-- Minimal Completion Banner -->
   {#if isWon}
-    <div class="border border-neutral-900 dark:border-white p-6 bg-white dark:bg-neutral-950 space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
-        <div>
-          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-0.5">
-            Validation Complete
-          </span>
-          <h3 class="font-serif text-2xl text-neutral-950 dark:text-neutral-50">
-            Theorem Formally Proven
-          </h3>
-        </div>
-        <div class="font-sans text-xs text-neutral-600 dark:text-neutral-300">
-          {steps.filter(s => s.rule !== 'premise').length} deduction steps
-        </div>
+    <section class="panel p-6 sm:p-8 space-y-6">
+      <div class="space-y-2">
+        <span class="label">Proved</span>
+        <h2 class="font-serif text-3xl text-ink leading-tight">
+          In {steps.filter(s => s.rule !== 'premise').length} {steps.filter(s => s.rule !== 'premise').length === 1 ? 'line' : 'lines'}
+        </h2>
       </div>
-
-      <div class="flex flex-wrap items-center gap-3 pt-1">
-        <button
-          type="button"
-          on:click={() => (showShareModal = true)}
-          class="h-9 px-4 bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 font-sans text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5"
-        >
-          <span>Share Proof Certificate</span>
-          <span class="text-[10px] opacity-70">↗</span>
-        </button>
+      <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-line">
+        <button type="button" on:click={() => (showShareModal = true)} class="btn btn-primary">Share proof</button>
+        <button type="button" on:click={() => (activeSubTab = 'library')} class="btn btn-ghost">Pick another</button>
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Proof Sharing Modal with LaTeX and Image Rendering -->

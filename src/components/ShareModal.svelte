@@ -260,7 +260,7 @@
     try {
       const text = getFullProofText();
       await navigator.clipboard.writeText(text);
-      statusMessage = 'Proof text copied to clipboard!';
+      statusMessage = 'Text copied';
       setTimeout(() => (statusMessage = ''), 2800);
     } catch {
       statusMessage = 'Could not copy text.';
@@ -279,7 +279,7 @@
           await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob })
           ]);
-          statusMessage = 'Proof card image copied to clipboard!';
+          statusMessage = 'Image copied';
           setTimeout(() => (statusMessage = ''), 2800);
         } catch {
           handleDownloadImage();
@@ -297,7 +297,7 @@
     a.download = `godle-proof.png`;
     a.href = dataUrl;
     a.click();
-    statusMessage = 'Proof image downloaded (.png)!';
+    statusMessage = 'Image downloaded';
     setTimeout(() => (statusMessage = ''), 2800);
   }
 
@@ -317,7 +317,7 @@
 
   async function shareInstagram() {
     await handleCopyImage();
-    statusMessage = 'Card image copied! Open Instagram to paste into Stories or message.';
+    statusMessage = 'Image copied. Paste it into a story or message';
     setTimeout(() => {
       window.open('https://www.instagram.com/', '_blank');
     }, 1200);
@@ -332,33 +332,33 @@
 
 {#if isOpen && problem}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-[2px] transition-opacity overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/50 transition-opacity overflow-y-auto"
     on:click={handleBackdrop}
     role="presentation"
   >
     <div
-      class="w-full max-w-2xl bg-white dark:bg-neutral-950 border border-neutral-900 dark:border-neutral-200 text-neutral-900 dark:text-neutral-100 p-5 sm:p-7 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto"
+      class="w-full max-w-2xl bg-card border border-line text-ink p-5 sm:p-7 space-y-5  max-h-[92vh] overflow-y-auto rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       role="dialog"
       aria-modal="true"
     >
       <!-- Modal Header -->
-      <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
-        <span class="text-xs font-sans font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-          Share Proof
+      <div class="flex items-center justify-between border-b border-line pb-3">
+        <span class="text-xs font-sans font-medium text-ink-3">
+          Share proof
         </span>
-        <button
+        <button aria-label="Close"
           type="button"
           on:click={() => dispatch('close')}
-          class="text-neutral-500 hover:text-black dark:hover:text-white text-xs font-sans tracking-wider cursor-pointer p-1"
+          class="btn-icon -mr-2 shrink-0"
         >
-          [ ✕ Close ]
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
       <!-- Feedback Alert -->
       {#if statusMessage}
-        <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-sans">
-          ✓ {statusMessage}
+        <div class="p-2.5 border border-ink bg-raised text-ink text-xs font-sans rounded-xl">
+           {statusMessage}
         </div>
       {/if}
 
@@ -369,21 +369,21 @@
           <button
             type="button"
             on:click={handleCopyText}
-            class="h-9 px-3 border border-neutral-900 dark:border-white hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-950 dark:text-white font-bold uppercase tracking-wider cursor-pointer transition-colors"
+            class="h-9 px-3 border border-ink hover:bg-raised text-ink font-medium cursor-pointer transition-colors rounded-lg"
           >
-            Copy Text
+            Copy text
           </button>
           <button
             type="button"
             on:click={handleCopyImage}
-            class="h-9 px-3 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 font-bold uppercase tracking-wider cursor-pointer hover:opacity-90 transition-opacity"
+            class="h-9 px-3 bg-ink text-paper font-medium cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
           >
-            Copy Image
+            Copy image
           </button>
           <button
             type="button"
             on:click={handleDownloadImage}
-            class="h-9 px-3 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white uppercase font-bold tracking-wider cursor-pointer transition-colors"
+            class="h-9 px-3 border border-line-strong hover:border-ink font-medium cursor-pointer transition-colors rounded-lg"
           >
             Download PNG
           </button>
@@ -396,7 +396,7 @@
             type="button"
             on:click={shareTwitter}
             title="Share on Twitter / X"
-            class="w-9 h-9 flex items-center justify-center border border-neutral-300 dark:border-neutral-700 hover:border-black dark:hover:border-white text-neutral-800 dark:text-neutral-200 transition-colors cursor-pointer"
+            class="w-9 h-9 flex items-center justify-center border border-line-strong hover:border-ink text-ink transition-colors cursor-pointer rounded-lg"
             aria-label="Share on Twitter"
           >
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -409,7 +409,7 @@
             type="button"
             on:click={shareFacebook}
             title="Share on Facebook"
-            class="w-9 h-9 flex items-center justify-center border border-neutral-300 dark:border-neutral-700 hover:border-black dark:hover:border-white text-neutral-800 dark:text-neutral-200 transition-colors cursor-pointer"
+            class="w-9 h-9 flex items-center justify-center border border-line-strong hover:border-ink text-ink transition-colors cursor-pointer rounded-lg"
             aria-label="Share on Facebook"
           >
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -422,7 +422,7 @@
             type="button"
             on:click={shareInstagram}
             title="Share on Instagram"
-            class="w-9 h-9 flex items-center justify-center border border-neutral-300 dark:border-neutral-700 hover:border-black dark:hover:border-white text-neutral-800 dark:text-neutral-200 transition-colors cursor-pointer"
+            class="w-9 h-9 flex items-center justify-center border border-line-strong hover:border-ink text-ink transition-colors cursor-pointer rounded-lg"
             aria-label="Share on Instagram"
           >
             <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -439,18 +439,18 @@
               imageTheme = imageTheme === 'dark' ? 'light' : 'dark';
               renderProofCanvas();
             }}
-            class="h-9 px-2.5 border border-neutral-300 dark:border-neutral-700 text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white cursor-pointer ml-1"
+            class="h-9 px-2.5 border border-line-strong text-meta font-medium text-ink-2 hover:text-ink cursor-pointer ml-1 rounded-lg"
             title="Switch card theme"
           >
-            {imageTheme === 'dark' ? 'Light Card' : 'Dark Card'}
+            {imageTheme === 'dark' ? 'Light' : 'Dark'}
           </button>
         </div>
       </div>
 
       <!-- SINGLE CARD PREVIEW: First variation with LaTeX notation, main gödle typography, user icon, username, date, duration, lines & premises clearly shown -->
-      <div class="border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 space-y-6 transition-colors shadow-sm {
-        imageTheme === 'dark' ? 'bg-[#0A0A0A] text-[#F5F5F5]' : 'bg-[#FFFFFF] text-[#0A0A0A]'
-      }">
+      <div class="border border-line p-6 sm:p-8 space-y-6 transition-colors shadow-sm {
+ imageTheme === 'dark' ? 'bg-[#0A0A0A] text-[#F5F5F5]' : 'bg-[#FFFFFF] text-[#0A0A0A]'
+ } rounded-xl">
         <!-- Card Header: gödle typography and author credit -->
         <div class="flex items-baseline justify-between border-b {imageTheme === 'dark' ? 'border-[#262626]' : 'border-[#E5E5E5]'} pb-3">
           <div class="flex items-baseline gap-2.5">
@@ -461,7 +461,7 @@
               by A. Arcega
             </span>
           </div>
-          <span class="text-xs font-sans uppercase tracking-wider {imageTheme === 'dark' ? 'text-[#888888]' : 'text-[#666666]'}">
+          <span class="text-xs font-sans {imageTheme === 'dark' ? 'text-[#888888]' : 'text-[#666666]'}">
             {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
           </span>
         </div>
@@ -469,10 +469,10 @@
         <!-- Logician Info & Stats -->
         <div class="flex items-center justify-between text-xs font-sans flex-wrap gap-2">
           <div class="flex items-center gap-2">
-            <span class="w-6 h-6 border flex items-center justify-center font-serif font-bold text-xs select-none {imageTheme === 'dark' ? 'bg-[#1A1A1A] border-[#333333]' : 'bg-[#F0F0F0] border-[#D0D0D0]'}">
+            <span class="w-6 h-6 border flex items-center justify-center font-serif font-medium text-xs select-none {imageTheme === 'dark' ? 'bg-[#1A1A1A] border-[#333333]' : 'bg-[#F0F0F0] border-[#D0D0D0]'}">
               {$authStore.user?.avatarIcon || '⊢'}
             </span>
-            <span class="font-bold">
+            <span class="font-medium">
               {$authStore.user?.username || 'Anonymous Logician'}
             </span>
           </div>
@@ -482,13 +482,13 @@
             {#if durationSeconds > 0}
               <span> · {formatDuration(durationSeconds)}</span>
             {/if}
-            <span class="font-bold ml-1">· Q.E.D. ∎</span>
+            <span class="font-medium ml-1">· Q.E.D. ∎</span>
           </div>
         </div>
 
         <!-- Theorem LaTeX Statement -->
-        <div class="py-2.5 px-3 border {imageTheme === 'dark' ? 'border-[#262626] bg-[#121212]' : 'border-[#E5E5E5] bg-[#FBFBFB]'} flex items-center justify-between flex-wrap gap-2 text-sm">
-          <span class="text-[10px] font-sans uppercase tracking-wider {imageTheme === 'dark' ? 'text-[#888888]' : 'text-[#666666]'}">
+        <div class="py-2.5 px-3 border {imageTheme === 'dark' ? 'border-[#262626] bg-[#121212]' : 'border-[#E5E5E5] bg-[#FBFBFB]'} flex items-center justify-between flex-wrap gap-2 text-sm rounded-xl">
+          <span class="text-meta font-sans {imageTheme === 'dark' ? 'text-[#888888]' : 'text-[#666666]'}">
             Theorem:
           </span>
           <div class="font-serif font-medium overflow-x-auto">
@@ -498,7 +498,7 @@
 
         <!-- Lines & Premises Clearly Demarcated with LaTeX notation -->
         <div class="space-y-1 font-sans">
-          <div class="grid grid-cols-12 text-[10px] uppercase font-bold pb-1 border-b {imageTheme === 'dark' ? 'text-[#888888] border-[#262626]' : 'text-[#666666] border-[#E5E5E5]'}">
+          <div class="grid grid-cols-12 text-meta font-medium pb-1 border-b {imageTheme === 'dark' ? 'text-[#888888] border-[#262626]' : 'text-[#666666] border-[#E5E5E5]'}">
             <span class="col-span-1">No.</span>
             <span class="col-span-7">Proposition (LaTeX)</span>
             <span class="col-span-4 text-right">Justification</span>
@@ -506,12 +506,12 @@
 
           <div class="divide-y {imageTheme === 'dark' ? 'divide-[#1A1A1A]' : 'divide-[#F0F0F0]'}">
             {#each steps as s}
-              <div class="grid grid-cols-12 py-2 text-xs items-center {s.stepNumber === steps.length ? 'font-bold' : ''}">
+              <div class="grid grid-cols-12 py-2 text-xs items-center {s.stepNumber === steps.length ? 'font-medium' : ''}">
                 <span class="col-span-1 font-sans {imageTheme === 'dark' ? 'text-[#666666]' : 'text-[#999999]'}">{s.stepNumber}.</span>
                 <span class="col-span-7 font-serif flex items-center">
                   <LaTeX formula={s.formula} displayMode={false} />
                 </span>
-                <span class="col-span-4 text-right text-[11px] {s.isPremise ? (imageTheme === 'dark' ? 'text-[#777777]' : 'text-[#888888]') : ''}">
+                <span class="col-span-4 text-right text-meta {s.isPremise ? (imageTheme === 'dark' ? 'text-[#777777]' : 'text-[#888888]') : ''}">
                   {getRuleLabel(s.rule, s.citations)}
                 </span>
               </div>
@@ -520,13 +520,13 @@
         </div>
 
         <!-- Card Footer Watermark -->
-        <div class="pt-2 border-t {imageTheme === 'dark' ? 'border-[#262626]' : 'border-[#E5E5E5]'} flex items-center justify-between text-[9px] uppercase tracking-wider {imageTheme === 'dark' ? 'text-[#777777]' : 'text-[#888888]'}">
+        <div class="pt-2 border-t {imageTheme === 'dark' ? 'border-[#262626]' : 'border-[#E5E5E5]'} flex items-center justify-between text-meta {imageTheme === 'dark' ? 'text-[#777777]' : 'text-[#888888]'}">
           <div class="flex items-center gap-2">
             <a
               href="https://godle-logic-game.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:underline transition-colors {imageTheme === 'dark' ? 'text-[#888888] hover:text-white' : 'text-[#666666] hover:text-black'}"
+              class="hover:underline transition-colors {imageTheme === 'dark' ? 'text-[#888888] hover:text-paper' : 'text-[#666666] hover:text-ink'}"
             >
               godle-logic-game.vercel.app
             </a>
@@ -543,11 +543,11 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex justify-end">
+      <div class="pt-2 border-t border-line flex justify-end">
         <button
           type="button"
           on:click={() => dispatch('close')}
-          class="px-5 py-2 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-sans uppercase font-bold cursor-pointer hover:opacity-90 transition-opacity"
+          class="px-5 py-2 bg-ink text-paper text-xs font-sans font-medium cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
         >
           Done
         </button>

@@ -28,7 +28,7 @@
   let resetConfirmPassword: string = '';
   let resetLoading: boolean = false;
 
-  // Attach Password State
+  // Add password State
   let attachNewPassword: string = '';
   let attachConfirmPassword: string = '';
   let attachLoading: boolean = false;
@@ -171,7 +171,7 @@
 
       authStore.setUser(data.user, data.token);
       authStore.checkAuth().catch(() => {});
-      successMessage = mode === 'register' ? 'Account created! Entering...' : 'Welcome back! Entering...';
+      successMessage = mode === 'register' ? 'Account created' : 'Signed in';
       setTimeout(() => {
         dispatch('close');
       }, 500);
@@ -254,7 +254,7 @@
     }
   }
 
-  // Handle Attach Password to Account
+  // Handle Add password to Account
   async function handleAttachPassword() {
     errorMessage = '';
     successMessage = '';
@@ -287,7 +287,7 @@
       if (!res.ok) {
         errorMessage = data?.error || 'Failed to attach password.';
       } else {
-        successMessage = 'Master password attached to account!';
+        successMessage = 'Password added';
         authStore.checkAuth().catch(() => {});
         setTimeout(() => {
           dispatch('close');
@@ -346,7 +346,7 @@
         authStore.setUser(data.user, data.token);
         authStore.checkAuth().catch(() => {});
         oauthProvider = null;
-        successMessage = 'Signed in with GitHub!';
+        successMessage = 'Signed in with GitHub';
         setTimeout(() => {
           dispatch('close');
         }, 600);
@@ -367,26 +367,26 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-[2px] transition-opacity"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-opacity"
     on:click={handleBackdrop}
     role="presentation"
   >
     <div
-      class="w-full max-w-md bg-white dark:bg-neutral-950 border border-neutral-900 dark:border-neutral-200 text-neutral-900 dark:text-neutral-100 p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden"
+      class="w-full max-w-md bg-card border border-line text-ink p-6 sm:p-8 space-y-6  relative overflow-hidden rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       role="dialog"
       aria-modal="true"
     >
       <!-- Form Container -->
       <div class="space-y-6">
         <!-- Modal Header -->
-        <div class="flex items-start justify-between border-b border-neutral-200 dark:border-neutral-800 pb-4">
+        <div class="flex items-start justify-between border-b border-line pb-4">
         <div>
-          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500 dark:text-neutral-400 block mb-0.5">
-            Logician Authentication
+          <span class="text-meta font-sans text-ink-3 block mb-0.5">
+            Account
           </span>
-          <h2 class="text-xl font-bold font-sans uppercase tracking-tight">
+          <h2 class="text-xl font-medium font-sans tracking-tight">
             {#if mode === 'prompt'}
-              Account Clearance
+              Sign in
             {:else if mode === 'login'}
               Sign In
             {:else if mode === 'register'}
@@ -394,23 +394,23 @@
             {:else if mode === 'reset'}
               Reset Password
             {:else if mode === 'attach-password'}
-              Attach Password
+              Add password
             {/if}
           </h2>
         </div>
-        <button
+        <button aria-label="Close"
           type="button"
           on:click={() => dispatch('close')}
-          class="text-neutral-500 hover:text-black dark:hover:text-white text-xs font-sans tracking-wider cursor-pointer p-1"
+          class="btn-icon -mr-2 shrink-0"
         >
-          [ ✕ Close ]
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
       <!-- VIEW 1: PROMPT VIEW (Choose Sign In, Register, or OAuth) -->
       {#if mode === 'prompt'}
         <div class="space-y-5 font-sans">
-          <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed text-center">
+          <p class="text-xs text-ink-2 leading-relaxed text-center">
             Sign in to record daily deduction streaks, monitor your activity heatmap, and save formal proofs.
           </p>
 
@@ -419,18 +419,18 @@
             <button
               type="button"
               on:click={() => switchMode('login')}
-              class="w-full h-11 border border-neutral-900 dark:border-white hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-950 dark:text-white font-bold text-xs uppercase tracking-widest cursor-pointer transition-colors flex items-center justify-center gap-2"
+              class="w-full h-11 border border-ink hover:bg-raised text-ink font-medium text-xs cursor-pointer transition-colors flex items-center justify-center gap-2 rounded-lg"
             >
-              <span>Sign In with Username & Password</span>
+              <span>Sign in with username</span>
               <span class="font-sans">→</span>
             </button>
 
             <button
               type="button"
               on:click={() => switchMode('register')}
-              class="w-full h-11 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 font-bold text-xs uppercase tracking-widest cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              class="w-full h-11 bg-ink text-paper font-medium text-xs cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2 rounded-lg"
             >
-              <span>Create New Logician Account</span>
+              <span>Create an account</span>
               <span class="font-sans">+</span>
             </button>
           </div>
@@ -438,16 +438,16 @@
           <!-- OAuth Social Divider -->
           <div class="space-y-3 pt-2">
             <div class="flex items-center gap-3">
-              <div class="flex-1 h-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
-              <span class="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">or authenticate with</span>
-              <div class="flex-1 h-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
+              <div class="flex-1 h-[1px] bg-raised"></div>
+              <span class="text-meta text-ink-3 font-medium">or</span>
+              <div class="flex-1 h-[1px] bg-raised"></div>
             </div>
 
             <!-- GitHub Button -->
             <button
               type="button"
               on:click={triggerGitHubSignIn}
-              class="w-full h-10 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-colors bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 shadow-sm"
+              class="w-full h-10 border border-line-strong hover:border-ink flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-colors bg-card text-ink shadow-sm rounded-lg"
             >
               <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
@@ -456,15 +456,15 @@
             </button>
           </div>
 
-          <div class="text-center pt-2 text-[11px] font-serif italic text-neutral-400 dark:text-neutral-500">
+          <div class="text-center pt-2 text-meta font-serif text-ink-3">
             "A proposition is that in virtue of which a statement is true or false."
           </div>
 
-          <div class="text-center text-[10px] text-neutral-400 dark:text-neutral-500 font-sans pt-1">
-            By authenticating, you agree to gödle's
-            <button type="button" on:click={() => openLegalModal('terms')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Terms of Service</button>
+          <div class="text-center text-meta text-ink-3 font-sans pt-1">
+            By continuing, you agree to gödle's
+            <button type="button" on:click={() => openLegalModal('terms')} class="underline hover:text-ink cursor-pointer">Terms of Service</button>
             and
-            <button type="button" on:click={() => openLegalModal('privacy')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Privacy Policy</button>.
+            <button type="button" on:click={() => openLegalModal('privacy')} class="underline hover:text-ink cursor-pointer">Privacy Policy</button>.
           </div>
         </div>
 
@@ -472,27 +472,27 @@
       {:else if mode === 'login' || mode === 'register'}
         <div class="space-y-4 font-sans text-xs">
           <!-- Back to Options & Mode Switcher -->
-          <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900 pb-2">
+          <div class="flex items-center justify-between border-b border-line pb-2">
             <button
               type="button"
               on:click={() => switchMode('prompt')}
-              class="text-[11px] text-neutral-500 hover:text-black dark:hover:text-white cursor-pointer font-medium"
+              class="text-meta text-ink-3 hover:text-ink cursor-pointer font-medium"
             >
               ← Back to options
             </button>
-            <div class="flex gap-2 text-[11px]">
+            <div class="flex gap-2 text-meta">
               <button
                 type="button"
                 on:click={() => switchMode('login')}
-                class="uppercase tracking-wider {mode === 'login' ? 'font-bold underline text-neutral-950 dark:text-white' : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer'}"
+                class="{mode === 'login' ? 'font-medium underline text-ink ' : 'text-ink-3 hover:text-ink-2 cursor-pointer'}"
               >
                 Sign In
               </button>
-              <span class="text-neutral-300 dark:text-neutral-700">|</span>
+              <span class="text-ink-3">|</span>
               <button
                 type="button"
                 on:click={() => switchMode('register')}
-                class="uppercase tracking-wider {mode === 'register' ? 'font-bold underline text-neutral-950 dark:text-white' : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 cursor-pointer'}"
+                class="{mode === 'register' ? 'font-medium underline text-ink ' : 'text-ink-3 hover:text-ink-2 cursor-pointer'}"
               >
                 Register
               </button>
@@ -501,20 +501,20 @@
 
           <form on:submit|preventDefault={handleAuth} class="space-y-3.5 pt-1">
             {#if errorMessage}
-              <div class="p-2.5 border border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs">
+              <div class="p-2.5 border border-ink bg-raised text-ink text-xs rounded-xl">
                 • {errorMessage}
               </div>
             {/if}
 
             {#if successMessage}
-              <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
-                ✓ {successMessage}
+              <div class="p-2.5 border border-ink bg-raised text-ink text-xs rounded-xl">
+                 {successMessage}
               </div>
             {/if}
 
             <!-- Username Field -->
             <div>
-              <label for="auth-username-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+              <label for="auth-username-field" class="block text-meta font-medium text-ink-2 mb-1">
                 Username
               </label>
               <input
@@ -523,14 +523,14 @@
                 bind:value={username}
                 required
                 placeholder="Logician handle"
-                class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+                class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
               />
             </div>
 
             <!-- Email (for Register) -->
             {#if mode === 'register'}
               <div>
-                <label for="auth-email-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+                <label for="auth-email-field" class="block text-meta font-medium text-ink-2 mb-1">
                   Email (Optional, used for password recovery)
                 </label>
                 <input
@@ -538,14 +538,14 @@
                   type="email"
                   bind:value={email}
                   placeholder="logician@example.org"
-                  class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+                  class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
                 />
               </div>
             {/if}
 
             <!-- Password Field -->
             <div>
-              <label for="auth-password-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+              <label for="auth-password-field" class="block text-meta font-medium text-ink-2 mb-1">
                 Password
               </label>
               <input
@@ -555,14 +555,14 @@
                 required
                 minlength="6"
                 placeholder="Minimum 6 characters"
-                class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+                class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
               />
             </div>
 
             <!-- Confirm Password (for Register) -->
             {#if mode === 'register'}
               <div>
-                <label for="auth-confirm-pwd-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+                <label for="auth-confirm-pwd-field" class="block text-meta font-medium text-ink-2 mb-1">
                   Confirm Password
                 </label>
                 <input
@@ -570,36 +570,36 @@
                   type="password"
                   bind:value={confirmPassword}
                   placeholder="Re-enter password"
-                  class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+                  class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
                 />
               </div>
             {/if}
 
-            <!-- Security Captcha Verification -->
+            <!-- Captcha Verification -->
             <div class="space-y-1.5 pt-1">
               <div class="flex items-center justify-between">
-                <label for="auth-captcha-input" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400">
-                  Security Captcha
+                <label for="auth-captcha-input" class="block text-meta font-medium text-ink-2">
+                  Captcha
                 </label>
                 <button
                   type="button"
                   on:click={fetchCaptcha}
-                  class="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                  class="text-meta text-ink-3 hover:text-ink flex items-center gap-1 cursor-pointer transition-colors"
                   title="Generate a new code"
                 >
-                  <span class="font-bold">↻</span>
+                  <span class="font-medium">↻</span>
                   <span>Refresh Code</span>
                 </button>
               </div>
               <div class="flex gap-2 items-center">
                 <!-- SVG Visual Challenge -->
-                <div class="w-40 h-10 border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center overflow-hidden select-none shrink-0 shadow-inner">
+                <div class="w-40 h-10 border border-line-strong bg-raised flex items-center justify-center overflow-hidden select-none shrink-0 shadow-inner">
                   {#if captchaLoading}
-                    <span class="text-[10px] text-neutral-400 animate-pulse">Loading...</span>
+                    <span class="text-meta text-ink-3">Loading</span>
                   {:else if captchaSvg}
                     {@html captchaSvg}
                   {:else}
-                    <button type="button" on:click={fetchCaptcha} class="text-[10px] text-blue-600 underline">Load Captcha</button>
+                    <button type="button" on:click={fetchCaptcha} class="text-meta text-ink underline">Load Captcha</button>
                   {/if}
                 </div>
                 <!-- Input field -->
@@ -612,10 +612,10 @@
                   placeholder="Enter Code"
                   autocomplete="off"
                   spellcheck="false"
-                  class="flex-1 h-10 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-mono text-xs uppercase tracking-widest focus:outline-none focus:border-neutral-900 dark:focus:border-white text-center"
+                  class="flex-1 h-10 px-2.5 bg-raised border border-line-strong font-mono text-xs focus:outline-none focus:border-ink text-center rounded-lg"
                 />
               </div>
-              <div class="text-[9px] text-neutral-400">
+              <div class="text-meta text-ink-3">
                 Case-insensitive. Type the 5 characters to verify you are human.
               </div>
             </div>
@@ -623,34 +623,34 @@
             <button
               type="submit"
               disabled={loading}
-              class="w-full h-10 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 uppercase tracking-widest text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 mt-2"
+              class="w-full h-10 bg-ink text-paper text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 mt-2 rounded-lg"
             >
-              {loading ? 'Authenticating...' : (mode === 'login' ? 'Sign In' : 'Create Logician Account')}
+              {loading ? 'Signing in' : (mode === 'login' ? 'Sign In' : 'Create account')}
             </button>
 
             {#if mode === 'login'}
-              <p class="text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+              <p class="text-center text-meta text-ink-3">
                 Password reset is yet to be implemented.
               </p>
             {:else if mode === 'register'}
-              <p class="text-center text-[10px] text-neutral-500 dark:text-neutral-400">
+              <p class="text-center text-meta text-ink-3">
                 By creating an account, you agree to our
-                <button type="button" on:click={() => openLegalModal('terms')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Terms</button>
+                <button type="button" on:click={() => openLegalModal('terms')} class="underline hover:text-ink cursor-pointer">Terms</button>
                 &
-                <button type="button" on:click={() => openLegalModal('privacy')} class="underline hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer">Privacy Policy</button>.
+                <button type="button" on:click={() => openLegalModal('privacy')} class="underline hover:text-ink cursor-pointer">Privacy Policy</button>.
               </p>
             {/if}
           </form>
 
           <!-- Social Sign In under Login/Register -->
-          <div class="space-y-2.5 pt-3 border-t border-neutral-200 dark:border-neutral-800">
-            <div class="text-center text-[10px] uppercase text-neutral-400 font-bold tracking-wider">
+          <div class="space-y-2.5 pt-3 border-t border-line">
+            <div class="text-center text-meta text-ink-3 font-medium">
               Or sign in with OAuth
             </div>
             <button
               type="button"
               on:click={triggerGitHubSignIn}
-              class="w-full h-8 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer transition-colors bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
+              class="w-full h-8 border border-line-strong hover:border-ink flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer transition-colors bg-card text-ink rounded-lg"
             >
               <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
@@ -663,36 +663,36 @@
       <!-- VIEW 3: RESET PASSWORD VIEW -->
       {:else if mode === 'reset'}
         <form on:submit|preventDefault={handleResetPassword} class="space-y-4 font-sans text-xs">
-          <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900 pb-2">
+          <div class="flex items-center justify-between border-b border-line pb-2">
             <button
               type="button"
               on:click={() => switchMode('login')}
-              class="text-[11px] text-neutral-500 hover:text-black dark:hover:text-white cursor-pointer font-medium"
+              class="text-meta text-ink-3 hover:text-ink cursor-pointer font-medium"
             >
-              ← Back to Sign In
+              Back to sign in
             </button>
-            <span class="text-[10px] uppercase font-bold text-neutral-400">Account Recovery</span>
+            <span class="text-meta font-medium text-ink-3">Reset password</span>
           </div>
 
-          <p class="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed">
+          <p class="text-meta text-ink-2 leading-relaxed">
             Enter your account username and registered email (if one was attached) to reset your master password.
           </p>
 
           {#if errorMessage}
-            <div class="p-2.5 border border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs">
+            <div class="p-2.5 border border-ink bg-raised text-ink text-xs rounded-xl">
               • {errorMessage}
             </div>
           {/if}
 
           {#if successMessage}
-            <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
-              ✓ {successMessage}
+            <div class="p-2.5 border border-ink bg-raised text-ink text-xs rounded-xl">
+               {successMessage}
             </div>
           {/if}
 
           <div>
-            <label for="reset-username-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-              Account Username
+            <label for="reset-username-field" class="block text-meta font-medium text-ink-2 mb-1">
+              Username
             </label>
             <input
               id="reset-username-field"
@@ -700,26 +700,26 @@
               bind:value={resetUsername}
               required
               placeholder="Your username"
-              class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+              class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
             />
           </div>
 
           <div>
-            <label for="reset-email-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-              Registered Email (If applicable)
+            <label for="reset-email-field" class="block text-meta font-medium text-ink-2 mb-1">
+              Recovery email
             </label>
             <input
               id="reset-email-field"
               type="email"
               bind:value={resetEmail}
               placeholder="email@example.org"
-              class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+              class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
             />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label for="reset-new-pwd-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+              <label for="reset-new-pwd-field" class="block text-meta font-medium text-ink-2 mb-1">
                 New Password
               </label>
               <input
@@ -729,11 +729,11 @@
                 required
                 minlength="6"
                 placeholder="Min. 6 chars"
-                class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+                class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
               />
             </div>
             <div>
-              <label for="reset-confirm-pwd-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
+              <label for="reset-confirm-pwd-field" class="block text-meta font-medium text-ink-2 mb-1">
                 Confirm Password
               </label>
               <input
@@ -743,36 +743,36 @@
                 required
                 minlength="6"
                 placeholder="Repeat password"
-                class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+                class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
               />
             </div>
           </div>
 
-          <!-- Security Captcha Verification -->
+          <!-- Captcha Verification -->
           <div class="space-y-1.5 pt-1">
             <div class="flex items-center justify-between">
-              <label for="reset-captcha-input" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400">
-                Security Captcha
+              <label for="reset-captcha-input" class="block text-meta font-medium text-ink-2">
+                Captcha
               </label>
               <button
                 type="button"
                 on:click={fetchCaptcha}
-                class="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                class="text-meta text-ink-3 hover:text-ink flex items-center gap-1 cursor-pointer transition-colors"
                 title="Generate a new code"
               >
-                <span class="font-bold">↻</span>
+                <span class="font-medium">↻</span>
                 <span>Refresh Code</span>
               </button>
             </div>
             <div class="flex gap-2 items-center">
               <!-- SVG Visual Challenge -->
-              <div class="w-40 h-10 border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center overflow-hidden select-none shrink-0 shadow-inner">
+              <div class="w-40 h-10 border border-line-strong bg-raised flex items-center justify-center overflow-hidden select-none shrink-0 shadow-inner">
                 {#if captchaLoading}
-                  <span class="text-[10px] text-neutral-400 animate-pulse">Loading...</span>
+                  <span class="text-meta text-ink-3">Loading</span>
                 {:else if captchaSvg}
                   {@html captchaSvg}
                 {:else}
-                  <button type="button" on:click={fetchCaptcha} class="text-[10px] text-blue-600 underline">Load Captcha</button>
+                  <button type="button" on:click={fetchCaptcha} class="text-meta text-ink underline">Load Captcha</button>
                 {/if}
               </div>
               <!-- Input field -->
@@ -785,10 +785,10 @@
                 placeholder="Enter Code"
                 autocomplete="off"
                 spellcheck="false"
-                class="flex-1 h-10 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-mono text-xs uppercase tracking-widest focus:outline-none focus:border-neutral-900 dark:focus:border-white text-center"
+                class="flex-1 h-10 px-2.5 bg-raised border border-line-strong font-mono text-xs focus:outline-none focus:border-ink text-center rounded-lg"
               />
             </div>
-            <div class="text-[9px] text-neutral-400">
+            <div class="text-meta text-ink-3">
               Case-insensitive. Type the 5 characters to verify you are human.
             </div>
           </div>
@@ -796,39 +796,39 @@
           <button
             type="submit"
             disabled={resetLoading}
-            class="w-full h-10 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 uppercase tracking-widest text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 mt-2"
+            class="w-full h-10 bg-ink text-paper text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 mt-2 rounded-lg"
           >
-            {resetLoading ? 'Resetting Password...' : 'Reset Password & Sign In'}
+            {resetLoading ? 'Resetting' : 'Reset and sign in'}
           </button>
         </form>
 
       <!-- VIEW 4: ATTACH PASSWORD TO ACCOUNT (Required for passwords without accounts) -->
       {:else if mode === 'attach-password'}
         <form on:submit|preventDefault={handleAttachPassword} class="space-y-4 font-sans text-xs">
-          <div class="p-3 border border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-900 space-y-1">
-            <div class="font-bold text-xs uppercase tracking-wider text-neutral-950 dark:text-neutral-50">
-              Attach Master Password
+          <div class="p-3 border border-ink bg-raised space-y-1 rounded-xl">
+            <div class="font-medium text-xs text-ink">
+              Add a password
             </div>
-            <p class="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed">
+            <p class="text-meta text-ink-2 leading-relaxed">
               Your account was created via OAuth. Please attach a password to your account so you can log in with your username and password directly.
             </p>
           </div>
 
           {#if errorMessage}
-            <div class="p-2.5 border border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs">
+            <div class="p-2.5 border border-ink bg-raised text-ink text-xs rounded-xl">
               • {errorMessage}
             </div>
           {/if}
 
           {#if successMessage}
-            <div class="p-2.5 border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs">
-              ✓ {successMessage}
+            <div class="p-2.5 border border-ink bg-raised text-ink text-xs rounded-xl">
+               {successMessage}
             </div>
           {/if}
 
           <div>
-            <label for="attach-new-pwd-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-              Choose Master Password
+            <label for="attach-new-pwd-field" class="block text-meta font-medium text-ink-2 mb-1">
+              Password
             </label>
             <input
               id="attach-new-pwd-field"
@@ -837,13 +837,13 @@
               required
               minlength="6"
               placeholder="Minimum 6 characters"
-              class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+              class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
             />
           </div>
 
           <div>
-            <label for="attach-confirm-pwd-field" class="block text-[10px] uppercase font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-              Confirm Master Password
+            <label for="attach-confirm-pwd-field" class="block text-meta font-medium text-ink-2 mb-1">
+              Confirm password
             </label>
             <input
               id="attach-confirm-pwd-field"
@@ -852,7 +852,7 @@
               required
               minlength="6"
               placeholder="Repeat password"
-              class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+              class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
             />
           </div>
 
@@ -860,14 +860,14 @@
             <button
               type="submit"
               disabled={attachLoading}
-              class="flex-1 h-10 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 uppercase tracking-widest text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40"
+              class="flex-1 h-10 bg-ink text-paper text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 rounded-lg"
             >
-              {attachLoading ? 'Attaching...' : 'Attach Password'}
+              {attachLoading ? 'Adding' : 'Add password'}
             </button>
             <button
               type="button"
               on:click={() => dispatch('close')}
-              class="px-4 h-10 border border-neutral-300 dark:border-neutral-700 text-xs uppercase font-bold cursor-pointer hover:border-neutral-900 dark:hover:border-white"
+              class="px-4 h-10 border border-line-strong text-xs font-medium cursor-pointer hover:border-ink rounded-lg"
             >
               Skip
             </button>
@@ -878,44 +878,44 @@
       <!-- OAUTH DEVELOPER/DEV-MODE CLEARANCE MODAL -->
       {#if oauthProvider}
         <div
-          class="absolute inset-0 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-sm z-20 p-6 flex flex-col justify-center space-y-4 font-sans text-xs"
+          class="absolute inset-0 bg-card/95 backdrop-blur-sm z-20 p-6 flex flex-col justify-center space-y-4 font-sans text-xs"
         >
-          <div class="flex items-start justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
+          <div class="flex items-start justify-between border-b border-line pb-3">
             <div class="flex items-center gap-2">
               <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
               </svg>
               <div>
-                <h3 class="font-bold text-sm uppercase tracking-wider">
+                <h3 class="font-medium text-sm">
                   GitHub Sign-In
                 </h3>
-                <span class="text-[9px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold block">
-                  Developer Mode Test Clearance
+                <span class="text-meta text-ink font-medium block">
+                  Developer test sign-in
                 </span>
               </div>
             </div>
-            <button
+            <button aria-label="Close"
               type="button"
               on:click={() => (oauthProvider = null)}
-              class="text-neutral-500 hover:text-black dark:hover:text-white cursor-pointer p-1"
+              class="btn-icon -mr-2 shrink-0"
             >
-              ✕
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
 
-          <p class="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed">
+          <p class="text-meta text-ink-2 leading-relaxed">
             Fast 1-click test authentication for local development and preview environments without requiring OAuth API credentials.
           </p>
 
           <div>
-            <label for="oauth-input" class="block text-[10px] uppercase font-bold text-neutral-500 mb-1">
-              Test GitHub Username
+            <label for="oauth-input" class="block text-meta font-medium text-ink-3 mb-1">
+              GitHub username for testing
             </label>
             <input
               id="oauth-input"
               type="text"
               bind:value={oauthEmailOrUser}
-              class="w-full h-9 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+              class="w-full h-9 px-2.5 bg-raised border border-line-strong font-sans text-xs focus:outline-none focus:border-ink rounded-lg"
             />
           </div>
 
@@ -923,7 +923,7 @@
             <button
               type="button"
               on:click={() => (oauthProvider = null)}
-              class="flex-1 h-10 border border-neutral-300 dark:border-neutral-700 text-xs uppercase font-bold cursor-pointer hover:border-neutral-900 dark:hover:border-white"
+              class="flex-1 h-10 border border-line-strong text-xs font-medium cursor-pointer hover:border-ink rounded-lg"
             >
               Cancel
             </button>
@@ -931,9 +931,9 @@
               type="button"
               disabled={oauthLoading || !oauthEmailOrUser.trim()}
               on:click={handleOAuthExecute}
-              class="flex-[2] h-10 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs uppercase font-bold tracking-wider cursor-pointer hover:opacity-90 disabled:opacity-40"
+              class="flex-[2] h-10 bg-ink text-paper text-xs font-medium cursor-pointer hover:opacity-90 disabled:opacity-40 rounded-lg"
             >
-              {oauthLoading ? 'Authenticating...' : 'Sign In with GitHub'}
+              {oauthLoading ? 'Signing in' : 'Sign in with GitHub'}
             </button>
           </div>
         </div>

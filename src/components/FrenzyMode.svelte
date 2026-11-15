@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import confetti from 'canvas-confetti';
+  import { celebrate } from "../logic/celebrate";
   import { playVictorySound } from '../logic/sound';
   import type { Problem, ProofStep, RuleId, Formula } from '../types/logic';
   import { generateProblem, formatProblemShareString, encodeProblemToShareCode, decodeProblemFromShareCode } from '../logic/generator';
@@ -73,9 +73,9 @@
     activeSeed = trimmed;
     const decoded = decodeProblemFromShareCode(trimmed);
     if (decoded) {
-      seedStatusMessage = `Loaded challenge "${decoded.title}". Press Start Solving to begin.`;
+      seedStatusMessage = `Loaded “${decoded.title}”`;
     } else {
-      seedStatusMessage = `Seed #${trimmed} loaded. Press Start Solving to begin.`;
+      seedStatusMessage = `Loaded seed ${trimmed}`;
     }
   }
 
@@ -83,7 +83,7 @@
     const rnd = generateRandomSeed();
     activeSeed = rnd;
     seedInput = rnd;
-    seedStatusMessage = `Generated seed #${rnd}. Press Start Solving to begin.`;
+    seedStatusMessage = `New seed ${rnd}`;
   }
 
   function handleSeedKeyDown(e: KeyboardEvent) {
@@ -136,7 +136,7 @@
     isGameOver = false;
     isWon = false;
     timer = 0;
-    seedStatusMessage = `Challenge exited. Active seed: #${activeSeed}.`;
+    seedStatusMessage = `Run ended. Seed ${activeSeed} is still loaded`;
   }
 
   onMount(() => {
@@ -158,7 +158,7 @@
 
     if (!checkResult.valid) {
       hearts = Math.max(0, hearts - 1);
-      errorMessage = `[Penalty: Heart Lost] ` + (checkResult.error || 'Invalid logical inference.');
+      errorMessage = (checkResult.error || 'That line does not follow by this rule') + ' · one heart lost';
       penaltyShake = true;
       setTimeout(() => (penaltyShake = false), 600);
 
@@ -190,7 +190,7 @@
     score = Math.max(100, hearts * 500 + Math.max(0, 1000 - timer * 8));
 
     try {
-      confetti({ particleCount: 50, spread: 60 });
+      celebrate(50, 60);
     } catch {}
 
     try {
@@ -228,151 +228,98 @@
   }
 </script>
 
-<div class="max-w-3xl mx-auto py-8 sm:py-12 px-4 space-y-8 {penaltyShake ? 'animate-shake' : ''}">
-  <!-- Status Bar Header -->
-  <div class="border-b border-neutral-200 dark:border-neutral-800 pb-5 space-y-4">
-    <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-      <div>
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-          02 / Frenzy Speed Mode {isPlaying ? `· Seed: #${activeSeed}` : ''}
-        </span>
-        <h1 class="text-xl sm:text-2xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
-          {isPlaying && problem ? problem.title : 'Speed Run Challenge'}
-        </h1>
+<div class="max-w-3xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-16 space-y-8 {penaltyShake ? 'animate-shake' : ''}">
+  <header class="flex items-start justify-between gap-4">
+    <div class="min-w-0 space-y-2">
+      <div class="font-sans text-meta text-ink-3">
+        <span class="font-medium text-ink-2">Frenzy</span>
+        {#if isPlaying}<span class="ml-3 tabular-nums">Seed {activeSeed}</span>{/if}
       </div>
-
-      <!-- Hearts & Timer Counter -->
-      <div class="flex items-center gap-4 font-sans text-xs self-start sm:self-auto">
-        <!-- Hearts -->
-        <div class="flex items-center gap-1 text-sm tracking-widest" title="{hearts} of 3 hearts remaining">
-          {#each Array(maxHearts) as _, idx}
-            <span class="{idx < hearts ? 'text-neutral-950 dark:text-white font-bold' : 'text-neutral-300 dark:text-neutral-700'}">
-              {idx < hearts ? '♥' : '♡'}
-            </span>
-          {/each}
-        </div>
-
-        <!-- Timer -->
-        <div class="border border-neutral-300 dark:border-neutral-700 px-2 py-0.5 {isPlaying ? 'text-neutral-800 dark:text-neutral-200 font-bold' : 'text-neutral-400 dark:text-neutral-500'}">
-          {Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}
-        </div>
-      </div>
+      <h1 class="page-title">{isPlaying && problem ? problem.title : 'One proof, three hearts, the clock running'}</h1>
     </div>
 
-    {#if isPlaying}
-      <!-- Active Run Sub-bar with exit option -->
-      <div class="flex items-center justify-between font-sans text-xs pt-1 border-t border-neutral-100 dark:border-neutral-900">
-        <span class="text-neutral-500 dark:text-neutral-400 text-[11px]">
-          Seed #{activeSeed} · Timer active
-        </span>
-        <button
-          type="button"
-          on:click={abortToSetup}
-          class="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white underline cursor-pointer"
-        >
-          [ Exit to Setup ]
-        </button>
+    <div class="flex items-center gap-4 shrink-0 pt-6">
+      <div class="flex items-center gap-1 text-ink" title="{hearts} of {maxHearts} hearts left" aria-label="{hearts} of {maxHearts} hearts left">
+        {#each Array(maxHearts) as _, idx}
+          <span class={idx < hearts ? 'text-ink' : 'text-ink-3'}><svg width="16" height="16" viewBox="0 0 24 24" fill="{idx < hearts ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></span>
+        {/each}
       </div>
-    {/if}
-  </div>
+      <span class="font-sans text-base tabular-nums {isPlaying ? 'text-ink font-medium' : 'text-ink-3'}">
+        {Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}
+      </span>
+    </div>
+  </header>
 
-  <!-- Initial Setup State: Statements and solving panels are hidden, timer is turned off, user can load seed -->
+  {#if isPlaying}
+    <div class="flex items-center justify-between -mt-4 font-sans text-caption text-ink-3">
+      <span>The clock stops when you reach the conclusion</span>
+      <button type="button" on:click={abortToSetup} class="link">End run</button>
+    </div>
+  {/if}
+
   {#if !isPlaying}
-    <div class="border border-neutral-900 dark:border-white p-6 sm:p-8 bg-white dark:bg-neutral-950 space-y-6">
-      <div class="space-y-1 border-b border-neutral-200 dark:border-neutral-800 pb-4">
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block">
-          Setup & Seed Configuration
-        </span>
-        <h2 class="font-serif text-2xl text-neutral-950 dark:text-neutral-50">
-          Load Challenge Seed
-        </h2>
-        <p class="font-sans text-xs text-neutral-600 dark:text-neutral-400 max-w-lg pt-1">
-          Specify a challenge seed or randomize. The logical premises, statement to prove, and timer remain hidden until you click Start Solving.
+    <section class="panel p-6 sm:p-8 space-y-8">
+      <div class="space-y-2 max-w-lg">
+        <h2 class="font-serif text-2xl text-ink">Choose a seed</h2>
+        <p class="font-sans text-caption text-ink-2">
+          The same seed always deals the same problem, so friends can race on it. The premises and the clock stay hidden until you start.
         </p>
       </div>
 
-      <!-- Seed Input & Actions -->
       <div class="space-y-2">
-        <label for="frenzy-setup-seed" class="block text-[10px] font-sans uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
-          Seed Identifier
-        </label>
+        <label for="frenzy-setup-seed" class="label block">Seed or share code</label>
         <div class="flex flex-col sm:flex-row gap-2">
           <input
             id="frenzy-setup-seed"
             type="text"
             bind:value={seedInput}
             on:keydown={handleSeedKeyDown}
-            placeholder="e.g. omega-4821 or share code"
-            class="h-10 flex-1 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 font-sans text-sm focus:outline-none focus:border-neutral-900 dark:focus:border-white"
+            placeholder="omega-4821"
+            class="field h-10 flex-1"
           />
           <div class="flex items-center gap-2">
-            <button
-              type="button"
-              on:click={handleLoadCustomSeed}
-              class="h-10 px-4 border border-neutral-900 dark:border-white font-sans text-xs uppercase tracking-wider text-neutral-950 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
-            >
-              Load Seed
-            </button>
-            <button
-              type="button"
-              on:click={handleGenerateRandomSeed}
-              class="h-10 px-3 border border-neutral-300 dark:border-neutral-700 font-sans text-xs uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
-              title="Generate a new random seed"
-            >
-              Randomize
+            <button type="button" on:click={handleLoadCustomSeed} class="btn btn-secondary h-10">Load</button>
+            <button type="button" on:click={handleGenerateRandomSeed} class="btn btn-ghost h-10" title="Deal a random seed">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+              Random
             </button>
           </div>
         </div>
-
         {#if seedStatusMessage}
-          <div class="text-xs font-sans text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5 pt-1">
-            <span>✓</span>
-            <span>{seedStatusMessage}</span>
-          </div>
+          <p class="font-sans text-meta text-ink-2" aria-live="polite">{seedStatusMessage}</p>
         {/if}
       </div>
 
-      <!-- Specification Badges -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs font-sans">
-        <div class="border border-neutral-200 dark:border-neutral-800 p-3">
-          <span class="text-[10px] uppercase text-neutral-500 dark:text-neutral-400 block mb-0.5">Active Seed</span>
-          <span class="font-bold text-neutral-950 dark:text-neutral-50 truncate block">#{activeSeed}</span>
+      <dl class="grid grid-cols-1 sm:grid-cols-3 border-y border-line divide-y sm:divide-y-0 sm:divide-x divide-line font-sans">
+        <div class="py-4 sm:pr-4 space-y-1">
+          <dt class="label">Seed</dt>
+          <dd class="text-sm text-ink font-medium truncate tabular-nums">{activeSeed}</dd>
         </div>
-        <div class="border border-neutral-200 dark:border-neutral-800 p-3">
-          <span class="text-[10px] uppercase text-neutral-500 dark:text-neutral-400 block mb-0.5">Hearts</span>
-          <span class="font-bold text-neutral-950 dark:text-neutral-50 block">3 Lives (1 lost per invalid step)</span>
+        <div class="py-4 sm:px-4 space-y-1">
+          <dt class="label">Hearts</dt>
+          <dd class="text-sm text-ink">3, one lost per invalid line</dd>
         </div>
-        <div class="border border-neutral-200 dark:border-neutral-800 p-3">
-          <span class="text-[10px] uppercase text-neutral-500 dark:text-neutral-400 block mb-0.5">Timer Status</span>
-          <span class="font-bold text-neutral-950 dark:text-neutral-50 block">Turned Off (Starts on click)</span>
+        <div class="py-4 sm:pl-4 space-y-1">
+          <dt class="label">Clock</dt>
+          <dd class="text-sm text-ink">Starts when you do</dd>
         </div>
-      </div>
+      </dl>
 
-      <!-- Start Button -->
-      <div class="pt-2">
-        <button
-          type="button"
-          on:click={startFrenzy}
-          class="w-full h-12 bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 font-sans text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <span>Start Solving</span>
-          <span>→</span>
-        </button>
-      </div>
-    </div>
+      <button type="button" on:click={startFrenzy} class="btn btn-primary btn-lg w-full">
+        Start
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </section>
   {/if}
 
-  <!-- Active Solving State: Statements and solving panels are revealed, timer runs -->
   {#if isPlaying && problem}
-    <!-- Error feedback message -->
     {#if errorMessage}
-      <div class="py-2.5 px-3.5 border border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-900 text-xs font-sans text-neutral-950 dark:text-neutral-50 flex items-center justify-between">
-        <span>• {errorMessage}</span>
-        <button type="button" on:click={() => (errorMessage = '')} class="underline ml-3 cursor-pointer">dismiss</button>
+      <div class="flex items-center justify-between gap-4 min-h-[44px] px-4 rounded-xl border border-ink bg-card font-sans text-caption text-ink" role="alert">
+        <span>{errorMessage}</span>
+        <button type="button" on:click={() => (errorMessage = '')} class="link shrink-0">Dismiss</button>
       </div>
     {/if}
 
-    <!-- Minimalist Proof Table (Premises & Conclusion) -->
     <ProofTable
       {steps}
       conclusion={problem.conclusion}
@@ -380,10 +327,9 @@
       canUndo={false}
       {hibernated}
       on:citeLine={handleCiteLine}
-    on:insertFormula={(event) => stepInputComponent?.insertFormula(event.detail)}
+      on:insertFormula={(event) => stepInputComponent?.insertFormula(event.detail)}
     />
 
-    <!-- Deduction Input (active if neither game over nor won) -->
     {#if !isWon && !isGameOver}
       <StepInput
         bind:this={stepInputComponent}
@@ -393,84 +339,41 @@
       />
     {/if}
 
-    <!-- Game Over Screen -->
     {#if isGameOver}
-      <div class="border border-neutral-900 dark:border-white p-6 bg-white dark:bg-neutral-950 space-y-4">
-        <div class="border-b border-neutral-200 dark:border-neutral-800 pb-3">
-          <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-            Outcome
-          </span>
-          <h3 class="font-serif text-2xl text-neutral-950 dark:text-neutral-50">
-            All Hearts Exhausted
-          </h3>
-          <p class="font-sans text-xs text-neutral-600 dark:text-neutral-300 mt-1">
-            3 invalid deduction steps made. Try this seed again or load a new seed.
-          </p>
+      <section class="panel p-6 sm:p-8 space-y-6">
+        <div class="space-y-2">
+          <span class="label">Out of hearts</span>
+          <h2 class="font-serif text-3xl text-ink leading-tight">Three lines did not follow</h2>
+          <p class="font-sans text-caption text-ink-2">Try the same seed again, or deal a new one.</p>
         </div>
-
-        <div class="flex items-center gap-3 pt-2">
-          <button
-            type="button"
-            on:click={startFrenzy}
-            class="h-9 px-4 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 font-sans text-xs uppercase tracking-wider cursor-pointer"
-          >
-            Retry This Seed
-          </button>
-          <button
-            type="button"
-            on:click={() => prepareSeed()}
-            class="h-9 px-4 border border-neutral-900 dark:border-white font-sans text-xs uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-900"
-          >
-            Change / New Seed
-          </button>
+        <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-line">
+          <button type="button" on:click={startFrenzy} class="btn btn-primary">Retry this seed</button>
+          <button type="button" on:click={() => prepareSeed()} class="btn btn-secondary">New seed</button>
         </div>
-      </div>
+      </section>
     {/if}
 
-    <!-- Victory Banner -->
     {#if isWon}
-      <div class="border border-neutral-900 dark:border-white p-6 bg-white dark:bg-neutral-950 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
-          <div>
-            <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-0.5">
-              Validation Complete
-            </span>
-            <h3 class="font-serif text-2xl text-neutral-950 dark:text-neutral-50">
-              Frenzy Solved · Score: {score}
-            </h3>
+      <section class="panel p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div class="space-y-2">
+            <span class="label">Proved</span>
+            <h2 class="font-serif text-3xl text-ink leading-tight">Score <span class="tabular-nums">{score}</span></h2>
           </div>
-          <div class="font-sans text-xs text-neutral-600 dark:text-neutral-300">
-            {hearts} hearts remaining · {timer}s
-          </div>
+          <dl class="font-sans text-caption text-ink-2 sm:text-right space-y-1">
+            <div><dt class="inline text-ink-3 mr-1">Hearts left </dt><dd class="inline tabular-nums text-ink">{hearts}</dd></div>
+            <div><dt class="inline text-ink-3 mr-1">Time </dt><dd class="inline tabular-nums text-ink">{Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}</dd></div>
+          </dl>
         </div>
-
-        <div class="flex flex-wrap items-center gap-3 pt-1">
-          <button
-            type="button"
-            on:click={() => (showShareModal = true)}
-            class="h-9 px-4 bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 font-sans text-xs uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
-          >
-            <span>Share Proof Certificate</span>
-            <span class="text-[10px] opacity-70">↗</span>
+        <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-line">
+          <button type="button" on:click={() => prepareSeed()} class="btn btn-primary">
+            New seed
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
-
-          <button
-            type="button"
-            on:click={copyFormattedStatement}
-            class="h-9 px-3.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-800 dark:text-neutral-200 font-sans text-xs uppercase tracking-wider cursor-pointer"
-          >
-            {shareTextCopied ? '✓ Copied' : 'Quick Copy Text'}
-          </button>
-
-          <button
-            type="button"
-            on:click={() => prepareSeed()}
-            class="h-9 px-4 border border-neutral-900 dark:border-white font-sans text-xs uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-900"
-          >
-            New Challenge →
-          </button>
+          <button type="button" on:click={() => (showShareModal = true)} class="btn btn-secondary">Share proof</button>
+          <button type="button" on:click={copyFormattedStatement} class="btn btn-ghost">{shareTextCopied ? 'Copied' : 'Copy as text'}</button>
         </div>
-      </div>
+      </section>
     {/if}
   {/if}
 

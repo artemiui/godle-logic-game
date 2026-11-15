@@ -47,12 +47,12 @@
 
       const res = validateProofStep(mockSteps, parsedFormula, currentRule.id, citations);
       if (res.valid) {
-        sandboxFeedback = { valid: true, message: `✓ Valid deduction under ${currentRule.name}.` };
+        sandboxFeedback = { valid: true, message: `Valid. This follows by ${currentRule.name}` };
       } else {
-        sandboxFeedback = { valid: false, message: `✕ ${res.error}` };
+        sandboxFeedback = { valid: false, message: `${res.error}` };
       }
     } catch (err: any) {
-      sandboxFeedback = { valid: false, message: `✕ ${err.message || 'Invalid formula'}` };
+      sandboxFeedback = { valid: false, message: `${err.message || 'This formula could not be read'}` };
     }
   }
 
@@ -76,287 +76,141 @@
   }
 </script>
 
-<div class="max-w-5xl mx-auto py-8 sm:py-12 px-4 space-y-8">
-  <!-- Minimalist Editorial Masthead -->
-  <div class="border-b border-neutral-900 dark:border-neutral-100 pb-6 space-y-4">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-16 space-y-8">
+  <header class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div>
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-600 dark:text-neutral-300 block mb-1">
-          04 / Formal Deductive Canon
-        </span>
-        <h1 class="text-2xl sm:text-3xl font-serif font-normal text-neutral-950 dark:text-neutral-50 tracking-tight">
-          Copi's 19 Rules of Deduction
-        </h1>
-      </div>
-
-      <div class="text-xs font-sans text-neutral-600 dark:text-neutral-300">
-        9 Inference Rules • 10 Replacement Rules
+      <div class="space-y-2">
+        <span class="font-sans text-meta font-medium text-ink-2">Rules</span>
+        <h1 class="page-title">Copi’s 19 rules</h1>
+        <p class="font-sans text-caption text-ink-2">9 rules of inference for whole lines, 10 rules of replacement for any part of a line</p>
       </div>
     </div>
 
-    <!-- Category Filter & Search -->
-    <div class="flex flex-wrap items-center justify-between gap-3 pt-2 font-sans text-xs">
-      <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          on:click={() => (selectedCategory = 'all')}
-          class="px-2.5 py-1 border transition-colors cursor-pointer {
-            selectedCategory === 'all'
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-          }"
-        >
-          All 19 Rules
-        </button>
-        <button
-          type="button"
-          on:click={() => (selectedCategory = 'inference')}
-          class="px-2.5 py-1 border transition-colors cursor-pointer {
-            selectedCategory === 'inference'
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-          }"
-        >
-          9 Inference
-        </button>
-        <button
-          type="button"
-          on:click={() => (selectedCategory = 'replacement')}
-          class="px-2.5 py-1 border transition-colors cursor-pointer {
-            selectedCategory === 'replacement'
-              ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-black dark:border-white font-bold'
-              : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
-          }"
-        >
-          10 Replacement
-        </button>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="seg" role="group" aria-label="Category">
+        <button type="button" class="seg-item" aria-pressed={selectedCategory === 'all'} on:click={() => (selectedCategory = 'all')}>All <span class="text-ink-3 tabular-nums ml-1">19</span></button>
+        <button type="button" class="seg-item" aria-pressed={selectedCategory === 'inference'} on:click={() => (selectedCategory = 'inference')}>Inference <span class="text-ink-3 tabular-nums ml-1">9</span></button>
+        <button type="button" class="seg-item" aria-pressed={selectedCategory === 'replacement'} on:click={() => (selectedCategory = 'replacement')}>Replacement <span class="text-ink-3 tabular-nums ml-1">10</span></button>
       </div>
-
-      <!-- Search Input -->
-      <div class="w-full sm:w-60">
-        <input
-          type="text"
-          bind:value={searchQuery}
-          placeholder="Filter rules..."
-          class="w-full h-8 px-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-sans text-xs focus:outline-none focus:border-neutral-900 dark:focus:border-white"
-        />
+      <div class="relative w-full sm:w-64">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" bind:value={searchQuery} placeholder="Search" aria-label="Search rules" class="field pl-9" />
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- How to Get Started Section -->
-  <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 sm:p-6 bg-white/60 dark:bg-neutral-900/40 backdrop-blur-sm space-y-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <span class="text-[10px] font-sans tracking-widest uppercase text-neutral-500">Primer</span>
-        <span class="w-1 h-1 rounded-full bg-neutral-400"></span>
-        <h2 class="font-serif text-lg sm:text-xl font-medium text-neutral-950 dark:text-white">
-          How to Construct a Proof
-        </h2>
-      </div>
-      <button
-        type="button"
-        on:click={() => (showGettingStarted = !showGettingStarted)}
-        class="text-[11px] font-sans text-neutral-500 hover:text-neutral-950 dark:hover:text-white cursor-pointer underline transition-colors"
-      >
-        {showGettingStarted ? 'Hide Guide' : 'Show Guide'}
+  <section class="panel p-6 sm:p-8 space-y-6">
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="font-serif text-xl text-ink">How a proof works</h2>
+      <button type="button" on:click={() => (showGettingStarted = !showGettingStarted)} class="link font-sans text-meta">
+        {showGettingStarted ? 'Hide' : 'Show'}
       </button>
     </div>
 
     {#if showGettingStarted}
-      <!-- 3 Intuitive Steps -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1">
-        <!-- Step 1 -->
-        <div class="p-4 rounded-lg border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-1.5">
-          <div class="flex items-center justify-between text-[10px] font-sans text-neutral-500">
-            <span>PHASE 01</span>
-            <span class="font-serif italic font-bold">Inspect Goal</span>
-          </div>
-          <div class="font-serif text-sm font-semibold text-neutral-950 dark:text-white">
-            1. Read Premises & Conclusion
-          </div>
-          <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans text-[11px]">
-            Every puzzle provides numbered premises and a target conclusion (<span class="font-serif italic">∴</span>). Look at the operators to determine what must be detached, combined, or transformed.
-          </p>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="p-4 rounded-lg border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-1.5">
-          <div class="flex items-center justify-between text-[10px] font-sans text-neutral-500">
-            <span>PHASE 02</span>
-            <span class="font-serif italic font-bold">Cite & Derive</span>
-          </div>
-          <div class="font-serif text-sm font-semibold text-neutral-950 dark:text-white">
-            2. Cite Lines & Apply Rule
-          </div>
-          <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans text-[11px]">
-            Click 1 or 2 existing lines from your proof to cite them. Select a valid rule from Copi's 19, type your deduced proposition, and submit. Each valid step becomes a new line available for future citations.
-          </p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="p-4 rounded-lg border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-1.5">
-          <div class="flex items-center justify-between text-[10px] font-sans text-neutral-500">
-            <span>PHASE 03</span>
-            <span class="font-serif italic font-bold">Conclude</span>
-          </div>
-          <div class="font-serif text-sm font-semibold text-neutral-950 dark:text-white">
-            3. Reach the Conclusion
-          </div>
-          <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-sans text-[11px]">
-            Once a derived step matches the target conclusion structurally, the deduction is sealed (Q.E.D.). You can solve each puzzle in multiple valid ways as long as every step is sound.
-          </p>
-        </div>
-      </div>
-
-      <!-- Golden Rule Callout -->
-      <div class="pt-3 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
-        <div class="flex items-center gap-2">
-          <span class="font-sans text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-200">Key Rule</span>
-          <span><strong>Inference (1–9):</strong> One-way deduction on whole lines only. <strong>Replacement (10–19):</strong> Two-way equivalence (<span class="font-serif italic">≡</span>) on whole lines or any sub-part.</span>
-        </div>
-        <button
-          type="button"
-          on:click={() => activeTabStore.set('wordle')}
-          class="self-start sm:self-auto text-neutral-950 dark:text-white font-medium underline hover:opacity-75 cursor-pointer font-sans text-[11px]"
-        >
-          Try a Daily Deduction →
-        </button>
+      <ol class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <li class="space-y-2">
+          <span class="font-serif text-2xl leading-none text-ink-3 tabular-nums">1</span>
+          <h3 class="font-sans text-sm font-medium text-ink">Read the premises and the conclusion</h3>
+          <p class="font-sans text-caption text-ink-2">Each problem gives numbered premises and a conclusion after <span class="font-serif">∴</span>. The main connectives tell you what has to be taken apart, combined or rewritten.</p>
+        </li>
+        <li class="space-y-2">
+          <span class="font-serif text-2xl leading-none text-ink-3 tabular-nums">2</span>
+          <h3 class="font-sans text-sm font-medium text-ink">Cite lines and name a rule</h3>
+          <p class="font-sans text-caption text-ink-2">Write the next line, name the rule that licenses it, and cite the one or two lines it comes from. Each valid line can be cited later.</p>
+        </li>
+        <li class="space-y-2">
+          <span class="font-serif text-2xl leading-none text-ink-3 tabular-nums">3</span>
+          <h3 class="font-sans text-sm font-medium text-ink">Reach the conclusion</h3>
+          <p class="font-sans text-caption text-ink-2">When a line matches the conclusion, the proof is done. Any route works as long as every line follows.</p>
+        </li>
+      </ol>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-line font-sans text-caption text-ink-2">
+        <p>Inference rules apply to whole lines, one way. Replacement rules are equivalences (<span class="font-serif">≡</span>) and apply anywhere inside a line.</p>
+        <button type="button" on:click={() => activeTabStore.set('wordle')} class="btn btn-secondary btn-sm shrink-0">Try today’s problem</button>
       </div>
     {/if}
-  </div>
+  </section>
 
-  <!-- Main Content Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-    <!-- Left List of Rules -->
-    <div class="md:col-span-4 space-y-1.5 max-h-[640px] overflow-y-auto pr-1">
-      {#each filteredRules as rule}
-        <button
-          type="button"
-          on:click={() => {
-            activeRuleId = rule.id;
-            sandboxFormulaInput = '';
-            sandboxFeedback = null;
-          }}
-          class="w-full p-2.5 text-left border transition-colors cursor-pointer {
-            activeRuleId === rule.id
-              ? 'border-neutral-900 dark:border-white bg-neutral-100/70 dark:bg-neutral-900'
-              : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-400'
-          }"
-        >
-          <div class="flex items-baseline justify-between font-sans text-xs">
-            <span class="font-bold text-neutral-950 dark:text-neutral-50">{rule.name}</span>
-            <span class="text-[10px] text-neutral-600 dark:text-neutral-300">{rule.abbreviation}</span>
-          </div>
-          <div class="text-[11px] font-sans text-neutral-700 dark:text-neutral-300 truncate mt-1">
-            {rule.copiSchema}
-          </div>
-        </button>
-      {/each}
-    </div>
-
-    <!-- Right Rule Details Panel -->
-    <div class="md:col-span-8 space-y-6 border border-neutral-200 dark:border-neutral-800 p-6 bg-white dark:bg-neutral-950">
-      <div class="border-b border-neutral-200 dark:border-neutral-800 pb-4">
-        <div class="flex items-center gap-3 font-sans text-[10px] uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
-          <span>{currentRule.category === 'inference' ? 'Rule of Inference (Whole lines only)' : 'Rule of Replacement (Sub-expressions allowed)'}</span>
-          <span>•</span>
-          <span>Requires {currentRule.requiredPremiseCount} cited line(s)</span>
-        </div>
-        <h2 class="font-serif text-2xl text-neutral-950 dark:text-neutral-50">
-          {currentRule.name} <span class="font-sans text-base font-normal text-neutral-600 dark:text-neutral-300">({currentRule.abbreviation})</span>
-        </h2>
-        <div class="mt-2 py-2 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 font-sans text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-          {currentRule.copiSchema}
-        </div>
+  <div class="grid grid-cols-1 md:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] gap-6 items-start">
+    <nav class="panel overflow-hidden md:sticky md:top-20" aria-label="Rules">
+      <div class="max-h-[640px] overflow-y-auto divide-y divide-line">
+        {#each filteredRules as rule}
+          <button
+            type="button"
+            on:click={() => { activeRuleId = rule.id; sandboxFormulaInput = ''; sandboxFeedback = null; }}
+            aria-current={activeRuleId === rule.id ? 'true' : undefined}
+            class="w-full flex items-center justify-between gap-4 min-h-[52px] px-4 py-2 text-left cursor-pointer transition-colors duration-150 {activeRuleId === rule.id ? 'bg-raised' : 'hover:bg-raised/60'}"
+          >
+            <span class="min-w-0">
+              <span class="block font-sans text-sm text-ink truncate {activeRuleId === rule.id ? 'font-medium' : ''}">{rule.name}</span>
+              <span class="block font-serif text-caption text-ink-3 truncate">{rule.copiSchema}</span>
+            </span>
+            <span class="font-sans text-meta text-ink-3 shrink-0">{rule.abbreviation}</span>
+          </button>
+        {:else}
+          <p class="px-4 py-8 text-center font-sans text-caption text-ink-3">No rule matches “{searchQuery}”</p>
+        {/each}
       </div>
+    </nav>
 
-      <!-- Explanation -->
-      <div class="space-y-2">
-        <h3 class="text-[10px] font-sans uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
-          Theoretical Principle
-        </h3>
-        <p class="font-serif text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">
-          {currentRule.description}
+    <article class="panel p-6 sm:p-8 space-y-8">
+      <header class="space-y-4">
+        <p class="font-sans text-meta text-ink-3">
+          {currentRule.category === 'inference' ? 'Rule of inference · whole lines only' : 'Rule of replacement · any part of a line'}
+          <span class="mx-2">·</span>cites {currentRule.requiredPremiseCount} {currentRule.requiredPremiseCount === 1 ? 'line' : 'lines'}
         </p>
-      </div>
+        <h2 class="font-serif text-3xl text-ink leading-tight">
+          {currentRule.name} <span class="font-sans text-base text-ink-3 ml-1">{currentRule.abbreviation}</span>
+        </h2>
+        <div class="px-4 py-4 rounded-xl bg-raised font-serif text-xl text-ink">{currentRule.copiSchema}</div>
+      </header>
 
-      <!-- Worked Example -->
-      <div class="space-y-2">
-        <h3 class="text-[10px] font-sans uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
-          Walkthrough Example
-        </h3>
-        <div class="border border-neutral-200 dark:border-neutral-800 p-3 bg-neutral-50 dark:bg-neutral-900 font-sans text-xs space-y-1.5">
-          <div class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase">Given Premise Line(s):</div>
+      <p class="font-serif text-lg leading-relaxed text-ink">{currentRule.description}</p>
+
+      <section class="space-y-3">
+        <h3 class="label">Example</h3>
+        <ol class="rounded-xl border border-line divide-y divide-line font-serif text-lg text-ink">
           {#each currentRule.example.inputs as inp, idx}
-            <div class="pl-2 border-l border-neutral-900 dark:border-white">
-              {idx + 1}. {inp}
-            </div>
+            <li class="grid grid-cols-[40px_1fr] items-center min-h-[48px] pr-4">
+              <span class="text-right pr-3 font-sans text-caption text-ink-3 tabular-nums">{idx + 1}.</span>
+              <span>{inp}</span>
+            </li>
           {/each}
-          <div class="text-[10px] text-neutral-600 dark:text-neutral-300 uppercase pt-2">Yields:</div>
-          <div class="pl-2 border-l border-neutral-900 dark:border-white font-bold">
-            ∴ {currentRule.example.result}
+          <li class="grid grid-cols-[40px_1fr] items-center min-h-[48px] pr-4 bg-raised/50">
+            <span class="text-right pr-3 text-ink-3">∴</span>
+            <span>{currentRule.example.result}</span>
+          </li>
+        </ol>
+        <p class="font-sans text-caption text-ink-2">{currentRule.example.explanation}</p>
+      </section>
+
+      <section class="space-y-4 pt-8 border-t border-line">
+        <div class="flex items-center justify-between">
+          <h3 class="font-sans text-sm font-medium text-ink">Try it</h3>
+          <button type="button" on:click={prefillExample} class="link font-sans text-meta">Fill in the example</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-4 font-sans">
+          <div class="space-y-2">
+            <label for="tutorial-practice-formula" class="label block">Formula</label>
+            <input id="tutorial-practice-formula" type="text" bind:value={sandboxFormulaInput} on:input={handleFormulaInput}
+              maxlength="250" placeholder={currentRule.example.result} class="field font-serif text-base" />
           </div>
-          <div class="text-[11px] font-serif italic text-neutral-600 dark:text-neutral-300 pt-1">
-            {currentRule.example.explanation}
+          <div class="space-y-2">
+            <label for="tutorial-practice-citations" class="label block">Cites</label>
+            <input id="tutorial-practice-citations" type="text" bind:value={sandboxCitationLine} placeholder="1, 2" class="field tabular-nums" />
           </div>
         </div>
-      </div>
-
-      <!-- Interactive Mini Practice -->
-      <div class="space-y-3 pt-2">
-        <div class="flex items-center justify-between font-sans text-xs">
-          <span class="text-[10px] uppercase tracking-widest text-neutral-600 dark:text-neutral-300">Practice Sandbox</span>
-          <button
-            type="button"
-            on:click={prefillExample}
-            class="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white underline cursor-pointer"
-          >
-            Prefill with example
-          </button>
-        </div>
-
-        <div class="p-3.5 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 space-y-3 font-sans text-xs">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div>
-              <label for="tutorial-practice-formula" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Derived Formula</label>
-              <input
-                id="tutorial-practice-formula"
-                type="text"
-                bind:value={sandboxFormulaInput}
-                on:input={handleFormulaInput}
-                maxlength="250"
-                placeholder="e.g. {currentRule.example.result}"
-                class="w-full h-8 px-2.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 font-serif text-sm"
-              />
-            </div>
-            <div>
-              <label for="tutorial-practice-citations" class="block text-[10px] uppercase text-neutral-600 dark:text-neutral-300 mb-1">Citations</label>
-              <input
-                id="tutorial-practice-citations"
-                type="text"
-                bind:value={sandboxCitationLine}
-                placeholder="e.g. 1, 2"
-                class="w-full h-8 px-2.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 font-sans text-xs"
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            on:click={testRuleSandbox}
-            class="w-full h-8 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 uppercase tracking-wider text-xs cursor-pointer hover:bg-black"
-          >
-            Check Deduction
-          </button>
-
-          {#if sandboxFeedback}
-            <div class="p-2 border {sandboxFeedback.valid ? 'border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800' : 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'}">
-              {sandboxFeedback.message}
-            </div>
-          {/if}
-        </div>
-      </div>
-    </div>
+        <button type="button" on:click={testRuleSandbox} class="btn btn-primary w-full">Check</button>
+        {#if sandboxFeedback}
+          <p class="flex items-center gap-3 min-h-[40px] px-4 rounded-lg font-sans text-caption {sandboxFeedback.valid ? 'bg-raised text-ink' : 'border border-ink text-ink'}" role="status">
+            {#if sandboxFeedback.valid}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            {/if}
+            {sandboxFeedback.message}
+          </p>
+        {/if}
+      </section>
+    </article>
   </div>
 </div>
