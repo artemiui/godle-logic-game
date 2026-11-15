@@ -4,6 +4,7 @@
   import type { ActiveTab } from '../stores/auth';
   import { CHANGELOG } from '../data/changelog';
   import { openLegalModal } from '../stores/legal';
+  import LogicField from './LogicField.svelte';
 
   const dispatch = createEventDispatcher<{
     enter: void;
@@ -42,24 +43,23 @@
   </header>
 
   <main class="flex-1">
-    <!-- Hero: wordmark, promise, one action -->
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 min-h-[calc(100vh-56px)] flex items-center py-16">
-      <div class="landing-rise space-y-8">
-        <div>
+    <!-- Hero: centred wordmark over a quiet field of logic glyphs -->
+    <section class="relative overflow-hidden">
+      <LogicField />
+      <div class="relative max-w-6xl mx-auto px-4 sm:px-6 min-h-[calc(100vh-56px)] flex flex-col items-center justify-center text-center py-24">
+        <div class="landing-rise">
           <h1 class="font-sans font-black text-7xl sm:text-8xl lg:text-9xl tracking-tight leading-[0.9] text-neutral-950 dark:text-white select-none">gödle</h1>
           <p class="mt-6 text-sm text-ink-3">by A. Arcega</p>
         </div>
-        <div class="max-w-xl">
-          <p class="font-serif text-2xl sm:text-[28px] leading-snug text-ink">
-            A daily proof in propositional logic, line by line, with Copi’s 19 rules
-          </p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
+        <p class="landing-rise landing-rise-2 mt-10 max-w-xl font-serif text-2xl sm:text-[28px] leading-snug text-ink">
+          A daily proof in propositional logic, line by line, with Copi’s 19 rules
+        </p>
+        <div class="landing-rise landing-rise-3 mt-10 flex flex-wrap items-center justify-center gap-3">
           <button type="button" on:click={() => dispatch('navigate', 'wordle')} class="btn btn-primary btn-lg">
             Play today’s problem
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
-          <button type="button" on:click={() => dispatch('navigate', 'tutorial')} class="btn btn-ghost btn-lg">Learn the rules</button>
+          <button type="button" on:click={() => dispatch('navigate', 'tutorial')} class="btn btn-secondary btn-lg bg-paper/80">Learn the rules</button>
         </div>
       </div>
     </section>
@@ -151,6 +151,8 @@
     to { opacity: 1; transform: none; }
   }
   .landing-rise { animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .landing-rise-2 { animation-delay: 60ms; }
+  .landing-rise-3 { animation-delay: 120ms; }
     @media (prefers-reduced-motion: reduce) {
     .landing-rise { animation: none; }
   }
