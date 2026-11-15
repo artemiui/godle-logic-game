@@ -718,21 +718,63 @@ app.post('/api/user/report', async (req: AuthenticatedRequest, res) => {
 });
 
 // Public OAuth configuration endpoint
+// Simulated GitHub sign-in for local development only. Never available in production or on
+// Vercel, and off by default locally: it needs ALLOW_DEV_OAUTH=1.
+function isDevOAuthAllowed(): boolean {
+  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+  return !isProd && process.env.ALLOW_DEV_OAUTH === '1';
+}
+
+const OAUTH_STATE_COOKIE = 'gh_oauth_state';
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+
+function oauthStateCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/api/auth/oauth',
+  };
+}
+
+function statesMatch(a: unknown, b: unknown): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string' || !a || a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
 app.get('/api/auth/oauth/config', async (_req, res) => {
   res.json({
     githubClientId: process.env.GITHUB_CLIENT_ID || null,
-    devMode: Boolean(process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEV_OAUTH),
+    devMode: isDevOAuthAllowed(),
   });
+});
+
+// Step 1 of GitHub sign-in: bind a one-time state value to this browser. GitHub echoes it back
+// and the callback must present the same value, so a code started in another browser
+// (login CSRF, or linking an attacker's GitHub to a victim's account) is rejected.
+app.post('/api/auth/oauth/github/start', async (_req, res) => {
+  if (!process.env.GITHUB_CLIENT_ID) {
+    return res.status(400).json({ error: 'GitHub sign-in is not configured.' });
+  }
+  const state = crypto.randomBytes(32).toString('hex');
+  res.cookie(OAUTH_STATE_COOKIE, state, { ...oauthStateCookieOptions(), maxAge: OAUTH_STATE_TTL_MS });
+  res.json({ state });
 });
 
 // OAuth Handler (GitHub) with Real Server-side Verification
 app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
-  const { code, githubUsername: clientUsername } = req.body;
-  let verifiedUsername = clientUsername;
+  const { code, state, githubUsername: clientUsername } = req.body;
+  let verifiedUsername: string | undefined;
   let verifiedGithubId: string | null = null;
 
   // Real GitHub OAuth Server-side Verification (Authorization Code Exchange)
   if (code) {
+    // The state must match the one issued to this browser by /github/start. One use only.
+    const expectedState = req.cookies?.[OAUTH_STATE_COOKIE];
+    res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions());
+    if (!statesMatch(state, expectedState)) {
+      return res.status(400).json({ error: 'GitHub sign-in could not be verified. Please start again from the sign-in button.' });
+    }
     try {
       const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',
@@ -758,23 +800,34 @@ app.post('/api/auth/oauth/github', async (req: AuthenticatedRequest, res) => {
         },
       });
       const userData = await userRes.json() as any;
+      if (!userRes.ok || userData?.id === undefined || userData?.id === null) {
+        return res.status(401).json({ error: 'Could not read your GitHub profile.' });
+      }
       verifiedUsername = userData.login;
       verifiedGithubId = String(userData.id);
     } catch {
       return res.status(502).json({ error: 'Failed to communicate with GitHub OAuth service.' });
     }
   } else {
-    // In production without ALLOW_DEV_OAUTH, reject unverified OAuth calls without authorization code
-    if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_OAUTH) {
-      return res.status(400).json({ error: 'GitHub authorization code is required in production.' });
+    if (!isDevOAuthAllowed()) {
+      return res.status(400).json({ error: 'GitHub authorization code is required.' });
     }
-    const safeSeed = verifiedUsername ? verifiedUsername.toLowerCase().replace(/[^a-z0-9]/g, '_') : crypto.randomBytes(4).toString('hex');
-    verifiedGithubId = req.body.githubId || `gh_${safeSeed}`;
+    // Local development only. The client never chooses the GitHub id; it is derived from the
+    // typed name under a "dev:" prefix that cannot collide with real (numeric) GitHub ids.
+    const safeSeed = typeof clientUsername === 'string' && clientUsername.trim()
+      ? clientUsername.trim().toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 32)
+      : crypto.randomBytes(4).toString('hex');
+    verifiedUsername = safeSeed;
+    verifiedGithubId = `dev:${safeSeed}`;
   }
 
   try {
     if (req.user) {
-      // Link GitHub to current user
+      // Link GitHub to the signed-in user, unless that GitHub account already belongs to someone else
+      const owner = await db.prepare('SELECT id FROM users WHERE github_id = ?').get(verifiedGithubId) as any;
+      if (owner && owner.id !== req.user.id) {
+        return res.status(409).json({ error: 'That GitHub account is already linked to another gödle account.' });
+      }
       await db.prepare('UPDATE users SET github_id = ? WHERE id = ?').run(verifiedGithubId, req.user.id);
       return res.json({ success: true, message: 'GitHub account linked successfully.' });
     }

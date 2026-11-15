@@ -8,10 +8,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.2.0',
+    date: '2026-11-15',
+    title: 'Redesign, Rule Lessons & Sign-in Security',
+    tag: 'Latest',
+    highlights: [
+      'Secured GitHub sign-in: each sign-in now carries a one-time check tied to your browser, so a link from someone else can no longer sign you into their account or attach their GitHub to yours.',
+      'Removed the simulated GitHub sign-in from public deployments; linking GitHub from your profile now always goes through GitHub itself, and a GitHub account can only be linked to one gödle account.',
+      'Added Ctrl+Enter (⌘+Enter on Mac) to add a line from anywhere while solving.',
+      'Rebuilt the Rules tab as short guided lessons: see the pattern, watch it work, pick the line that follows, then write one yourself, with progress across all 19 rules.',
+      'Redesigned the interface around the proof itself, with a typeset proof sheet, margin justifications, quieter controls, and a new landing page.',
+      'Daily puzzles now show the date while you solve instead of the puzzle title.'
+    ]
+  },
+  {
     version: 'v1.1.3',
     date: '2026-11-02',
     title: 'Formula Reuse & Sound Controls',
-    tag: 'Latest',
+    tag: 'Release',
     highlights: [
       'Made copied formulas paste as clean, readable text in the active notation, with support for styled letters and alternate logic symbols.',
       'Added inline Use and Cite actions to premises and derived lines: insert a formula directly into the editor or toggle its citation.',

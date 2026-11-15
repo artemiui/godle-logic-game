@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { startGitHubOAuth } from '../logic/oauth';
   import { createEventDispatcher } from 'svelte';
   import { authStore } from '../stores/auth';
   import { openLegalModal } from '../stores/legal';
@@ -301,14 +302,17 @@
   }
 
   // Trigger GitHub Sign-In
-  function triggerGitHubSignIn() {
+  async function triggerGitHubSignIn() {
     errorMessage = '';
     successMessage = '';
 
     // If real GitHub Client ID is configured
     if (oauthConfig.githubClientId) {
-      const redirectUri = encodeURIComponent(window.location.origin);
-      window.location.href = `https://github.com/login/oauth/authorize?client_id=${oauthConfig.githubClientId}&scope=read:user,user:email&redirect_uri=${redirectUri}`;
+      try {
+        await startGitHubOAuth(oauthConfig.githubClientId);
+      } catch (err: any) {
+        errorMessage = err?.message || 'Could not start GitHub sign-in.';
+      }
       return;
     }
 

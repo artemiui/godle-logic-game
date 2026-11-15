@@ -181,12 +181,26 @@
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       handleSubmit();
     }
   }
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+
+  // Ctrl+Enter (Cmd+Enter on Mac) adds the line from anywhere on the page, not only from a field.
+  // Daily, Frenzy and Sandbox each keep an editor mounted, so only the visible one responds.
+  function handleGlobalKeyDown(e: KeyboardEvent) {
+    if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey) || e.repeat) return;
+    if (disabled || hibernated || showRulesReference) return;
+    if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+    e.preventDefault();
+    handleSubmit();
+  }
 </script>
+
+<svelte:window on:keydown={handleGlobalKeyDown} />
 
 <div class="panel p-4 sm:p-6 space-y-4">
   <div class="flex items-center justify-between gap-4">
@@ -338,7 +352,7 @@
     class="btn btn-primary btn-lg w-full"
   >
     Add line
-    <span class="kbd">Enter</span>
+    <span class="kbd">{isMac ? '⌘' : 'Ctrl'} Enter</span>
   </button>
 </div>
 
