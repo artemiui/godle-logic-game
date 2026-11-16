@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!--
+  Source for public/og-image.png (1200×630 social preview).
+  Regenerate with: powershell -File scripts/og/render.ps1
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAFAFA;
+    --card: #FFFFFF;
+    --ink: #0A0A0A;
+    --ink-2: #525252;
+    --ink-3: #737373;
+    --line: rgba(10, 10, 10, 0.09);
+    --line-strong: rgba(10, 10, 10, 0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    position: relative;
+  }
+  /* hairline frame */
+  body::after {
+    content: '';
+    position: absolute;
+    inset: 32px;
+    border: 1px solid var(--line);
+    pointer-events: none;
+  }
+  .left {
+    padding: 80px 0 80px 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .wordmark {
+    font-weight: 800;
+    font-size: 148px;
+    letter-spacing: -0.045em;
+    line-height: 0.85;
+  }
+  .by { margin-top: 44px; font-size: 18px; color: var(--ink-3); }
+  .tagline {
+    font-family: 'Newsreader', 'Crimson Pro', Georgia, serif;
+    font-size: 34px;
+    line-height: 1.22;
+    max-width: 540px;
+    font-weight: 400;
+  }
+  .meta { margin-top: 20px; font-size: 17px; color: var(--ink-3); }
+
+  .right {
+    border-left: 1px solid var(--line);
+    margin: 32px 32px 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 48px;
+  }
+  .sheet { width: 100%; }
+  .conclusion {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 44px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line-strong);
+    margin-bottom: 12px;
+  }
+  .conclusion .therefore { color: var(--ink-3); margin-right: 14px; }
+  .row {
+    display: grid;
+    grid-template-columns: 36px 1fr 112px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  .n { font-size: 15px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .f { font-family: 'Newsreader', Georgia, serif; font-size: 28px; }
+  .note {
+    font-size: 15px;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+    border-left: 1px solid var(--line-strong);
+    padding-left: 14px;
+    white-space: pre;
+  }
+  .premise .note { color: var(--ink-3); }
+  .qed { display: flex; gap: 18px; align-items: baseline; }
+  .qed span { font-size: 22px; }
+  .divider { height: 1px; background: var(--line-strong); margin: 4px 0; }
+</style>
+</head>
+<body>
+  <section class="left">
+    <div>
+      <div class="wordmark">gödle</div>
+      <div class="by">by A. Arcega</div>
+    </div>
+    <div>
+      <p class="tagline">A daily proof in propositional logic, line by line, with Copi’s 19 rules</p>
+      <p class="meta">godle-logic-game.vercel.app</p>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="sheet">
+      <div class="conclusion"><span class="therefore">∴</span>¬P</div>
+      <div class="row premise"><span class="n">1</span><span class="f">P → (Q ∧ R)</span><span class="note">Premise</span></div>
+      <div class="row premise"><span class="n">2</span><span class="f">¬R</span><span class="note">Premise</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="n">3</span><span class="f">¬R ∨ ¬Q</span><span class="note">2  Add</span></div>
+      <div class="row"><span class="n">4</span><span class="f">¬Q ∨ ¬R</span><span class="note">3  Com</span></div>
+      <div class="row"><span class="n">5</span><span class="f">¬(Q ∧ R)</span><span class="note">4  DeM</span></div>
+      <div class="row"><span class="n">6</span><span class="f qed">¬P <span>∎</span></span><span class="note">1, 5  MT</span></div>
+    </div>
+  </section>
+</body>
+</html>

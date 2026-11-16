@@ -8,10 +8,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.2.1',
+    date: '2026-11-16',
+    title: 'Link Previews',
+    tag: 'Latest',
+    highlights: [
+      'Links to gödle now unfurl with a preview card on X, Discord, Slack, Facebook, LinkedIn and messaging apps: the wordmark beside a short typeset proof.',
+      'Added a page description and light and dark browser colours.'
+    ]
+  },
+  {
     version: 'v1.2.0',
     date: '2026-11-15',
     title: 'Redesign, Rule Lessons & Sign-in Security',
-    tag: 'Latest',
+    tag: 'Release',
     highlights: [
       'Secured GitHub sign-in: each sign-in now carries a one-time check tied to your browser, so a link from someone else can no longer sign you into their account or attach their GitHub to yours.',
       'Removed the simulated GitHub sign-in from public deployments; linking GitHub from your profile now always goes through GitHub itself, and a GitHub account can only be linked to one gödle account.',
